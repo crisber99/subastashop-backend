@@ -5,8 +5,17 @@ import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.repositories.AppUserRepository;
 import com.subastashop.backend.services.JwtService;
 import lombok.Data;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,27 +27,44 @@ public class AuthController {
     private AppUserRepository userRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // Necesitaremos configurar esto
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
     // LOGIN
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        // 1. Buscar usuario
-        AppUsers user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        // 2. Verificar password (ojo: en producción usar AuthenticationManager)
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            return ResponseEntity.badRequest().body("Contraseña incorrecta");
-        }
-
-        // 3. Generar Token
-        String token = jwtService.generateToken(user);
+    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         
-        return ResponseEntity.ok(new AuthResponse(token, user.getNombreCompleto(), user.getId()));
+        // Autenticación estándar (esto ya lo tienes)
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+        // Generamos el token pasando el userDetails (que es lo que suele pedir JwtService)
+        String jwt = jwtService.generateToken(userDetails);
+
+       // --- BUSCAR DATOS EXTRAS DEL USUARIO PARA EL FRONTEND ---
+        AppUsers userCompleto = userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new RuntimeException("Error: Usuario no encontrado."));
+
+        // --- CONSTRUIR RESPUESTA ---
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", jwt);
+        
+        Map<String, String> usuarioMap = new HashMap<>();
+        usuarioMap.put("nombre", userCompleto.getNombreCompleto());
+        usuarioMap.put("email", userCompleto.getEmail());
+        usuarioMap.put("role", userCompleto.getRol()); 
+        
+        response.put("usuario", usuarioMap);
+
+        return ResponseEntity.ok(response);
     }
 
     // REGISTRO
