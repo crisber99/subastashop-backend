@@ -4,7 +4,6 @@ import com.subastashop.backend.config.TenantContext;
 import com.subastashop.backend.models.Producto;
 import com.subastashop.backend.repositories.ProductoRepository;
 import com.subastashop.backend.services.AzureBlobService;
-import com.subastashop.backend.services.StorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,9 +21,7 @@ public class ProductoController {
     @Autowired
     private ProductoRepository productoRepository;
 
-    @Autowired
-    private StorageService storageService; // <--- Inyectamos el servicio de Azure
-
+    // 🔧 CAMBIO: Usamos solo AzureBlobService para evitar conflictos
     @Autowired
     private AzureBlobService azureBlobService;
 
@@ -35,102 +32,111 @@ public class ProductoController {
         return ResponseEntity.ok(productos);
     }
 
-    // NUEVO MÉTODO POST CON IMAGEN
-    // Consumes = MULTIPART_FORM_DATA es obligatorio para recibir archivos
+    // --- CREAR PRODUCTO ---
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Producto> crearProducto(
             @RequestParam("file") MultipartFile file,
             @RequestParam("nombre") String nombre,
             @RequestParam("descripcion") String descripcion,
-            @RequestParam("tipoVenta") String tipoVenta, // DIRECTA o SUBASTA
+            @RequestParam("tipoVenta") String tipoVenta, 
             @RequestParam("precioBase") BigDecimal precioBase,
             @RequestParam(value = "stock", required = false, defaultValue = "1") Integer stock,
-            @RequestParam(value = "fechaFin", required = false) String fechaFinIso // Ejemplo: "2026-12-31T23:59:00"
+            @RequestParam(value = "fechaFin", required = false) String fechaFinIso 
     ) {
         try {
-            // 1. Subir imagen a Azure Blob Storage
-            String urlImagen = "https://fakeimg.pl/300/"; // Fallback por si falla la subida
+            // 1. Subir imagen a Azure Blob Storage ☁️
+            String urlImagen = "https://via.placeholder.com/300"; // Imagen por defecto
+            
             if (file != null && !file.isEmpty()) {
-                urlImagen = storageService.subirImagen(file);
+                // Usamos el servicio de Azure que ya funciona
+                urlImagen = azureBlobService.subirImagen(file);
             }
 
-            // 2. Construir el objeto Producto
+            // 2. Construir el objeto
             Producto p = new Producto();
             p.setNombre(nombre);
             p.setDescripcion(descripcion);
             p.setTipoVenta(tipoVenta);
             p.setPrecioBase(precioBase);
-            p.setImagenUrl(urlImagen);
+            p.setImagenUrl(urlImagen); // Guardamos la URL aquí para ambos casos
 
-            // Si es subasta, el precio actual inicial es el base
+            // 3. Lógica según tipo de venta
             if ("SUBASTA".equalsIgnoreCase(tipoVenta)) {
                 p.setPrecioActual(precioBase);
-                if (fechaFinIso != null) {
+                p.setEstado("EN_SUBASTA");
+                p.setStock(1); // En subasta el stock suele ser 1
+
+                // 🩹 PARCHE DE FECHA (Evita el error 'undefined')
+                if (fechaFinIso != null && !fechaFinIso.equals("undefined") && !fechaFinIso.isEmpty()) {
+                    // Si viene corta (ej: 15:30), agregamos segundos (15:30:00)
+                    if (fechaFinIso.length() == 16) {
+                        fechaFinIso += ":00";
+                    }
                     p.setFechaFinSubasta(LocalDateTime.parse(fechaFinIso));
                 }
-                p.setEstado("EN_SUBASTA");
             } else {
                 p.setStock(stock);
-                // p.setImagenUrl(urlImagen); // <--- Guardamos la URL de Azure
                 p.setEstado("DISPONIBLE");
             }
 
-            // Nota: No seteamos TenantId, BaseEntity lo hace solo.
-
-            // 3. Guardar en BD
+            // 4. Guardar
             Producto nuevo = productoRepository.save(p);
-
             return ResponseEntity.ok(nuevo);
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().build(); // Devuelve 500 pero no rompe la app
         }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Producto> obtenerProducto(@PathVariable Integer id) {
-        // 1. Obtenemos el tenant actual
         String currentTenant = TenantContext.getTenantId();
-        
-        // 2. Buscamos el producto asegurándonos que sea de ESTA tienda
         return productoRepository.findByIdAndTenantId(id, currentTenant)
-                .map(ResponseEntity::ok) // Si existe, devolvemos 200 OK con el producto
-                .orElse(ResponseEntity.notFound().build()); // Si no existe, 404
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
+    // --- EDITAR PRODUCTO ---
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> editarProducto(
             @PathVariable Integer id,
             @RequestParam("nombre") String nombre,
             @RequestParam("descripcion") String descripcion,
             @RequestParam("precioBase") BigDecimal precioBase,
-            @RequestParam("fechaFin") String fechaFin,
+            @RequestParam(value = "fechaFin", required = false) String fechaFin, // Puede ser opcional
             @RequestParam(value = "imagen", required = false) MultipartFile imagen) {
 
         try {
-            // 1. Buscar el producto
+            // 1. Buscar producto
             Producto producto = productoRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
-            // 2. 🛡️ VALIDACIÓN DE REGLAS DE NEGOCIO
+            // 2. Validaciones de negocio
             String estado = producto.getEstado();
             if ("SUBASTA".equals(estado) || "ADJUDICADO".equals(estado) || "PAGADO".equals(estado)) {
                 return ResponseEntity.badRequest()
-                    .body("❌ Error: No puedes editar un producto que está en Subasta o ya fue Vendido.");
+                    .body("❌ Error: No puedes editar un producto activo o vendido.");
             }
 
-            // 3. Actualizar datos básicos
+            // 3. Actualizar datos
             producto.setNombre(nombre);
             producto.setDescripcion(descripcion);
             producto.setPrecioBase(precioBase);
-            // Si nadie ha pujado, actualizamos también el precio actual
+            
             if (producto.getPujas() == null || producto.getPujas().isEmpty()) {
                 producto.setPrecioActual(precioBase);
             }
-            producto.setFechaFinSubasta(LocalDateTime.parse(fechaFin));
 
-            // 4. Actualizar Imagen (Solo si subieron una nueva)
+            // 🩹 PARCHE DE FECHA EN EDICIÓN
+            if (fechaFin != null && !fechaFin.equals("undefined") && !fechaFin.isEmpty()) {
+                if (fechaFin.length() == 16) {
+                    fechaFin += ":00";
+                }
+                producto.setFechaFinSubasta(LocalDateTime.parse(fechaFin));
+            }
+
+            // 4. Subir nueva imagen (si existe)
             if (imagen != null && !imagen.isEmpty()) {
                 String urlNueva = azureBlobService.subirImagen(imagen);
                 producto.setImagenUrl(urlNueva);
@@ -139,8 +145,8 @@ public class ProductoController {
             return ResponseEntity.ok(productoRepository.save(producto));
 
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body("Error al actualizar");
+            e.printStackTrace(); // Esto te mostrará el error en los logs de Azure si pasa algo
+            return ResponseEntity.internalServerError().body("Error al actualizar: " + e.getMessage());
         }
     }
 }
