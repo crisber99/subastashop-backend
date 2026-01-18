@@ -3,6 +3,7 @@ package com.subastashop.backend.controllers;
 import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.Orden;
 import com.subastashop.backend.models.Puja;
+import com.subastashop.backend.repositories.AppUserRepository;
 import com.subastashop.backend.repositories.OrdenRepository;
 import com.subastashop.backend.repositories.PujaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,24 +22,31 @@ public class UsuarioController {
 
     @Autowired
     private PujaRepository pujaRepository;
-
     @Autowired
     private OrdenRepository ordenRepository;
+    @Autowired
+    private AppUserRepository usuarioRepository;
 
-    // Helper para sacar el ID del token
-    private Integer getUserId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AppUsers user = (AppUsers) auth.getPrincipal();
-        return user.getId();
-    }
-
+    // 1. Endpoint para "Mis Pujas" 🔨
     @GetMapping("/mis-pujas")
-    public ResponseEntity<List<Puja>> misPujas() {
-        return ResponseEntity.ok(pujaRepository.findByUsuarioIdOrderByFechaPujaDesc(getUserId()));
+    public ResponseEntity<List<Puja>> obtenerMisPujas() {
+        AppUsers usuario = getUsuarioAutenticado();
+        // Devuelve el objeto PUJA completo (que incluye el Producto dentro)
+        return ResponseEntity.ok(pujaRepository.findByUsuarioIdOrderByFechaPujaDesc(usuario.getId()));
     }
 
+    // 2. Endpoint para "Mis Compras/Ganadas" 🏆
     @GetMapping("/mis-compras")
-    public ResponseEntity<List<Orden>> misCompras() {
-        return ResponseEntity.ok(ordenRepository.findByUsuarioId(getUserId()));
+    public ResponseEntity<List<Orden>> obtenerMisCompras() {
+        AppUsers usuario = getUsuarioAutenticado();
+        // Busca las ordenes de este usuario
+        return ResponseEntity.ok(ordenRepository.findByUsuarioId(usuario.getId()));
+    }
+
+    // Método auxiliar para no repetir código
+    private AppUsers getUsuarioAutenticado() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return usuarioRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
 }
