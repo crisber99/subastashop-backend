@@ -35,7 +35,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()     // Login y Registro
                 .requestMatchers("/ws-subastas/**").permitAll()   // <--- ¡AGREGA ESTA LÍNEA! 🔌
                 .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll() // Ver productos
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                 .anyRequest().authenticated()
             )
             .sessionManagement(sess -> sess
