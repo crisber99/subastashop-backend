@@ -3,6 +3,7 @@ package com.subastashop.backend.controllers;
 import com.subastashop.backend.config.TenantContext;
 import com.subastashop.backend.models.Producto;
 import com.subastashop.backend.repositories.ProductoRepository;
+import com.subastashop.backend.services.AzureBlobService;
 import com.subastashop.backend.services.StorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -23,6 +24,9 @@ public class ProductoController {
 
     @Autowired
     private StorageService storageService; // <--- Inyectamos el servicio de Azure
+
+    @Autowired
+    private AzureBlobService azureBlobService;
 
     @GetMapping
     public ResponseEntity<List<Producto>> listarProductos() {
@@ -93,5 +97,50 @@ public class ProductoController {
         return productoRepository.findByIdAndTenantId(id, currentTenant)
                 .map(ResponseEntity::ok) // Si existe, devolvemos 200 OK con el producto
                 .orElse(ResponseEntity.notFound().build()); // Si no existe, 404
+    }
+
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> editarProducto(
+            @PathVariable Integer id,
+            @RequestParam("nombre") String nombre,
+            @RequestParam("descripcion") String descripcion,
+            @RequestParam("precioBase") BigDecimal precioBase,
+            @RequestParam("fechaFin") String fechaFin,
+            @RequestParam(value = "imagen", required = false) MultipartFile imagen) {
+
+        try {
+            // 1. Buscar el producto
+            Producto producto = productoRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+            // 2. 🛡️ VALIDACIÓN DE REGLAS DE NEGOCIO
+            String estado = producto.getEstado();
+            if ("SUBASTA".equals(estado) || "ADJUDICADO".equals(estado) || "PAGADO".equals(estado)) {
+                return ResponseEntity.badRequest()
+                    .body("❌ Error: No puedes editar un producto que está en Subasta o ya fue Vendido.");
+            }
+
+            // 3. Actualizar datos básicos
+            producto.setNombre(nombre);
+            producto.setDescripcion(descripcion);
+            producto.setPrecioBase(precioBase);
+            // Si nadie ha pujado, actualizamos también el precio actual
+            if (producto.getPujas() == null || producto.getPujas().isEmpty()) {
+                producto.setPrecioActual(precioBase);
+            }
+            producto.setFechaFinSubasta(LocalDateTime.parse(fechaFin));
+
+            // 4. Actualizar Imagen (Solo si subieron una nueva)
+            if (imagen != null && !imagen.isEmpty()) {
+                String urlNueva = azureBlobService.subirImagen(imagen);
+                producto.setImagenUrl(urlNueva);
+            }
+
+            return ResponseEntity.ok(productoRepository.save(producto));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Error al actualizar");
+        }
     }
 }

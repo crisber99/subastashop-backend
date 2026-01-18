@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true) // Importante para que Lombok incluya el TenantId en el equals
@@ -39,4 +41,8 @@ public class Producto extends BaseEntity {
     private String estado;
 
     private LocalDateTime fechaCreacion = LocalDateTime.now();
+
+    @OneToMany(mappedBy = "producto")
+    @JsonIgnore // Evita bucles infinitos al transformar a JSON
+    private List<Puja> pujas;
 }
