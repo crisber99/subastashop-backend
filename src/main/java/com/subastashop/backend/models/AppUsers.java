@@ -13,13 +13,13 @@ import java.util.List;
 @Data
 @Entity
 @Table(name = "AppUsers")
-public class AppUsers implements UserDetails { // <--- IMPLEMENTAR ESTO
+public class AppUsers implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private String tenantId; // No usamos BaseEntity aquí porque el login es previo a saber el tenant a veces
+    private String tenantId;
     
     @Column(nullable = false)
     private String email;
@@ -28,14 +28,20 @@ public class AppUsers implements UserDetails { // <--- IMPLEMENTAR ESTO
     private String passwordHash;
 
     private String nombreCompleto;
-    private String rol; // ADMIN, COMPRADOR
+
+    // 🔧 CAMBIO 1: Cambiamos String por Role y agregamos la anotación
+    @Enumerated(EnumType.STRING) 
+    private Role rol; // Ahora es del tipo Enum, no String
+
     private LocalDateTime fechaRegistro = LocalDateTime.now();
 
     // --- MÉTODOS DE USERDETAILS ---
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(rol));
+        // 🔧 CAMBIO 2: Convertimos el Enum a String usando .name()
+        // Spring Security necesita texto, así que extraemos el nombre del rol (ej: "ROLE_ADMIN")
+        return List.of(new SimpleGrantedAuthority(rol.name()));
     }
 
     @Override
@@ -45,7 +51,7 @@ public class AppUsers implements UserDetails { // <--- IMPLEMENTAR ESTO
 
     @Override
     public String getUsername() {
-        return email; // Usamos el email como usuario
+        return email;
     }
 
     @Override

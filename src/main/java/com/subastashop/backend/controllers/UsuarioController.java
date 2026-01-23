@@ -11,8 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.subastashop.backend.models.Role;
 
 import java.util.List;
 
@@ -48,5 +50,21 @@ public class UsuarioController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return usuarioRepository.findByEmail(auth.getName())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    }
+
+    @PostMapping("/convertir-vendedor")
+    public ResponseEntity<?> solicitarSerVendedor() {
+        // 1. Obtener usuario actual del token
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        AppUsers usuario = usuarioRepository.findByEmail(email).get();
+
+        // 2. Cambiar Rol
+        usuario.setRol(Role.ROLE_VENDEDOR); // Asegúrate de agregar VENDEDOR a tu Enum Role
+        usuarioRepository.save(usuario);
+
+        // 3. (Opcional) Aquí podrías pedir RUT, Cuenta Bancaria, etc. antes de
+        // aprobarlo.
+
+        return ResponseEntity.ok("¡Felicidades! Ahora tienes acceso al panel de ventas.");
     }
 }

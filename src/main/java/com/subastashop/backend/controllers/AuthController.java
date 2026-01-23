@@ -2,6 +2,7 @@ package com.subastashop.backend.controllers;
 
 import com.subastashop.backend.config.TenantContext;
 import com.subastashop.backend.models.AppUsers;
+import com.subastashop.backend.models.Role;
 import com.subastashop.backend.repositories.AppUserRepository;
 import com.subastashop.backend.services.JwtService;
 import lombok.Data;
@@ -60,7 +61,7 @@ public class AuthController {
         Map<String, String> usuarioMap = new HashMap<>();
         usuarioMap.put("nombre", userCompleto.getNombreCompleto());
         usuarioMap.put("email", userCompleto.getEmail());
-        usuarioMap.put("role", userCompleto.getRol()); 
+        usuarioMap.put("role", userCompleto.getRol().name()); 
         
         response.put("usuario", usuarioMap);
 
@@ -78,7 +79,7 @@ public class AuthController {
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setNombreCompleto(request.getNombre());
-        user.setRol("COMPRADOR");
+        user.setRol(Role.ROLE_COMPRADOR);
         user.setTenantId(tenantId);
 
         userRepository.save(user);

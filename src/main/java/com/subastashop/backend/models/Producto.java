@@ -43,6 +43,10 @@ public class Producto extends BaseEntity {
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
     @OneToMany(mappedBy = "producto")
-    @JsonIgnore // Evita bucles infinitos al transformar a JSON
+    @JsonIgnore
     private List<Puja> pujas;
+
+    private Integer cantidadNumeros;
+    private Integer cantidadGanadores;
+    private BigDecimal precioTicket;
 }
