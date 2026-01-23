@@ -10,11 +10,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration; // <--- Importar
-import org.springframework.web.cors.CorsConfigurationSource; // <--- Importar
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource; // <--- Importar
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays; // <--- Importar
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -27,14 +27,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // 1. ACTIVAR CORS AQUÍ (Esto es lo nuevo)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()     // Login y Registro
-                .requestMatchers("/ws-subastas/**").permitAll()   // <--- ¡AGREGA ESTA LÍNEA! 🔌
-                .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll() // Ver productos
+                .requestMatchers("/api/auth/**").permitAll() 
+                .requestMatchers("/ws-subastas/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
                 .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                 .anyRequest().authenticated()
             )
@@ -52,8 +51,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:4200",                                      // Desarrollo Local
-            "https://storagesubastasapp.z20.web.core.windows.net"         // Producción (Azure)
+            "http://localhost:4200",
+            "https://storagesubastasapp.z20.web.core.windows.net"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
