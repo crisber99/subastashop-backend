@@ -70,23 +70,21 @@ public class RifaController {
 
     @PostMapping("/{productoId}/comprar/{numeroTicket}")
     public ResponseEntity<?> comprarTicket(@PathVariable Integer productoId, @PathVariable Integer numeroTicket) {
-        // 1. Obtener usuario actual (del Token JWT)
+
+        // 1. Obtener usuario actual
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        AppUsers usuario = usuarioRepository.findByEmail(email).orElseThrow();
+        AppUsers usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         // 2. Validar si el número ya está ocupado
         if (ticketRepository.existsByRifaIdAndNumeroTicket(productoId, numeroTicket)) {
             return ResponseEntity.badRequest().body("⛔ Este número ya fue vendido.");
         }
 
-        // 3. Crear el ticket
-        Producto rifa = productoRepository.findById(productoId).orElseThrow();
+        Producto rifa = productoRepository.findById(productoId)
+                .orElseThrow(() -> new RuntimeException("Rifa no encontrada"));
 
-        // Validación extra: El número no puede ser mayor al total
-        if (numeroTicket > rifa.getCantidadNumeros() || numeroTicket < 1) {
-            return ResponseEntity.badRequest().body("Número inválido.");
-        }
-
+        // 3. Crear y Guardar el ticket
         TicketRifa ticket = new TicketRifa();
         ticket.setRifa(rifa);
         ticket.setNumeroTicket(numeroTicket);
@@ -95,23 +93,31 @@ public class RifaController {
 
         ticketRepository.save(ticket);
 
+        // ================================================================
+        // 📢 EL GRITO AL SOCKET (ESTO ACTUALIZA LAS OTRAS PANTALLAS)
+        // ================================================================
         Map<String, Object> notificacion = new HashMap<>();
-        notificacion.put("tipo", "TICKET_VENDIDO"); // Para distinguir de una Puja
+        notificacion.put("tipo", "TICKET_VENDIDO");
         notificacion.put("numero", numeroTicket);
         notificacion.put("productoId", productoId);
 
-        // Enviamos al mismo canal que usas para las subastas
+        // Enviamos el mensaje al canal público del producto
         messagingTemplate.convertAndSend("/topic/producto/" + productoId, notificacion);
+        // ================================================================
 
-        return ResponseEntity.ok("Ticket #" + numeroTicket + " comprado con éxito 🍀");
+        // Devolvemos un JSON simple para que el Frontend no se queje de "Texto vs JSON"
+        Map<String, String> respuesta = new HashMap<>();
+        respuesta.put("mensaje", "Ticket comprado con éxito");
+
+        return ResponseEntity.ok(respuesta);
     }
 
     @GetMapping("/{productoId}/tickets")
     public ResponseEntity<List<Integer>> obtenerTicketsVendidos(@PathVariable Integer productoId) {
-        // Devuelve solo la lista de números ocupados (ej: [1, 5, 20]) para pintar la
-        // grilla en rojo
         List<TicketRifa> tickets = ticketRepository.findByRifaId(productoId);
-        List<Integer> ocupados = tickets.stream().map(TicketRifa::getNumeroTicket).collect(Collectors.toList());
+        List<Integer> ocupados = tickets.stream()
+                .map(TicketRifa::getNumeroTicket)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(ocupados);
     }
 }
