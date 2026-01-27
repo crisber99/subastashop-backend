@@ -38,15 +38,17 @@ public class ProductoController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("nombre") String nombre,
             @RequestParam("descripcion") String descripcion,
-            @RequestParam("tipoVenta") String tipoVenta, 
+            @RequestParam("tipoVenta") String tipoVenta,
             @RequestParam("precioBase") BigDecimal precioBase,
             @RequestParam(value = "stock", required = false, defaultValue = "1") Integer stock,
-            @RequestParam(value = "fechaFin", required = false) String fechaFinIso 
-    ) {
+            @RequestParam(value = "fechaFin", required = false) String fechaFinIso,
+            @RequestParam(value = "precioTicket", required = false) BigDecimal precioTicket,
+            @RequestParam(value = "cantidadNumeros", required = false) Integer cantidadNumeros,
+            @RequestParam(value = "cantidadGanadores", required = false) Integer cantidadGanadores) {
         try {
             // 1. Subir imagen a Azure Blob Storage ☁️
             String urlImagen = "https://via.placeholder.com/300"; // Imagen por defecto
-            
+
             if (file != null && !file.isEmpty()) {
                 // Usamos el servicio de Azure que ya funciona
                 urlImagen = azureBlobService.subirImagen(file);
@@ -60,8 +62,12 @@ public class ProductoController {
             p.setPrecioBase(precioBase);
             p.setImagenUrl(urlImagen); // Guardamos la URL aquí para ambos casos
 
-            // 3. Lógica según tipo de venta
-            if ("SUBASTA".equalsIgnoreCase(tipoVenta)) {
+            if ("RIFA".equalsIgnoreCase(tipoVenta)) {
+                p.setEstado("DISPONIBLE");
+                p.setPrecioTicket(precioTicket);
+                p.setCantidadNumeros(cantidadNumeros);
+                p.setCantidadGanadores(cantidadGanadores);
+            } else if ("SUBASTA".equalsIgnoreCase(tipoVenta)) {
                 p.setPrecioActual(precioBase);
                 p.setEstado("EN_SUBASTA");
                 p.setStock(1); // En subasta el stock suele ser 1
@@ -116,14 +122,14 @@ public class ProductoController {
             String estado = producto.getEstado();
             if ("SUBASTA".equals(estado) || "ADJUDICADO".equals(estado) || "PAGADO".equals(estado)) {
                 return ResponseEntity.badRequest()
-                    .body("❌ Error: No puedes editar un producto activo o vendido.");
+                        .body("❌ Error: No puedes editar un producto activo o vendido.");
             }
 
             // 3. Actualizar datos
             producto.setNombre(nombre);
             producto.setDescripcion(descripcion);
             producto.setPrecioBase(precioBase);
-            
+
             if (producto.getPujas() == null || producto.getPujas().isEmpty()) {
                 producto.setPrecioActual(precioBase);
             }
