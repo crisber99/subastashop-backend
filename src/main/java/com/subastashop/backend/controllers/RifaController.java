@@ -1,13 +1,18 @@
 package com.subastashop.backend.controllers;
 
+import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.Producto;
 import com.subastashop.backend.models.TicketRifa;
 import com.subastashop.backend.repositories.ProductoRepository;
 import com.subastashop.backend.repositories.TicketRifaRepository; // <--- Debes crear este repo (ver abajo)
+import com.subastashop.backend.repositories.UsuarioRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,5 +56,47 @@ public class RifaController {
         productoRepository.save(rifa);
 
         return ResponseEntity.ok(ganadores);
+    }
+
+    @Autowired
+    private UsuarioRepository usuarioRepository; // Necesitamos saber quién compra
+
+    @PostMapping("/{productoId}/comprar/{numeroTicket}")
+    public ResponseEntity<?> comprarTicket(@PathVariable Integer productoId, @PathVariable Integer numeroTicket) {
+        // 1. Obtener usuario actual (del Token JWT)
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        AppUsers usuario = usuarioRepository.findByEmail(email).orElseThrow();
+
+        // 2. Validar si el número ya está ocupado
+        if (ticketRepository.existsByRifaIdAndNumeroTicket(productoId, numeroTicket)) {
+            return ResponseEntity.badRequest().body("⛔ Este número ya fue vendido.");
+        }
+
+        // 3. Crear el ticket
+        Producto rifa = productoRepository.findById(productoId).orElseThrow();
+
+        // Validación extra: El número no puede ser mayor al total
+        if (numeroTicket > rifa.getCantidadNumeros() || numeroTicket < 1) {
+            return ResponseEntity.badRequest().body("Número inválido.");
+        }
+
+        TicketRifa ticket = new TicketRifa();
+        ticket.setRifa(rifa);
+        ticket.setNumeroTicket(numeroTicket);
+        ticket.setComprador(usuario);
+        ticket.setFechaCompra(LocalDateTime.now());
+
+        ticketRepository.save(ticket);
+
+        return ResponseEntity.ok("Ticket #" + numeroTicket + " comprado con éxito 🍀");
+    }
+
+    @GetMapping("/{productoId}/tickets")
+    public ResponseEntity<List<Integer>> obtenerTicketsVendidos(@PathVariable Integer productoId) {
+        // Devuelve solo la lista de números ocupados (ej: [1, 5, 20]) para pintar la
+        // grilla en rojo
+        List<TicketRifa> tickets = ticketRepository.findByRifaId(productoId);
+        List<Integer> ocupados = tickets.stream().map(TicketRifa::getNumeroTicket).collect(Collectors.toList());
+        return ResponseEntity.ok(ocupados);
     }
 }
