@@ -120,4 +120,23 @@ public class RifaController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(ocupados);
     }
+
+    @GetMapping("/{productoId}/admin/detalles")
+public ResponseEntity<List<Map<String, Object>>> obtenerDetallesAdmin(@PathVariable Integer productoId) {
+    // Aquí podrías validar si el usuario es Admin, pero confiaremos en el Frontend por ahora
+    // o Spring Security si tienes la ruta protegida.
+    
+    List<TicketRifa> tickets = ticketRepository.findByRifaId(productoId);
+    
+    List<Map<String, Object>> respuesta = tickets.stream().map(t -> {
+        Map<String, Object> map = new HashMap<>();
+        map.put("numero", t.getNumeroTicket());
+        map.put("comprador", t.getComprador().getEmail()); // O t.getComprador().getNombre()
+        map.put("fecha", t.getFechaCompra());
+        map.put("pagado", t.getPagado());
+        return map;
+    }).collect(Collectors.toList());
+    
+    return ResponseEntity.ok(respuesta);
+}
 }

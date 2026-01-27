@@ -23,4 +23,6 @@ public class TicketRifa {
     private AppUsers comprador;
 
     private LocalDateTime fechaCompra = LocalDateTime.now();
+
+    private Boolean pagado = true;
 }
