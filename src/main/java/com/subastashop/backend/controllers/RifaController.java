@@ -17,9 +17,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import java.util.Map;
+import java.util.HashMap;
+
 @RestController // <--- Faltaba esto
 @RequestMapping("/api/rifas") // <--- Faltaba la ruta base
 public class RifaController {
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @Autowired
     private ProductoRepository productoRepository; // <--- Faltaba inyectar esto
@@ -87,6 +94,14 @@ public class RifaController {
         ticket.setFechaCompra(LocalDateTime.now());
 
         ticketRepository.save(ticket);
+
+        Map<String, Object> notificacion = new HashMap<>();
+        notificacion.put("tipo", "TICKET_VENDIDO"); // Para distinguir de una Puja
+        notificacion.put("numero", numeroTicket);
+        notificacion.put("productoId", productoId);
+
+        // Enviamos al mismo canal que usas para las subastas
+        messagingTemplate.convertAndSend("/topic/producto/" + productoId, notificacion);
 
         return ResponseEntity.ok("Ticket #" + numeroTicket + " comprado con éxito 🍀");
     }
