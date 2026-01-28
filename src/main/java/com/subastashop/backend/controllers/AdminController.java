@@ -45,7 +45,7 @@ public class AdminController {
     }
 
     @PutMapping("/usuarios/{id}/rol")
-public ResponseEntity<?> cambiarRol(@PathVariable Integer id, @RequestBody String nuevoRol) {
+    public ResponseEntity<?> cambiarRol(@PathVariable Integer id, @RequestBody String nuevoRol) {
         AppUsers usuario = usuarioRepository.findById(id).orElseThrow();
         usuario.setRol(Role.ROLE_VENDEDOR); // "ROLE_VENDEDOR"
         usuarioRepository.save(usuario);
