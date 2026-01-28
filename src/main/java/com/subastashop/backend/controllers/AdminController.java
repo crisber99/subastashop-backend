@@ -31,7 +31,6 @@ public class AdminController {
 
         // 2. VERIFICAR QUE TENGA TIENDA
         if (admin.getTienda() == null) {
-            // Si es Super Admin, quizás quieras mostrar todo. 
             // Por ahora, devolvemos error o ceros.
             return ResponseEntity.badRequest().body("No tienes una tienda asignada.");
         }

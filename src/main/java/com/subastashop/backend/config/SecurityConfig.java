@@ -39,7 +39,7 @@ public class SecurityConfig {
                                                 // Autenticación (Login/Registro)
                                                 .requestMatchers("/api/auth/**").permitAll()
 
-                                                // 👇 ESTA ES LA CLAVE PARA TU LANDING PAGE MULTI-TIENDA 👇
+                                                // 👇 LANDING PAGE MULTI-TIENDA 👇
                                                 .requestMatchers("/api/public/**").permitAll()
 
                                                 // Imágenes
@@ -52,7 +52,12 @@ public class SecurityConfig {
                                                 // ================================================================
                                                 // 2. ZONA PROTEGIDA (Roles Específicos) 👮‍♂️
                                                 // ================================================================
-                                                // Admin de Rifa y Admin General
+
+                                                // 👑 ZONA SUPER ADMIN (Creación de tiendas y gestión global)
+                                                // Asegúrate de tener "ROLE_SUPER_ADMIN" en tu Enum Role.java
+                                                .requestMatchers("/api/super-admin/**").hasAuthority("ROLE_SUPER_ADMIN")
+
+                                                // Admin de Rifa y Admin de Tienda
                                                 .requestMatchers("/api/rifas/*/admin/**").hasAuthority("ROLE_ADMIN")
                                                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
 
