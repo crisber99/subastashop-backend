@@ -20,7 +20,7 @@ public class AppUsers implements UserDetails {
     private Integer id;
 
     private String tenantId;
-    
+
     @Column(nullable = false)
     private String email;
 
@@ -30,17 +30,22 @@ public class AppUsers implements UserDetails {
     private String nombreCompleto;
 
     // 🔧 CAMBIO 1: Cambiamos String por Role y agregamos la anotación
-    @Enumerated(EnumType.STRING) 
+    @Enumerated(EnumType.STRING)
     private Role rol; // Ahora es del tipo Enum, no String
 
     private LocalDateTime fechaRegistro = LocalDateTime.now();
+
+    @ManyToOne
+    @JoinColumn(name = "tienda_id")
+    private Tienda tienda;
 
     // --- MÉTODOS DE USERDETAILS ---
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // 🔧 CAMBIO 2: Convertimos el Enum a String usando .name()
-        // Spring Security necesita texto, así que extraemos el nombre del rol (ej: "ROLE_ADMIN")
+        // Spring Security necesita texto, así que extraemos el nombre del rol (ej:
+        // "ROLE_ADMIN")
         return List.of(new SimpleGrantedAuthority(rol.name()));
     }
 
@@ -54,15 +59,28 @@ public class AppUsers implements UserDetails {
         return email;
     }
 
-    @Override
-    public boolean isAccountNonExpired() { return true; }
+    public void setPassword(String password) {
+        this.passwordHash = password;
+    }
 
     @Override
-    public boolean isAccountNonLocked() { return true; }
+    public boolean isAccountNonExpired() {
+        return true;
+    }
 
     @Override
-    public boolean isCredentialsNonExpired() { return true; }
+    public boolean isAccountNonLocked() {
+        return true;
+    }
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+    
 }

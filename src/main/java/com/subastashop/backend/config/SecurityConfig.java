@@ -49,6 +49,7 @@ public class SecurityConfig {
                                                 // 4. RESTO (Vendedor y otros)
                                                 .requestMatchers("/api/vendedor/**")
                                                 .hasAnyAuthority("ROLE_VENDEDOR", "ROLE_ADMIN")
+                                                .requestMatchers("/api/public/**").permitAll()
                                                 .anyRequest().authenticated())
                                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authenticationProvider(authenticationProvider)

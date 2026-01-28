@@ -2,7 +2,9 @@ package com.subastashop.backend.controllers;
 
 import com.subastashop.backend.config.TenantContext;
 import com.subastashop.backend.models.Producto;
+import com.subastashop.backend.models.Tienda;
 import com.subastashop.backend.repositories.ProductoRepository;
+import com.subastashop.backend.repositories.TiendaRepository;
 import com.subastashop.backend.services.AzureBlobService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -25,11 +27,23 @@ public class ProductoController {
     @Autowired
     private AzureBlobService azureBlobService;
 
+    @Autowired
+    private TiendaRepository tiendaRepository;
+
     @GetMapping
     public ResponseEntity<List<Producto>> listarProductos() {
         String currentTenant = TenantContext.getTenantId();
         List<Producto> productos = productoRepository.findByTenantId(currentTenant);
         return ResponseEntity.ok(productos);
+    }
+
+    @GetMapping("/tienda/{slug}")
+    public ResponseEntity<List<Producto>> obtenerProductosPorTienda(@PathVariable String slug) {
+        // Buscamos la tienda por su URL amigable
+        Tienda tienda = tiendaRepository.findBySlug(slug) // Crear en repo
+                .orElseThrow(() -> new RuntimeException("Tienda no existe"));
+
+        return ResponseEntity.ok(productoRepository.findByTiendaId(tienda.getId()));
     }
 
     // --- CREAR PRODUCTO ---

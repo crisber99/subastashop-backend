@@ -49,4 +49,8 @@ public class Producto extends BaseEntity {
     private Integer cantidadNumeros;
     private Integer cantidadGanadores;
     private BigDecimal precioTicket;
+
+    @ManyToOne
+    @JoinColumn(name = "tienda_id")
+    private Tienda tienda;
 }

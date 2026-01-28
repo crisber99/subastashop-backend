@@ -23,4 +23,10 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     List<Producto> buscarSubastasPorCerrar(@Param("ahora") LocalDateTime ahora);
 
     long countByEstado(String estado);
+
+    // Buscar productos de UNA tienda específica
+    List<Producto> findByTiendaId(Long tiendaId);
+
+    // Buscar productos de una tienda y que estén activos (para el público)
+    List<Producto> findByTiendaSlugAndEstado(String slug, String estado);
 }
