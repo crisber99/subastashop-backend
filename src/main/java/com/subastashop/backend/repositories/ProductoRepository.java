@@ -29,4 +29,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
 
     // Buscar productos de una tienda y que estén activos (para el público)
     List<Producto> findByTiendaSlugAndEstado(String slug, String estado);
+
+    // Contar productos de UNA tienda (para las cards del dashboard)
+    long countByTiendaIdAndEstado(Long tiendaId, String estado);
+
 }

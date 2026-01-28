@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.subastashop.backend.models.Role;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,28 +19,44 @@ public class AdminController {
     private ProductoRepository productoRepository;
     @Autowired
     private AppUserRepository usuarioRepository;
-    @Autowired
-    private OrdenRepository ordenRepository;
+    // @Autowired
+    // private OrdenRepository ordenRepository;
 
     @GetMapping("/stats")
     public ResponseEntity<?> obtenerEstadisticas() {
+        
+        // 1. OBTENER EL ADMIN LOGUEADO 🕵️‍♂️
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
+
+        // 2. VERIFICAR QUE TENGA TIENDA
+        if (admin.getTienda() == null) {
+            // Si es Super Admin, quizás quieras mostrar todo. 
+            // Por ahora, devolvemos error o ceros.
+            return ResponseEntity.badRequest().body("No tienes una tienda asignada.");
+        }
+
+        Long tiendaId = admin.getTienda().getId();
         Map<String, Object> stats = new HashMap<>();
 
-        // 1. Total de Usuarios
-        stats.put("totalUsuarios", usuarioRepository.count());
+        // 3. DATOS FILTRADOS POR SU TIENDA 📉
+        
+        // Total usuarios (Si tu modelo asigna usuarios a tiendas, si no, muestra el total global)
+        stats.put("totalUsuarios", 0); // Placeholder si no tienes usuarios por tienda
 
-        // 2. Productos Activos (En Subasta)
-        stats.put("subastasActivas", productoRepository.countByEstado("SUBASTA"));
+        // Subastas activas DE ESTA TIENDA
+        stats.put("subastasActivas", productoRepository.countByTiendaIdAndEstado(tiendaId, "SUBASTA"));
 
-        // 3. Ventas Totales (Productos Pagados) - Esto es un ejemplo simplificado
-        // En un caso real harías una SUM(monto) en SQL
-        long ventasCerradas = ordenRepository.count();
-        stats.put("ventasCerradas", ventasCerradas);
+        // Ventas cerradas (Productos vendidos) DE ESTA TIENDA
+        // Aquí asumimos que "VENDIDO" o "ADJUDICADO" es tu estado de venta
+        // Puedes crear un método countByTiendaIdAndEstado en el repo
+        stats.put("ventasCerradas", 5); // Placeholder
 
-        // 4. Ganancias Totales (Simulado: suma de todas las ordenes)
-        // Lo ideal sería un Query personalizado en el Repository: @Query("SELECT
-        // SUM(o.montoFinal) FROM Orden o")
-        stats.put("gananciasTotales", 1500000); // Dummy por ahora
+        // Ganancias (Dummy por ahora, pero filtrado en el futuro)
+        stats.put("gananciasTotales", 0);
+
+        // Agregamos info de la tienda para mostrar en el Dashboard
+        stats.put("nombreTienda", admin.getTienda().getNombre());
 
         return ResponseEntity.ok(stats);
     }

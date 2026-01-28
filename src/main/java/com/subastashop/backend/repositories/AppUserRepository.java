@@ -10,4 +10,7 @@ public interface AppUserRepository extends JpaRepository<AppUsers, Integer> {
     
     // Validar que no se repita al registrarse
     boolean existsByEmailAndTenantId(String email, String tenantId);
+
+    // Contar usuarios registrados en esta tienda
+    long countByTiendaId(Long tiendaId);
 }
