@@ -3,80 +3,113 @@ package com.subastashop.backend.controllers;
 import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.Producto;
 import com.subastashop.backend.models.TicketRifa;
+import com.subastashop.backend.models.GanadorRifa; // 👈 Importante
 import com.subastashop.backend.repositories.ProductoRepository;
-import com.subastashop.backend.repositories.TicketRifaRepository; // <--- Debes crear este repo (ver abajo)
+import com.subastashop.backend.repositories.TicketRifaRepository;
 import com.subastashop.backend.repositories.UsuarioRepository;
+import com.subastashop.backend.repositories.GanadorRifaRepository; // 👈 Importante
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
+import java.util.*; // Imports generales para List, Map, Collections, etc.
 import java.util.stream.Collectors;
 
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import java.util.Map;
-import java.util.HashMap;
-
-@RestController // <--- Faltaba esto
-@RequestMapping("/api/rifas") // <--- Faltaba la ruta base
+@RestController
+@RequestMapping("/api/rifas")
 public class RifaController {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
     @Autowired
-    private ProductoRepository productoRepository; // <--- Faltaba inyectar esto
+    private ProductoRepository productoRepository;
 
     @Autowired
-    private TicketRifaRepository ticketRepository; // <--- Faltaba inyectar esto
+    private TicketRifaRepository ticketRepository;
 
+    @Autowired
+    private GanadorRifaRepository ganadorRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+
+    // 👇 MÉTODO ACTUALIZADO: AHORA GUARDA EN BD Y AVISA POR SOCKET
     @PostMapping("/{productoId}/lanzar")
     public ResponseEntity<?> lanzarRifa(@PathVariable Integer productoId) {
+        
+        // 1. Validaciones
         Producto rifa = productoRepository.findById(productoId)
                 .orElseThrow(() -> new RuntimeException("Rifa no encontrada"));
 
-        // 1. Validar que se vendieron todos
-        long ticketsVendidos = ticketRepository.countByRifaId(productoId);
+        // Evitar lanzar dos veces
+        // (Asume que crearás este método en el repo, o puedes chequear si rifa.getEstado() == "FINALIZADA")
+        if ("FINALIZADA".equals(rifa.getEstado())) { 
+             return ResponseEntity.badRequest().body("El sorteo ya fue realizado.");
+        }
 
-        // (Asegúrate que Producto tenga getCantidadNumeros, si no, agrégalo al modelo)
-        if (ticketsVendidos < rifa.getCantidadNumeros()) {
+        List<TicketRifa> todosLosTickets = ticketRepository.findByRifaId(productoId);
+
+        if (todosLosTickets.size() < rifa.getCantidadNumeros()) {
             return ResponseEntity.badRequest().body("Aún faltan números por vender.");
         }
 
-        // 2. Obtener todos los participantes
-        List<TicketRifa> todosLosTickets = ticketRepository.findByRifaId(productoId);
-
-        // 3. EL SORTEO 🎲
+        // 2. EL SORTEO 🎲 (Mezclar tickets)
         Collections.shuffle(todosLosTickets);
 
-        // 4. Sacar los ganadores
-        List<TicketRifa> ganadores = todosLosTickets.stream()
-                .limit(rifa.getCantidadGanadores())
-                .collect(Collectors.toList());
+        // 3. Seleccionar, Guardar y Preparar Notificación
+        int cantidadGanadores = rifa.getCantidadGanadores();
+        List<Map<String, Object>> listaGanadoresDTO = new ArrayList<>();
 
-        // 5. Guardar resultados
+        for (int i = 0; i < cantidadGanadores && i < todosLosTickets.size(); i++) {
+            TicketRifa ticketGanador = todosLosTickets.get(i);
+
+            // A) Guardar en Base de Datos (Persistencia)
+            GanadorRifa ganador = new GanadorRifa();
+            ganador.setRifa(rifa);
+            ganador.setTicketGanador(ticketGanador);
+            ganador.setPuesto(i + 1); // 1, 2, 3...
+            ganador.setFechaGanador(LocalDateTime.now());
+            ganadorRepository.save(ganador);
+
+            // B) Preparar objeto para el Frontend (DTO)
+            Map<String, Object> dto = new HashMap<>();
+            dto.put("puesto", i + 1);
+            dto.put("numeroTicket", ticketGanador.getNumeroTicket());
+            dto.put("comprador", ticketGanador.getComprador().getEmail());
+            // Puedes agregar más datos si quieres
+            listaGanadoresDTO.add(dto);
+        }
+
+        // 4. Actualizar estado de la Rifa
         rifa.setEstado("FINALIZADA");
         productoRepository.save(rifa);
 
-        return ResponseEntity.ok(ganadores);
+        // 5. 📢 GRITO AL SOCKET: "¡YA HAY GANADORES!"
+        Map<String, Object> notificacion = new HashMap<>();
+        notificacion.put("tipo", "SORTEO_FINALIZADO");
+        notificacion.put("ganadores", listaGanadoresDTO); // Enviamos la lista
+        notificacion.put("productoId", productoId);
+
+        messagingTemplate.convertAndSend("/topic/producto/" + productoId, notificacion);
+
+        return ResponseEntity.ok(listaGanadoresDTO);
     }
 
-    @Autowired
-    private UsuarioRepository usuarioRepository; // Necesitamos saber quién compra
+    // --- EL RESTO DE TUS MÉTODOS SE MANTIENEN IGUAL ---
 
     @PostMapping("/{productoId}/comprar/{numeroTicket}")
     public ResponseEntity<?> comprarTicket(@PathVariable Integer productoId, @PathVariable Integer numeroTicket) {
-
-        // 1. Obtener usuario actual
+        // ... (Tu código existente de compra, NO CAMBIA) ...
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         AppUsers usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // 2. Validar si el número ya está ocupado
         if (ticketRepository.existsByRifaIdAndNumeroTicket(productoId, numeroTicket)) {
             return ResponseEntity.badRequest().body("⛔ Este número ya fue vendido.");
         }
@@ -84,7 +117,6 @@ public class RifaController {
         Producto rifa = productoRepository.findById(productoId)
                 .orElseThrow(() -> new RuntimeException("Rifa no encontrada"));
 
-        // 3. Crear y Guardar el ticket
         TicketRifa ticket = new TicketRifa();
         ticket.setRifa(rifa);
         ticket.setNumeroTicket(numeroTicket);
@@ -93,22 +125,15 @@ public class RifaController {
 
         ticketRepository.save(ticket);
 
-        // ================================================================
-        // 📢 EL GRITO AL SOCKET (ESTO ACTUALIZA LAS OTRAS PANTALLAS)
-        // ================================================================
+        // Notificación Socket Compra
         Map<String, Object> notificacion = new HashMap<>();
         notificacion.put("tipo", "TICKET_VENDIDO");
         notificacion.put("numero", numeroTicket);
         notificacion.put("productoId", productoId);
-
-        // Enviamos el mensaje al canal público del producto
         messagingTemplate.convertAndSend("/topic/producto/" + productoId, notificacion);
-        // ================================================================
 
-        // Devolvemos un JSON simple para que el Frontend no se queje de "Texto vs JSON"
         Map<String, String> respuesta = new HashMap<>();
         respuesta.put("mensaje", "Ticket comprado con éxito");
-
         return ResponseEntity.ok(respuesta);
     }
 
@@ -122,21 +147,16 @@ public class RifaController {
     }
 
     @GetMapping("/{productoId}/admin/detalles")
-public ResponseEntity<List<Map<String, Object>>> obtenerDetallesAdmin(@PathVariable Integer productoId) {
-    // Aquí podrías validar si el usuario es Admin, pero confiaremos en el Frontend por ahora
-    // o Spring Security si tienes la ruta protegida.
-    
-    List<TicketRifa> tickets = ticketRepository.findByRifaId(productoId);
-    
-    List<Map<String, Object>> respuesta = tickets.stream().map(t -> {
-        Map<String, Object> map = new HashMap<>();
-        map.put("numero", t.getNumeroTicket());
-        map.put("comprador", t.getComprador().getEmail()); // O t.getComprador().getNombre()
-        map.put("fecha", t.getFechaCompra());
-        map.put("pagado", t.getPagado());
-        return map;
-    }).collect(Collectors.toList());
-    
-    return ResponseEntity.ok(respuesta);
-}
+    public ResponseEntity<List<Map<String, Object>>> obtenerDetallesAdmin(@PathVariable Integer productoId) {
+        List<TicketRifa> tickets = ticketRepository.findByRifaId(productoId);
+        List<Map<String, Object>> respuesta = tickets.stream().map(t -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("numero", t.getNumeroTicket());
+            map.put("comprador", t.getComprador().getEmail());
+            map.put("fecha", t.getFechaCompra());
+            map.put("pagado", t.getPagado());
+            return map;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(respuesta);
+    }
 }
