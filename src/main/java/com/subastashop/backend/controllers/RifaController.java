@@ -55,9 +55,9 @@ public class RifaController {
 
         List<TicketRifa> todosLosTickets = ticketRepository.findByRifaId(productoId);
 
-        if (todosLosTickets.size() < rifa.getCantidadNumeros()) {
-            return ResponseEntity.badRequest().body("Aún faltan números por vender.");
-        }
+        // if (todosLosTickets.size() < rifa.getCantidadNumeros()) {
+        //     return ResponseEntity.badRequest().body("Aún faltan números por vender.");
+        // }
 
         // 2. EL SORTEO 🎲 (Mezclar tickets)
         Collections.shuffle(todosLosTickets);
