@@ -55,9 +55,9 @@ public class RifaController {
 
         List<TicketRifa> todosLosTickets = ticketRepository.findByRifaId(productoId);
 
-        // if (todosLosTickets.size() < rifa.getCantidadNumeros()) {
-        //     return ResponseEntity.badRequest().body("Aún faltan números por vender.");
-        // }
+        if (todosLosTickets.size() < rifa.getCantidadNumeros()) {
+            return ResponseEntity.badRequest().body("Aún faltan números por vender.");
+        }
 
         // 2. EL SORTEO 🎲 (Mezclar tickets)
         Collections.shuffle(todosLosTickets);
@@ -101,7 +101,6 @@ public class RifaController {
         return ResponseEntity.ok(listaGanadoresDTO);
     }
 
-    // --- EL RESTO DE TUS MÉTODOS SE MANTIENEN IGUAL ---
 
     @PostMapping("/{productoId}/comprar/{numeroTicket}")
     public ResponseEntity<?> comprarTicket(@PathVariable Integer productoId, @PathVariable Integer numeroTicket) {
@@ -157,6 +156,22 @@ public class RifaController {
             map.put("pagado", t.getPagado());
             return map;
         }).collect(Collectors.toList());
+        return ResponseEntity.ok(respuesta);
+    }
+
+    @GetMapping("/{productoId}/ganadores")
+    public ResponseEntity<List<Map<String, Object>>> obtenerGanadores(@PathVariable Integer productoId) {
+
+        List<GanadorRifa> ganadores = ganadorRepository.findByRifaId(productoId);
+        
+        List<Map<String, Object>> respuesta = ganadores.stream().map(g -> {
+            Map<String, Object> dto = new HashMap<>();
+            dto.put("puesto", g.getPuesto());
+            dto.put("numeroTicket", g.getTicketGanador().getNumeroTicket());
+            dto.put("comprador", g.getTicketGanador().getComprador().getEmail());
+            return dto;
+        }).collect(Collectors.toList());
+        
         return ResponseEntity.ok(respuesta);
     }
 }
