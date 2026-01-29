@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -28,7 +29,7 @@ public class ReporteController {
         reporte.setEstado("PENDIENTE");
         reporteRepository.save(reporte);
 
-        return ResponseEntity.ok("Reporte enviado. Gracias por ayudar a la comunidad.");
+        return ResponseEntity.ok(Collections.singletonMap("mensaje", "Reporte enviado correctamente."));
     }
 
     // 2. SOLO SUPER ADMIN: VER REPORTES PENDIENTES 👮‍♂️
