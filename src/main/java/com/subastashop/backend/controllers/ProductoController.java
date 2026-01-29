@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.subastashop.backend.services.ContentSecurityService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,7 +27,6 @@ public class ProductoController {
     @Autowired
     private ProductoRepository productoRepository;
 
-    // 🔧 CAMBIO: Usamos solo AzureBlobService para evitar conflictos
     @Autowired
     private AzureBlobService azureBlobService;
 
@@ -35,6 +35,9 @@ public class ProductoController {
 
     @Autowired
     private AppUserRepository usuarioRepository;
+
+    @Autowired
+    private ContentSecurityService securityService;
 
     @GetMapping
     public ResponseEntity<List<Producto>> listarProductos() {
@@ -66,7 +69,13 @@ public class ProductoController {
             @RequestParam(value = "cantidadNumeros", required = false) Integer cantidadNumeros,
             @RequestParam(value = "cantidadGanadores", required = false) Integer cantidadGanadores) {
         try {
-            
+
+            // 1. VALIDACIÓN DE SEGURIDAD 🚨
+            if (securityService.tieneContenidoIlegal(nombre) || securityService.tieneContenidoIlegal(descripcion)) {
+                return ResponseEntity.badRequest()
+                        .body("⛔ Error de Seguridad: Tu publicación contiene palabras prohibidas por nuestras normas de comunidad.");
+            }
+
             // 👇 2. IDENTIFICAR AL DUEÑO DE LA TIENDA (NUEVA LÓGICA)
             String email = SecurityContextHolder.getContext().getAuthentication().getName();
             AppUsers admin = usuarioRepository.findByEmail(email)
@@ -77,7 +86,7 @@ public class ProductoController {
             }
 
             // 3. Subir imagen
-            String urlImagen = "https://via.placeholder.com/300"; 
+            String urlImagen = "https://via.placeholder.com/300";
             if (file != null && !file.isEmpty()) {
                 urlImagen = azureBlobService.subirImagen(file);
             }
@@ -89,9 +98,9 @@ public class ProductoController {
             p.setTipoVenta(tipoVenta);
             p.setPrecioBase(precioBase);
             p.setImagenUrl(urlImagen);
-            
+
             // 👇 5. ¡AQUÍ ESTÁ LA MAGIA! ASIGNAMOS LA TIENDA
-            p.setTienda(admin.getTienda()); 
+            p.setTienda(admin.getTienda());
 
             // Configurar campos según tipo
             if ("RIFA".equalsIgnoreCase(tipoVenta)) {
@@ -103,9 +112,10 @@ public class ProductoController {
                 p.setPrecioActual(precioBase);
                 p.setEstado("EN_SUBASTA");
                 p.setStock(1);
-                
+
                 if (fechaFinIso != null && !fechaFinIso.equals("undefined") && !fechaFinIso.isEmpty()) {
-                    if (fechaFinIso.length() == 16) fechaFinIso += ":00";
+                    if (fechaFinIso.length() == 16)
+                        fechaFinIso += ":00";
                     p.setFechaFinSubasta(LocalDateTime.parse(fechaFinIso));
                 }
             } else {
@@ -142,6 +152,11 @@ public class ProductoController {
             @RequestParam(value = "imagen", required = false) MultipartFile imagen) {
 
         try {
+            // 0. VALIDACIÓN DE SEGURIDAD 🚨
+            if (securityService.tieneContenidoIlegal(nombre) || securityService.tieneContenidoIlegal(descripcion)) {
+                return ResponseEntity.badRequest()
+                        .body("⛔ Error de Seguridad: No puedes actualizar el producto con términos prohibidos.");
+            }
             // 1. Buscar producto
             Producto producto = productoRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado"));

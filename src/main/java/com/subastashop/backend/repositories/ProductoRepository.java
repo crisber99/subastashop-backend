@@ -33,4 +33,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     // Contar productos de UNA tienda (para las cards del dashboard)
     long countByTiendaIdAndEstado(Long tiendaId, String estado);
 
+    // Listar solo los disponibles (ignorando SUSPENDIDO, OCULTO, etc.)
+    @Query("SELECT p FROM Producto p WHERE p.tienda.id = :tiendaId AND p.estado NOT IN ('SUSPENDIDO', 'ELIMINADO')")
+    List<Producto> findPublicosByTienda(Long tiendaId);
+
 }
