@@ -1,14 +1,17 @@
 package com.subastashop.backend.controllers;
 
 import com.subastashop.backend.config.TenantContext;
+import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.Producto;
 import com.subastashop.backend.models.Tienda;
+import com.subastashop.backend.repositories.AppUserRepository;
 import com.subastashop.backend.repositories.ProductoRepository;
 import com.subastashop.backend.repositories.TiendaRepository;
 import com.subastashop.backend.services.AzureBlobService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,6 +33,9 @@ public class ProductoController {
     @Autowired
     private TiendaRepository tiendaRepository;
 
+    @Autowired
+    private AppUserRepository usuarioRepository;
+
     @GetMapping
     public ResponseEntity<List<Producto>> listarProductos() {
         String currentTenant = TenantContext.getTenantId();
@@ -48,7 +54,7 @@ public class ProductoController {
 
     // --- CREAR PRODUCTO ---
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Producto> crearProducto(
+    public ResponseEntity<?> crearProducto( // Cambié a <?> para poder devolver errores de texto
             @RequestParam("file") MultipartFile file,
             @RequestParam("nombre") String nombre,
             @RequestParam("descripcion") String descripcion,
@@ -60,22 +66,34 @@ public class ProductoController {
             @RequestParam(value = "cantidadNumeros", required = false) Integer cantidadNumeros,
             @RequestParam(value = "cantidadGanadores", required = false) Integer cantidadGanadores) {
         try {
-            // 1. Subir imagen a Azure Blob Storage ☁️
-            String urlImagen = "https://via.placeholder.com/300"; // Imagen por defecto
+            
+            // 👇 2. IDENTIFICAR AL DUEÑO DE LA TIENDA (NUEVA LÓGICA)
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            AppUsers admin = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+            if (admin.getTienda() == null) {
+                return ResponseEntity.badRequest().body("❌ Error: No tienes una tienda asignada para crear productos.");
+            }
+
+            // 3. Subir imagen
+            String urlImagen = "https://via.placeholder.com/300"; 
             if (file != null && !file.isEmpty()) {
-                // Usamos el servicio de Azure que ya funciona
                 urlImagen = azureBlobService.subirImagen(file);
             }
 
-            // 2. Construir el objeto
+            // 4. Construir el objeto
             Producto p = new Producto();
             p.setNombre(nombre);
             p.setDescripcion(descripcion);
             p.setTipoVenta(tipoVenta);
             p.setPrecioBase(precioBase);
-            p.setImagenUrl(urlImagen); // Guardamos la URL aquí para ambos casos
+            p.setImagenUrl(urlImagen);
+            
+            // 👇 5. ¡AQUÍ ESTÁ LA MAGIA! ASIGNAMOS LA TIENDA
+            p.setTienda(admin.getTienda()); 
 
+            // Configurar campos según tipo
             if ("RIFA".equalsIgnoreCase(tipoVenta)) {
                 p.setEstado("DISPONIBLE");
                 p.setPrecioTicket(precioTicket);
@@ -84,14 +102,10 @@ public class ProductoController {
             } else if ("SUBASTA".equalsIgnoreCase(tipoVenta)) {
                 p.setPrecioActual(precioBase);
                 p.setEstado("EN_SUBASTA");
-                p.setStock(1); // En subasta el stock suele ser 1
-
-                // 🩹 PARCHE DE FECHA (Evita el error 'undefined')
+                p.setStock(1);
+                
                 if (fechaFinIso != null && !fechaFinIso.equals("undefined") && !fechaFinIso.isEmpty()) {
-                    // Si viene corta (ej: 15:30), agregamos segundos (15:30:00)
-                    if (fechaFinIso.length() == 16) {
-                        fechaFinIso += ":00";
-                    }
+                    if (fechaFinIso.length() == 16) fechaFinIso += ":00";
                     p.setFechaFinSubasta(LocalDateTime.parse(fechaFinIso));
                 }
             } else {
@@ -99,13 +113,13 @@ public class ProductoController {
                 p.setEstado("DISPONIBLE");
             }
 
-            // 4. Guardar
+            // Guardar
             Producto nuevo = productoRepository.save(p);
             return ResponseEntity.ok(nuevo);
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build(); // Devuelve 500 pero no rompe la app
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
         }
     }
 
