@@ -58,6 +58,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/super-admin/**").hasAuthority("ROLE_SUPER_ADMIN")
                 .requestMatchers("/api/reportes/admin/**").hasAuthority("ROLE_SUPER_ADMIN") // 👈 NUEVO: Solo tú ves los reportes
 
+                .requestMatchers("/api/ordenes/**").authenticated()
+                
                 // Admin de Tienda / Rifa
                 .requestMatchers("/api/rifas/*/admin/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
@@ -66,8 +68,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/vendedor/**").hasAnyAuthority("ROLE_VENDEDOR", "ROLE_ADMIN")
 
                 .requestMatchers("/api/tiendas/**").hasAnyAuthority("ROLE_VENDEDOR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")
-
-                .requestMatchers("/api/ordenes/**").authenticated()
 
                 // ================================================================
                 // 3. CANDADO FINAL (Todo lo demás requiere login) 🔒
