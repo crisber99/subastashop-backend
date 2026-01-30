@@ -1,9 +1,12 @@
 package com.subastashop.backend.schedulers;
 
 import com.subastashop.backend.config.TenantContext;
+import com.subastashop.backend.models.AppUsers;
+import com.subastashop.backend.models.DetalleOrden;
 import com.subastashop.backend.models.Orden;
 import com.subastashop.backend.models.Producto;
 import com.subastashop.backend.models.Puja;
+import com.subastashop.backend.repositories.AppUserRepository;
 import com.subastashop.backend.repositories.OrdenRepository;
 import com.subastashop.backend.repositories.ProductoRepository;
 import com.subastashop.backend.repositories.PujaRepository;
@@ -27,6 +30,9 @@ public class SubastaScheduler {
 
     @Autowired
     private OrdenRepository ordenRepository; // <--- Necesitaremos crear este repo
+
+    @Autowired
+    private AppUserRepository appUserRepository;
 
     // Se ejecuta cada 60.000 ms (1 minuto)
     @Scheduled(fixedRate = 60000)
@@ -57,20 +63,33 @@ public class SubastaScheduler {
                 p.setEstado("DESIERTO"); // Nadie ofertó
             } else {
                 Puja ganadora = pujas.get(0);
-                
+
                 // 2. Adjudicar al ganador
                 p.setEstado("ADJUDICADO"); // Ya no se puede ofertar
-                
+
                 // 3. Crear la Orden (Carrito) automáticamente
                 Orden orden = new Orden();
-                orden.setProductoId(p.getId());
-                orden.setUsuarioId(ganadora.getUsuarioId());
-                orden.setMontoFinal(ganadora.getMonto());
+                AppUsers usuarioGanador = appUserRepository.findById(ganadora.getUsuarioId())
+                        .orElseThrow(() -> new RuntimeException("Usuario ganador no encontrado"));
+                orden.setUsuario(usuarioGanador);
+                orden.setTienda(p.getTienda());
+                orden.setTotal(ganadora.getMonto());
                 orden.setEstado("PENDIENTE_PAGO");
-                
-                // 4. EL TEMPORIZADOR DE 3 HORAS
                 orden.setFechaExpiracionReserva(LocalDateTime.now().plusHours(3));
-                
+
+                // CREAR EL DETALLE (Aquí va el producto ahora)
+                DetalleOrden detalle = DetalleOrden.builder()
+                        .producto(p)
+                        .cantidad(1)
+                        .precioUnitario(ganadora.getMonto())
+                        .tipoCompra("SUBASTA_GANADA")
+                        .datosExtra("Ganador Subasta #" + p.getId())
+                        .build();
+
+                // Agregamos el detalle a la orden (usando el método helper que creamos)
+                orden.addDetalle(detalle);
+
+                // 4. GUARDAR
                 ordenRepository.save(orden);
                 System.out.println("--> Orden creada para usuario " + ganadora.getUsuarioId());
             }

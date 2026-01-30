@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -59,7 +60,8 @@ public class TiendaController {
             @RequestParam(value = "datosBancarios", required = false) String datosBancarios,
             @RequestParam(value = "colorPrimario", required = false) String colorPrimario,
             @RequestParam(value = "fotoAnverso", required = false) MultipartFile fotoAnverso,
-            @RequestParam(value = "fotoReverso", required = false) MultipartFile fotoReverso
+            @RequestParam(value = "fotoReverso", required = false) MultipartFile fotoReverso,
+            @RequestParam(value = "aceptaTerminos", required = false) Boolean aceptaTerminos
     ) {
         try {
             // A. Identificar al usuario logueado
@@ -86,6 +88,11 @@ public class TiendaController {
             if (fotoReverso != null && !fotoReverso.isEmpty()) {
                 String urlReverso = azureBlobService.subirImagen(fotoReverso);
                 tienda.setDocumentoReversoUrl(urlReverso);
+            }
+
+            if (Boolean.TRUE.equals(aceptaTerminos)) {
+                // Si marca el checkbox, guardamos la fecha y hora exacta (Firma Digital simple)
+                tienda.setFechaAceptacionTerminos(LocalDateTime.now());
             }
 
             // D. Guardar cambios

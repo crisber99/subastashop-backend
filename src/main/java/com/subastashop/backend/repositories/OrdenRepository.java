@@ -1,4 +1,5 @@
 package com.subastashop.backend.repositories;
+import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.Orden;
 
 import java.util.List;
@@ -10,4 +11,6 @@ import org.springframework.stereotype.Repository;
 public interface OrdenRepository extends JpaRepository<Orden, Integer> {
 
     List<Orden> findByUsuarioId(Integer usuarioId);
+
+    List<Orden> findByUsuarioOrderByIdDesc(AppUsers usuario);
 }
