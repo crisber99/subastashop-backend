@@ -29,17 +29,24 @@ public class PublicController {
         return tiendaRepository.findAll();
     }
 
-    // 👇 2. ESTE ES EL MÉTODO QUE TE FALTABA
     @GetMapping("/productos/tienda/{slug}")
     public ResponseEntity<List<Producto>> obtenerProductosPorTienda(@PathVariable String slug) {
-        
+
         // A. Buscamos la tienda por su nombre URL (ej: 'don-bernardo')
         Tienda tienda = tiendaRepository.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("Tienda no encontrada: " + slug));
 
         // B. Buscamos los productos que pertenecen a esa ID de tienda
         List<Producto> productos = productoRepository.findByTiendaId(tienda.getId());
-        
+
         return ResponseEntity.ok(productos);
+    }
+
+    public ResponseEntity<?> obtenerTiendaPorSlug(@PathVariable String slug) {
+        // Buscamos la tienda. Si no existe, devolvemos 404.
+        // Asegúrate de tener este método findBySlug en tu TiendaRepository
+        return tiendaRepository.findBySlug(slug)
+                .map(tienda -> ResponseEntity.ok(tienda))
+                .orElse(ResponseEntity.notFound().build());
     }
 }
