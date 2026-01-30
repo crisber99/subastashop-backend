@@ -42,11 +42,10 @@ public class PublicController {
         return ResponseEntity.ok(productos);
     }
 
+    @GetMapping("/tiendas/{slug}")
     public ResponseEntity<?> obtenerTiendaPorSlug(@PathVariable String slug) {
-        // Buscamos la tienda. Si no existe, devolvemos 404.
-        // Asegúrate de tener este método findBySlug en tu TiendaRepository
         return tiendaRepository.findBySlug(slug)
-                .map(tienda -> ResponseEntity.ok(tienda))
+                .map(t -> ResponseEntity.ok(t))
                 .orElse(ResponseEntity.notFound().build());
     }
 }
