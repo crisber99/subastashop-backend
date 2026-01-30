@@ -85,6 +85,14 @@ public class ProductoController {
                 return ResponseEntity.badRequest().body("❌ Error: No tienes una tienda asignada para crear productos.");
             }
 
+            Tienda tienda = admin.getTienda();
+            if (tienda.getRutEmpresa() == null || tienda.getRutEmpresa().isEmpty() ||
+                    tienda.getDatosBancarios() == null || tienda.getDatosBancarios().isEmpty()) {
+
+                return ResponseEntity.status(403) // Forbidden
+                        .body("⛔ ALTO: Para publicar, primero debes configurar tu RUT y Datos Bancarios en 'Configuración de Tienda'.");
+            }
+
             // 3. Subir imagen
             String urlImagen = "https://via.placeholder.com/300";
             if (file != null && !file.isEmpty()) {
