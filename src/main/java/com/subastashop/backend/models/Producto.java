@@ -6,6 +6,8 @@ import lombok.EqualsAndHashCode;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.List;
 
 @Data
@@ -52,5 +54,6 @@ public class Producto extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "tienda_id")
+    @JsonIgnoreProperties({"productos", "password", "usuario", "hibernateLazyInitializer", "handler"})
     private Tienda tienda;
 }
