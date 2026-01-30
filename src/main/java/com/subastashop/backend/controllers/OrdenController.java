@@ -6,6 +6,7 @@ import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.DetalleOrden;
 import com.subastashop.backend.models.Orden;
 import com.subastashop.backend.models.Producto;
+import com.subastashop.backend.models.Tienda;
 import com.subastashop.backend.repositories.AppUserRepository;
 import com.subastashop.backend.repositories.DetalleOrdenRepository;
 import com.subastashop.backend.repositories.OrdenRepository;
@@ -80,16 +81,35 @@ public class OrdenController {
         AppUsers usuarioActual = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+                if (request.getDetalles().isEmpty()) {
+            return ResponseEntity.badRequest().body("El carrito no puede estar vacío");
+        }
+
+        // Tomamos el primer producto para saber a qué Tienda pertenece esta orden
+        // (Asumimos que todos los productos del carrito son de la misma tienda, 
+        //  o asignamos la orden a la tienda del primer item).
+        Long primerProductoId = request.getDetalles().get(0).getProductoId();
+        Producto primerProducto = productoRepo.findById(primerProductoId.intValue())
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        
+        Tienda tiendaOrden = primerProducto.getTienda();
+
         // B. CREAR LA ORDEN CABECERA
         Orden orden = new Orden();
         orden.setUsuario(usuarioActual);
+        orden.setTienda(tiendaOrden); // ✅ ASIGNAMOS LA TIENDA AQUÍ, ANTES DEL SAVE
         orden.setFechaCreacion(LocalDateTime.now());
-        orden.setEstado("PENDIENTE_PAGO");
-        orden.setTotal(BigDecimal.ZERO); // Inicializamos en CERO BigDecimal
         
-        orden = ordenRepository.save(orden);
+        // Calculamos una fecha de expiración (ej: 24 horas para pagar)
+        orden.setFechaExpiracionReserva(LocalDateTime.now().plusHours(24)); 
+        
+        orden.setEstado("PENDIENTE_PAGO");
+        orden.setTotal(BigDecimal.ZERO);
+        
+        // AHORA SÍ PODEMOS GUARDAR (Ya tiene usuario y tienda)
+        orden = ordenRepository.save(orden); 
 
-        // Usamos BigDecimal para sumar dinero (corrige errores 4, 5, 6)
+        // C. PROCESAR DETALLES (Igual que antes)
         BigDecimal totalOrden = BigDecimal.ZERO; 
         List<DetalleOrden> detallesGuardados = new ArrayList<>();
 

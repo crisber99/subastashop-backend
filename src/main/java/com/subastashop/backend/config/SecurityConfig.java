@@ -67,6 +67,8 @@ public class SecurityConfig {
 
                 .requestMatchers("/api/tiendas/**").hasAnyAuthority("ROLE_VENDEDOR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")
 
+                .requestMatchers("/api/ordenes/**").authenticated()
+
                 // ================================================================
                 // 3. CANDADO FINAL (Todo lo demás requiere login) 🔒
                 // ================================================================
