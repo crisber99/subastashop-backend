@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/super-admin")
@@ -22,6 +23,47 @@ public class SuperAdminController {
     private UsuarioRepository usuarioRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @GetMapping
+    public ResponseEntity<List<AppUsers>> listarUsuarios() {
+        // En un sistema real, aquí usarías paginación (Pageable)
+        return ResponseEntity.ok(usuarioRepository.findAll());
+    }
+
+    @PutMapping("/{id}/rol")
+    public ResponseEntity<?> cambiarRol(@PathVariable Integer id, @RequestBody Map<String, String> body) {
+        String nuevoRolTexto = body.get("rol"); // Esperamos json: { "rol": "ROLE_ADMIN" }
+
+        AppUsers usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Evitar que el Super Admin se bloquee a sí mismo o se quite el rol
+        if (usuario.getRol().name().equals("ROLE_SUPER_ADMIN")) {
+            return ResponseEntity.badRequest().body("No puedes modificar al Super Admin Supremo.");
+        }
+
+        try {
+            // 2. CORRECCIÓN DEL ROL: Convertir String -> Enum
+            // Asumiendo que tu Enum se llama 'Role'
+            Role rolEnum = Role.valueOf(nuevoRolTexto);
+            usuario.setRol(rolEnum);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("El rol enviado no existe.");
+        }
+
+        usuarioRepository.save(usuario);
+
+        return ResponseEntity.ok("Rol actualizado a: " + nuevoRolTexto);
+    }
+
+    // 3. ELIMINAR/BLOQUEAR USUARIO
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminarUsuario(@PathVariable Integer id) {
+        // Lógica para borrar o desactivar (soft delete recomendado)
+        usuarioRepository.deleteById(id);
+        return ResponseEntity.ok("Usuario eliminado");
+    }
 
     // 1. VER TODAS LAS TIENDAS
     @GetMapping("/tiendas")

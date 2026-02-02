@@ -3,6 +3,7 @@ package com.subastashop.backend.models;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,10 +25,12 @@ public class Orden extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private AppUsers usuario;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tienda_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Tienda tienda;
 
     @CreationTimestamp // Esto llena la fecha automáticamente al guardar

@@ -41,13 +41,6 @@ public class OrdenController {
     @Autowired
     private DetalleOrdenRepository detalleOrdenRepository;
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Orden> obtenerOrden(@PathVariable Integer id) {
-        return ordenRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
     // SIMULACIÓN DE PAGO
     @PostMapping("/{id}/pagar")
     public ResponseEntity<?> pagarOrden(@PathVariable Integer id) {
@@ -183,8 +176,27 @@ public class OrdenController {
     // ... el método mis-ordenes ...
     @GetMapping("/mis-ordenes")
     public ResponseEntity<List<Orden>> obtenerMisOrdenes() {
+        System.out.println("🚀 ¡Llegó la petición al controlador!");
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         AppUsers usuario = usuarioRepository.findByEmail(email).orElseThrow();
         return ResponseEntity.ok(ordenRepository.findByUsuarioOrderByIdDesc(usuario));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Orden> obtenerOrdenPorId(@PathVariable Integer id) {
+        // 1. Obtener usuario actual para seguridad
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        
+        // 2. Buscar la orden
+        Orden orden = ordenRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
+
+        // 3. SEGURIDAD: Validar que la orden pertenezca al usuario (o sea Admin)
+        if (!orden.getUsuario().getEmail().equals(email)) {
+             // Aquí podrías lanzar excepción o retornar 403
+             return ResponseEntity.status(403).build();
+        }
+
+        return ResponseEntity.ok(orden);
     }
 }
