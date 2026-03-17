@@ -19,9 +19,7 @@ public class TenantInterceptor implements HandlerInterceptor {
 
         // 2. Validamos que venga (para este MVP es obligatorio)
         if (tenantId == null || tenantId.isEmpty()) {
-            response.setStatus(400); // Bad Request
-            response.getWriter().write("Error: Falta el header X-Tenant-ID");
-            return false; // Cortamos la petición aquí
+            tenantId = "tienda-demo"; // Fallback para registros antiguos o desarrollo
         }
 
         // 3. Lo guardamos en el contexto para usarlo después

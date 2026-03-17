@@ -38,8 +38,10 @@ public class RifaController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private com.subastashop.backend.services.EmailService emailService;
 
-    // 👇 MÉTODO ACTUALIZADO: AHORA GUARDA EN BD Y AVISA POR SOCKET
+    // 👇 MÉTODO ACTUALIZADO: AHORA GUARDA EN BD Y AVISA POR SOCKET Y CORREO
     @PostMapping("/{productoId}/lanzar")
     public ResponseEntity<?> lanzarRifa(@PathVariable Integer productoId) {
         
@@ -84,6 +86,20 @@ public class RifaController {
             dto.put("comprador", ticketGanador.getComprador().getEmail());
             // Puedes agregar más datos si quieres
             listaGanadoresDTO.add(dto);
+            
+            // C) ✉️ Enviar correo al ganador
+            try {
+                String destino = ticketGanador.getComprador().getEmail();
+                String asunto = "¡Felicidades! Eres ganador en una Rifa de SubastaShop 🎉";
+                String mensaje = "Hola " + ticketGanador.getComprador().getNombreCompleto() + ",<br><br>" +
+                                 "¡Tenemos el agrado de informarte que tu ticket <b>#" + ticketGanador.getNumeroTicket() + 
+                                 "</b> ha resultado ganador (Puesto " + (i + 1) + ") en la rifa de '" + rifa.getNombre() + "'!<br><br>" +
+                                 "Por favor, revisa tus órdenes y ponte en contacto para coordinar la entrega.<br><br>" +
+                                 "Saludos,<br>El equipo de SubastaShop";
+                emailService.enviarCorreo(destino, asunto, mensaje);
+            } catch (Exception e) {
+                // Ignorar error de correo para no frenar el sorteo
+            }
         }
 
         // 4. Actualizar estado de la Rifa

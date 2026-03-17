@@ -1,5 +1,6 @@
 package com.subastashop.backend.controllers;
 
+import com.subastashop.backend.exceptions.ApiException;
 import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,8 +32,7 @@ public class AdminController {
 
         // 2. VERIFICAR QUE TENGA TIENDA
         if (admin.getTienda() == null) {
-            // Por ahora, devolvemos error o ceros.
-            return ResponseEntity.badRequest().body("No tienes una tienda asignada.");
+            throw new ApiException("No tienes una tienda asignada para ver estadísticas.");
         }
 
         Long tiendaId = admin.getTienda().getId();

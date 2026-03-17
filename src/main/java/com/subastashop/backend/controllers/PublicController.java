@@ -30,10 +30,10 @@ public class PublicController {
     }
 
     @GetMapping("/productos/tienda/{slug}")
-    public ResponseEntity<List<Producto>> obtenerProductosPorTienda(@PathVariable String slug) {
+    public ResponseEntity<List<Producto>> obtenerProductosPorTienda(@PathVariable("slug") String slug) {
 
-        // A. Buscamos la tienda por su nombre URL (ej: 'don-bernardo')
-        Tienda tienda = tiendaRepository.findBySlug(slug)
+        // A. Buscamos la tienda por su nombre URL (ej: 'don-bernardo'), asegurando minúsculas
+        Tienda tienda = tiendaRepository.findBySlug(slug.toLowerCase())
                 .orElseThrow(() -> new RuntimeException("Tienda no encontrada: " + slug));
 
         // B. Buscamos los productos que pertenecen a esa ID de tienda
@@ -43,8 +43,8 @@ public class PublicController {
     }
 
     @GetMapping("/tiendas/{slug}")
-    public ResponseEntity<?> obtenerTiendaPorSlug(@PathVariable String slug) {
-        return tiendaRepository.findBySlug(slug)
+    public ResponseEntity<?> obtenerTiendaPorSlug(@PathVariable("slug") String slug) {
+        return tiendaRepository.findBySlug(slug.toLowerCase())
                 .map(t -> ResponseEntity.ok(t))
                 .orElse(ResponseEntity.notFound().build());
     }

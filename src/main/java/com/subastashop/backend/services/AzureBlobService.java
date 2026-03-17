@@ -22,13 +22,23 @@ public class AzureBlobService {
     private final String containerName = "productos-img";
 
     public String subirImagen(MultipartFile archivo) throws IOException {
+        System.out.println("DEBUG: Azure Connection String detected: " + (connectionString != null && connectionString.contains("AccountName") ? "REAL KEY LOADED" : "PLACEHOLDER/NULL"));
+        
+        // Fallback si no hay conexión real a Azure (modo demo)
+        if (connectionString == null || connectionString.contains("placeholder")) {
+            return "https://placehold.co/600x400?text=Imagen+No+Disponible";
+        }
+
         // 1. Conectarse al servicio
         BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
                 .connectionString(connectionString)
                 .buildClient();
 
-        // 2. Obtener el contenedor
+        // 2. Obtener el contenedor (y crearlo si no existe)
         BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient(containerName);
+        if (!containerClient.exists()) {
+            containerClient.create();
+        }
 
         // 3. Generar nombre único (para que no se sobrescriban)
         String nombreOriginal = archivo.getOriginalFilename();

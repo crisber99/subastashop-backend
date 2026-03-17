@@ -39,13 +39,28 @@ public class AppUsers implements UserDetails {
     @JoinColumn(name = "tienda_id")
     private Tienda tienda;
 
+    // --- Campos de Suscripción y Trial ---
+    @Column(name = "fecha_fin_prueba")
+    private LocalDateTime fechaFinPrueba = LocalDateTime.now().plusDays(15);
+
+    @Column(name = "suscripcion_activa")
+    private Boolean suscripcionActiva = false;
+
+    @Column(name = "stripe_customer_id")
+    private String stripeCustomerId;
+
+    @Column(name = "stripe_subscription_id")
+    private String stripeSubscriptionId;
+
+    public boolean isSuscripcionActiva() {
+        return suscripcionActiva != null && suscripcionActiva;
+    }
+
     // --- MÉTODOS DE USERDETAILS ---
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // 🔧 CAMBIO 2: Convertimos el Enum a String usando .name()
-        // Spring Security necesita texto, así que extraemos el nombre del rol (ej:
-        // "ROLE_ADMIN")
+        if (rol == null) return List.of(new SimpleGrantedAuthority("ROLE_USER"));
         return List.of(new SimpleGrantedAuthority(rol.name()));
     }
 

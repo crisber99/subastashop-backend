@@ -19,7 +19,8 @@ public class JwtService {
 
     // IMPORTANTE: En producción esta clave debe estar en variables de entorno.
     // Debe ser larga y segura (hexadecimal de 256 bits).
-    private static final String SECRET_KEY = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+    @org.springframework.beans.factory.annotation.Value("${jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
+    private String SECRET_KEY;
 
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);

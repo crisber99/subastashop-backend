@@ -13,4 +13,8 @@ public interface AppUserRepository extends JpaRepository<AppUsers, Integer> {
 
     // Contar usuarios registrados en esta tienda
     long countByTiendaId(Long tiendaId);
+
+    // --- Consultas para Trial y Suscripciones ---
+    java.util.List<AppUsers> findByRolAndFechaFinPruebaBeforeAndSuscripcionActivaFalse(
+            com.subastashop.backend.models.Role rol, java.time.LocalDateTime fecha);
 }

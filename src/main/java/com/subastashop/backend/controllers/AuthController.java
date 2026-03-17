@@ -1,11 +1,12 @@
 package com.subastashop.backend.controllers;
 
-import com.subastashop.backend.config.TenantContext;
 import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.Role;
 import com.subastashop.backend.repositories.AppUserRepository;
 import com.subastashop.backend.services.JwtService;
-import lombok.Data;
+import com.subastashop.backend.dto.LoginRequest;
+import com.subastashop.backend.dto.RegisterRequest;
+import com.subastashop.backend.exceptions.ApiException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,6 +37,9 @@ public class AuthController {
     @Autowired
     private AuthenticationManager authenticationManager;
 
+    @Autowired
+    private com.subastashop.backend.services.EmailService emailService;
+
     // LOGIN
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
@@ -58,10 +62,12 @@ public class AuthController {
         Map<String, Object> response = new HashMap<>();
         response.put("token", jwt);
         
-        Map<String, String> usuarioMap = new HashMap<>();
+        Map<String, Object> usuarioMap = new HashMap<>();
         usuarioMap.put("nombre", userCompleto.getNombreCompleto());
         usuarioMap.put("email", userCompleto.getEmail());
-        usuarioMap.put("role", userCompleto.getRol().name()); 
+        usuarioMap.put("role", userCompleto.getRol() != null ? userCompleto.getRol().name() : "ROLE_USER"); 
+        usuarioMap.put("fechaFinPrueba", userCompleto.getFechaFinPrueba());
+        usuarioMap.put("suscripcionActiva", userCompleto.isSuscripcionActiva());
         
         response.put("usuario", usuarioMap);
 
@@ -72,7 +78,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request, @RequestHeader("X-Tenant-ID") String tenantId) {
         if (userRepository.existsByEmailAndTenantId(request.getEmail(), tenantId)) {
-            return ResponseEntity.badRequest().body("El email ya existe en esta tienda");
+            throw new ApiException("El email ya existe en esta tienda");
         }
 
         AppUsers user = new AppUsers();
@@ -84,34 +90,26 @@ public class AuthController {
 
         userRepository.save(user);
 
+        // Enviar correo de bienvenida
+        String asunto = "¡Bienvenido a SubastaShop!";
+        String mensaje = "Hola " + user.getNombreCompleto() + ",<br><br>" +
+                             "¡Bienvenido a <b>SubastaShop</b>!<br><br>" +
+                             "Tu cuenta ha sido creada exitosamente. Explora nuestras tiendas, únete a subastas y participa en nuestras rifas exclusivas.<br><br>" +
+                             "Saludos,<br>El equipo de SubastaShop";
+        emailService.enviarCorreo(user.getEmail(), asunto, mensaje);
+
         String token = jwtService.generateToken(user);
-        return ResponseEntity.ok(new AuthResponse(token, user.getNombreCompleto(), user.getId()));
-    }
-}
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        Map<String, Object> usuarioMap = new HashMap<>();
+        usuarioMap.put("nombre", user.getNombreCompleto());
+        usuarioMap.put("email", user.getEmail());
+        usuarioMap.put("role", user.getRol() != null ? user.getRol().name() : "ROLE_COMPRADOR");
+        usuarioMap.put("fechaFinPrueba", user.getFechaFinPrueba());
+        usuarioMap.put("suscripcionActiva", user.isSuscripcionActiva());
+        response.put("usuario", usuarioMap);
 
-// Clases auxiliares (DTOs) para no crear archivos aparte
-@Data
-class LoginRequest {
-    private String email;
-    private String password;
-}
-
-@Data
-class RegisterRequest {
-    private String email;
-    private String password;
-    private String nombre;
-}
-
-@Data
-class AuthResponse {
-    private String token;
-    private String nombre;
-    private Integer userId;
-    
-    public AuthResponse(String token, String nombre, Integer userId) {
-        this.token = token;
-        this.nombre = nombre;
-        this.userId = userId;
+        return ResponseEntity.ok(response);
     }
 }

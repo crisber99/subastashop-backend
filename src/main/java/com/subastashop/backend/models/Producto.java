@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -24,7 +25,11 @@ public class Producto extends BaseEntity {
     private String nombre;
 
     private String descripcion;
-    private String imagenUrl;
+    
+    @ElementCollection
+    @CollectionTable(name = "producto_imagenes", joinColumns = @JoinColumn(name = "producto_id"))
+    @Column(name = "url_imagen")
+    private List<String> imagenes = new ArrayList<>();
 
     // --- Configuración Híbrida ---
     @Column(nullable = false)
