@@ -37,7 +37,7 @@ public class SecurityConfig {
                 // ================================================================
                 // 1. ZONA PÚBLICA (Accesible para todos) 🌍
                 // ================================================================
-                // Websockets
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/ws-subastas/**").permitAll()
 
                 // Autenticación (Login/Registro)
@@ -91,14 +91,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // Permitimos tanto localhost (pruebas) como Azure (producción)
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:4200",
-                frontendUrl,
-                "https://storagesubastasapp.z20.web.core.windows.net",
-                "https://storagesubastasapp.z20.web.core.windows.net/"
-        ));
+        configuration.setAllowedOriginPatterns(Arrays.asList("*")); 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
