@@ -158,4 +158,10 @@ public class SuperAdminController {
 
         return ResponseEntity.ok(Map.of("mensaje", "✅ Tienda '" + tienda.getNombre() + "' creada y asignada a " + nuevoDueño.getEmail()));
     }
+
+    // 6. LISTAR TODOS LOS PRODUCTOS DE TODAS LAS TIENDAS
+    @GetMapping("/global-productos")
+    public ResponseEntity<List<Producto>> listarTodosLosProductos() {
+        return ResponseEntity.ok(productoRepository.findAll());
+    }
 }
