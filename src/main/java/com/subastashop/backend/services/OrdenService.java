@@ -40,20 +40,24 @@ public class OrdenService {
     @Autowired
     private com.subastashop.backend.services.EmailService emailService;
 
+    @Transactional
     public String pagarOrden(Integer id) {
-        Optional<Orden> ordenOpt = ordenRepository.findById(id);
-
-        if (ordenOpt.isEmpty()) {
-            throw new RuntimeException("Orden no encontrada");
-        }
-
-        Orden orden = ordenOpt.get();
+        Orden orden = ordenRepository.findByIdConDetalles(id)
+                .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
 
         if ("PAGADO".equals(orden.getEstado())) {
             throw new RuntimeException("Esta orden ya está pagada.");
         }
 
         orden.setEstado("PAGADO");
+
+        // MARCAR PRODUCTOS COMO VENDIDOS
+        for (DetalleOrden detalle : orden.getDetalles()) {
+            Producto p = detalle.getProducto();
+            p.setEstado("VENDIDO");
+            productoRepo.save(p);
+        }
+
         ordenRepository.save(orden);
 
         // Notificación de Pago Exitoso
