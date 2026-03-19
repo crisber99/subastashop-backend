@@ -90,10 +90,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // IMPORTANTE: Cuando allowCredentials es true, NO se puede usar "*" en origins ni headers.
-        configuration.setAllowedOrigins(Arrays.asList(
+        // Ajuste para evitar error 500 "When allowCredentials is true, use allowedOriginPatterns"
+        configuration.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:4200",
-                frontendUrl,
                 "https://storagesubastasapp.z20.web.core.windows.net",
                 "https://storagesubastasapp.z20.web.core.windows.net/"
         ));
@@ -104,9 +103,7 @@ public class SecurityConfig {
                 "X-Requested-With", 
                 "Accept", 
                 "Origin", 
-                "Access-Control-Request-Method", 
-                "Access-Control-Request-Headers",
-                "x-tenant-id" // 👈 ESTO ES LO QUE EL FRONTEND ESTABA PIDIENDO
+                "x-tenant-id"
         ));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "x-tenant-id"));
         configuration.setAllowCredentials(true);
