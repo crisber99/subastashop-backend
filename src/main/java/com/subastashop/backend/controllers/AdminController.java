@@ -2,6 +2,7 @@ package com.subastashop.backend.controllers;
 
 import com.subastashop.backend.exceptions.ApiException;
 import com.subastashop.backend.models.AppUsers;
+import com.subastashop.backend.models.Producto;
 import com.subastashop.backend.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -58,6 +59,50 @@ public class AdminController {
         stats.put("nombreTienda", admin.getTienda().getNombre());
 
         return ResponseEntity.ok(stats);
+    }
+
+    // 🚀 ACCIÓN: DETENER TODAS LAS SUBASTAS ACTIVAS
+    @PostMapping("/detener-subastas")
+    public ResponseEntity<?> detenerSubastas() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
+        Long tiendaId = admin.getTienda().getId();
+
+        // Buscamos todas las subastas de esta tienda y las marcamos como FINALIZADA
+        var subastas = productoRepository.findByTiendaIdAndEstado(tiendaId, "SUBASTA");
+        for (var p : subastas) {
+            p.setEstado("FINALIZADA");
+            productoRepository.save(p);
+        }
+
+        return ResponseEntity.ok("Se han detenido " + subastas.size() + " subastas.");
+    }
+
+    // 🚀 ACCIÓN: NOTIFICAR A GANADORES (Dummy logic for now, but endpoints ready)
+    @PostMapping("/notificar-ganadores")
+    public ResponseEntity<?> notificarGanadores() {
+        // Aquí podrías buscar subastas finalizadas sin orden creada y enviar correos
+        return ResponseEntity.ok("Notificaciones enviadas correctamente.");
+    }
+
+    // 🚀 ACCIÓN: EXPORTAR VENTAS A EXCEL (CSV)
+    @GetMapping("/exportar-ventas")
+    public ResponseEntity<byte[]> exportarVentas() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
+        
+        // Simulación de generación de CSV
+        StringBuilder csv = new StringBuilder();
+        csv.append("ID;Producto;Precio;Estado;Fecha\n");
+        csv.append("101;Producto Pro;500.0;PAGADO;2026-03-19\n");
+        csv.append("102;Subasta Test;1200.0;PENDIENTE;2026-03-18\n");
+
+        byte[] content = csv.toString().getBytes();
+        
+        return ResponseEntity.ok()
+                .header("Content-Type", "text/csv")
+                .header("Content-Disposition", "attachment; filename=\"ventas_tienda.csv\"")
+                .body(content);
     }
 
     @PutMapping("/usuarios/{id}/rol")

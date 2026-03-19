@@ -81,10 +81,19 @@ public class AuthController {
             throw new ApiException("El email ya existe en esta tienda");
         }
 
+        // VALIDACIÓN DE CONTRASEÑA 🔐
+        // Al menos 8 caracteres, una letra y un número
+        String passwordPattern = "^(?=.*[0-9])(?=.*[a-zA-Z]).{8,}$";
+        if (request.getPassword() == null || !request.getPassword().matches(passwordPattern)) {
+            throw new ApiException("La contraseña debe tener al menos 8 caracteres e incluir letras y números.");
+        }
+
         AppUsers user = new AppUsers();
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setNombreCompleto(request.getNombre());
+        user.setTelefono(request.getTelefono());
+        user.setDireccion(request.getDireccion());
         user.setRol(Role.ROLE_COMPRADOR);
         user.setTenantId(tenantId);
 
