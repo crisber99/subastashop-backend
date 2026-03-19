@@ -22,6 +22,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     @Query(value = "SELECT * FROM Productos WHERE Estado = 'EN_SUBASTA' AND FechaFinSubasta < :ahora", nativeQuery = true)
     List<Producto> buscarSubastasPorCerrar(@Param("ahora") LocalDateTime ahora);
 
+    List<Producto> findByEstado(String estado);
+
     long countByEstado(String estado);
 
     // Buscar productos de UNA tienda específica

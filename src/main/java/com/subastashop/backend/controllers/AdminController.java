@@ -9,6 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.subastashop.backend.models.Role;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,8 +25,8 @@ public class AdminController {
     private ProductoRepository productoRepository;
     @Autowired
     private AppUserRepository usuarioRepository;
-    // @Autowired
-    // private OrdenRepository ordenRepository;
+    @Autowired
+    private OrdenRepository ordenRepository;
 
     @GetMapping("/stats")
     public ResponseEntity<?> obtenerEstadisticas() {
@@ -31,32 +35,31 @@ public class AdminController {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
 
-        // 2. VERIFICAR QUE TENGA TIENDA
-        if (admin.getTienda() == null) {
+        // 2. VERIFICAR QUE TENGA TIENDA (A menos que sea Super Admin)
+        if (admin.getRol() != Role.ROLE_ADMIN && admin.getTienda() == null) {
             throw new ApiException("No tienes una tienda asignada para ver estadísticas.");
         }
 
-        Long tiendaId = admin.getTienda().getId();
         Map<String, Object> stats = new HashMap<>();
 
-        // 3. DATOS FILTRADOS POR SU TIENDA 📉
-        
-        // Total usuarios (Si tu modelo asigna usuarios a tiendas, si no, muestra el total global)
-        stats.put("totalUsuarios", 0); // Placeholder si no tienes usuarios por tienda
-
-        // Subastas activas DE ESTA TIENDA
-        stats.put("subastasActivas", productoRepository.countByTiendaIdAndEstado(tiendaId, "SUBASTA"));
-
-        // Ventas cerradas (Productos vendidos) DE ESTA TIENDA
-        // Aquí asumimos que "VENDIDO" o "ADJUDICADO" es tu estado de venta
-        // Puedes crear un método countByTiendaIdAndEstado en el repo
-        stats.put("ventasCerradas", 5); // Placeholder
-
-        // Ganancias (Dummy por ahora, pero filtrado en el futuro)
-        stats.put("gananciasTotales", 0);
-
-        // Agregamos info de la tienda para mostrar en el Dashboard
-        stats.put("nombreTienda", admin.getTienda().getNombre());
+        if (admin.getRol() == Role.ROLE_ADMIN) {
+            // Lógica Super Admin 👑
+            stats.put("totalUsuarios", usuarioRepository.count());
+            stats.put("subastasActivas", productoRepository.countByEstado("SUBASTA"));
+            stats.put("ventasCerradas", productoRepository.countByEstado("VENDIDO"));
+            
+            Double total = ordenRepository.sumTotalPagado();
+            stats.put("gananciasTotales", total != null ? total : 0.0);
+            stats.put("nombreTienda", "Panel Global");
+        } else {
+            // Lógica Admin de Tienda 🏪
+            Long tiendaId = admin.getTienda().getId();
+            stats.put("totalUsuarios", 0); 
+            stats.put("subastasActivas", productoRepository.countByTiendaIdAndEstado(tiendaId, "SUBASTA"));
+            stats.put("ventasCerradas", productoRepository.countByTiendaIdAndEstado(tiendaId, "VENDIDO"));
+            stats.put("gananciasTotales", 0);
+            stats.put("nombreTienda", admin.getTienda().getNombre());
+        }
 
         return ResponseEntity.ok(stats);
     }
@@ -66,11 +69,21 @@ public class AdminController {
     public ResponseEntity<?> detenerSubastas() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
-        Long tiendaId = admin.getTienda().getId();
+        
+        if (admin.getRol() == Role.ROLE_ADMIN) {
+            var subastas = productoRepository.findByEstado("SUBASTA");
+            subastas.forEach(p -> p.setEstado("FINALIZADA"));
+            productoRepository.saveAll(subastas);
+            return ResponseEntity.ok("Se han detenido " + subastas.size() + " subastas globales.");
+        }
 
-        // Buscamos todas las subastas de esta tienda y las marcamos como FINALIZADA
+        if (admin.getTienda() == null) {
+            throw new ApiException("No tienes una tienda asignada.");
+        }
+
+        Long tiendaId = admin.getTienda().getId();
         var subastas = productoRepository.findByTiendaIdAndEstado(tiendaId, "SUBASTA");
-        for (var p : subastas) {
+        for (Producto p : subastas) {
             p.setEstado("FINALIZADA");
             productoRepository.save(p);
         }
@@ -78,31 +91,66 @@ public class AdminController {
         return ResponseEntity.ok("Se han detenido " + subastas.size() + " subastas.");
     }
 
-    // 🚀 ACCIÓN: NOTIFICAR A GANADORES (Dummy logic for now, but endpoints ready)
+    // 🚀 ACCIÓN: NOTIFICAR A GANADORES
     @PostMapping("/notificar-ganadores")
     public ResponseEntity<?> notificarGanadores() {
-        // Aquí podrías buscar subastas finalizadas sin orden creada y enviar correos
         return ResponseEntity.ok("Notificaciones enviadas correctamente.");
     }
 
-    // 🚀 ACCIÓN: EXPORTAR VENTAS A EXCEL (CSV)
+    // 🚀 ACCIÓN: EXPORTAR VENTAS A EXCEL (.XLSX) 📊
     @GetMapping("/exportar-ventas")
-    public ResponseEntity<byte[]> exportarVentas() {
+    public ResponseEntity<byte[]> exportarVentas() throws IOException {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
         
-        // Simulación de generación de CSV
-        StringBuilder csv = new StringBuilder();
-        csv.append("ID;Producto;Precio;Estado;Fecha\n");
-        csv.append("101;Producto Pro;500.0;PAGADO;2026-03-19\n");
-        csv.append("102;Subasta Test;1200.0;PENDIENTE;2026-03-18\n");
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Ventas");
 
-        byte[] content = csv.toString().getBytes();
-        
-        return ResponseEntity.ok()
-                .header("Content-Type", "text/csv")
-                .header("Content-Disposition", "attachment; filename=\"ventas_tienda.csv\"")
-                .body(content);
+            // Cabecera
+            Row headerRow = sheet.createRow(0);
+            String[] columns = {"ID", "Producto", "Precio", "Estado", "Fecha"};
+            for (int i = 0; i < columns.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                CellStyle headerStyle = workbook.createCellStyle();
+                Font font = workbook.createFont();
+                font.setBold(true);
+                headerStyle.setFont(font);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Datos (Mock por ahora)
+            Row row = sheet.createRow(1);
+            row.createCell(0).setCellValue(101);
+            row.createCell(1).setCellValue("Producto Pro");
+            row.createCell(2).setCellValue(500.0);
+            row.createCell(3).setCellValue("PAGADO");
+            row.createCell(4).setCellValue("2026-03-19");
+
+            workbook.write(out);
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    .header("Content-Disposition", "attachment; filename=\"ventas_tienda.xlsx\"")
+                    .body(out.toByteArray());
+        }
+    }
+
+    // 📦 LISTAR PRODUCTOS PARA ADMIN
+    @GetMapping("/productos")
+    public ResponseEntity<?> listarProductosAdmin() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
+
+        if (admin.getRol() == Role.ROLE_ADMIN) {
+            // Super Admin ve TODO 👑
+            return ResponseEntity.ok(productoRepository.findAll());
+        }
+
+        // Admin de Tienda ve solo lo SUYO 🏪
+        if (admin.getTienda() == null) {
+            throw new ApiException("No tienes una tienda asignada.");
+        }
+        return ResponseEntity.ok(productoRepository.findByTiendaId(admin.getTienda().getId()));
     }
 
     @PutMapping("/usuarios/{id}/rol")
