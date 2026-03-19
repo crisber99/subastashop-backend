@@ -42,7 +42,7 @@ public class UsuarioController {
     public ResponseEntity<List<Orden>> obtenerMisCompras() {
         AppUsers usuario = getUsuarioAutenticado();
         // Busca las ordenes de este usuario
-        return ResponseEntity.ok(ordenRepository.findByUsuarioId(usuario.getId()));
+        return ResponseEntity.ok(ordenRepository.findByUsuarioOrderByIdDesc(usuario));
     }
 
     // Método auxiliar para no repetir código
