@@ -35,14 +35,17 @@ public class AdminController {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
 
+        // Check if global admin (Super Admin or Admin)
+        boolean isGlobalAdmin = admin.getRol() == Role.ROLE_ADMIN || admin.getRol() == Role.ROLE_SUPER_ADMIN;
+
         // 2. VERIFICAR QUE TENGA TIENDA (A menos que sea Super Admin)
-        if (admin.getRol() != Role.ROLE_ADMIN && admin.getTienda() == null) {
+        if (!isGlobalAdmin && admin.getTienda() == null) {
             throw new ApiException("No tienes una tienda asignada para ver estadísticas.");
         }
 
         Map<String, Object> stats = new HashMap<>();
 
-        if (admin.getRol() == Role.ROLE_ADMIN) {
+        if (isGlobalAdmin) {
             // Lógica Super Admin 👑
             stats.put("totalUsuarios", usuarioRepository.count());
             stats.put("subastasActivas", productoRepository.countByEstado("SUBASTA"));
@@ -70,7 +73,9 @@ public class AdminController {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
         
-        if (admin.getRol() == Role.ROLE_ADMIN) {
+        boolean isGlobalAdmin = admin.getRol() == Role.ROLE_ADMIN || admin.getRol() == Role.ROLE_SUPER_ADMIN;
+
+        if (isGlobalAdmin) {
             var subastas = productoRepository.findByEstado("SUBASTA");
             subastas.forEach(p -> p.setEstado("FINALIZADA"));
             productoRepository.saveAll(subastas);
@@ -141,7 +146,9 @@ public class AdminController {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
 
-        if (admin.getRol() == Role.ROLE_ADMIN) {
+        boolean isGlobalAdmin = admin.getRol() == Role.ROLE_ADMIN || admin.getRol() == Role.ROLE_SUPER_ADMIN;
+
+        if (isGlobalAdmin) {
             // Super Admin ve TODO 👑
             return ResponseEntity.ok(productoRepository.findAll());
         }
@@ -156,7 +163,7 @@ public class AdminController {
     @PutMapping("/usuarios/{id}/rol")
     public ResponseEntity<?> cambiarRol(@PathVariable Integer id, @RequestBody String nuevoRol) {
         AppUsers usuario = usuarioRepository.findById(id).orElseThrow();
-        usuario.setRol(Role.ROLE_VENDEDOR); // "ROLE_VENDEDOR"
+        usuario.setRol(Role.valueOf(nuevoRol)); // Usar el valor enviado
         usuarioRepository.save(usuario);
         return ResponseEntity.ok("Rol actualizado");
     }
