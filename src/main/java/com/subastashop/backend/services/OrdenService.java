@@ -143,11 +143,16 @@ public class OrdenService {
         return ordenRepository.save(orden);
     }
 
+    @Transactional
     public List<Orden> obtenerMisOrdenes(String email) {
         AppUsers usuario = usuarioRepository.findByEmail(email).orElseThrow();
-        return ordenRepository.findByUsuarioOrderByIdDesc(usuario);
+        List<Orden> ordenes = ordenRepository.findByUsuarioOrderByIdDesc(usuario);
+        // Forzamos carga de detalles si fuera necesario (aunque ahora es EAGER)
+        ordenes.forEach(o -> o.getDetalles().size());
+        return ordenes;
     }
 
+    @Transactional
     public Orden obtenerOrdenPorId(Integer id, String email) {
         Orden orden = ordenRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
@@ -156,6 +161,9 @@ public class OrdenService {
              throw new RuntimeException("No tienes permiso para ver esta orden");
         }
 
+        // Aseguramos que los detalles estén cargados
+        orden.getDetalles().size();
+        
         return orden;
     }
 }

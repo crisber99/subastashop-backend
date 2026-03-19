@@ -46,8 +46,8 @@ public class Orden extends BaseEntity {
     private LocalDateTime fechaExpiracionReserva;
 
     // Relación Bidireccional
-    @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default // Necesario si usas @Builder para que no borre la inicialización
+    @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @Builder.Default 
     private List<DetalleOrden> detalles = new ArrayList<>();
     
     // Método de ayuda para agregar detalles y mantener la coherencia
