@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +22,8 @@ public class SuperAdminController {
     private TiendaRepository tiendaRepository;
     @Autowired
     private AppUserRepository usuarioRepository;
+    @Autowired
+    private ProductoRepository productoRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -63,6 +66,32 @@ public class SuperAdminController {
         // Lógica para borrar o desactivar (soft delete recomendado)
         usuarioRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("mensaje", "Usuario eliminado"));
+    }
+
+    // 4. ACTUALIZAR DATOS DE USUARIO (Nombre, teléfono, etc.)
+    @PutMapping("/{id}")
+    public ResponseEntity<?> actualizarUsuario(@PathVariable Integer id, @RequestBody AppUsers datos) {
+        AppUsers usuario = usuarioRepository.findById(id).orElseThrow();
+        
+        if (datos.getNombreCompleto() != null) usuario.setNombreCompleto(datos.getNombreCompleto());
+        if (datos.getTelefono() != null) usuario.setTelefono(datos.getTelefono());
+        if (datos.getDireccion() != null) usuario.setDireccion(datos.getDireccion());
+        if (datos.getEmail() != null) usuario.setEmail(datos.getEmail());
+        
+        usuarioRepository.save(usuario);
+        return ResponseEntity.ok(Map.of("mensaje", "Usuario actualizado correctamente"));
+    }
+
+    // 5. ESTADÍSTICAS GLOBALES PARA DASHBOARD SUPER ADMIN
+    @GetMapping("/stats")
+    public ResponseEntity<?> getStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalUsuarios", usuarioRepository.count());
+        stats.put("totalTiendas", tiendaRepository.count());
+        stats.put("totalProductos", productoRepository.count());
+        stats.put("subastasActivas", productoRepository.countByEstado("SUBASTA"));
+        
+        return ResponseEntity.ok(stats);
     }
 
     // 1. VER TODAS LAS TIENDAS
