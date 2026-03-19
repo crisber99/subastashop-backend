@@ -35,8 +35,11 @@ public class AdminController {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
 
-        // Check if global admin (Super Admin or Admin)
-        boolean isGlobalAdmin = admin.getRol() == Role.ROLE_ADMIN || admin.getRol() == Role.ROLE_SUPER_ADMIN;
+        // Only Super Admin is Global now 👑
+        String roleName = admin.getRol() != null ? admin.getRol().name() : "";
+        boolean isGlobalAdmin = "ROLE_SUPER_ADMIN".equals(roleName);
+
+        System.out.println("DEBUG: Admin stats check for " + email + " role: " + roleName + " isGlobal: " + isGlobalAdmin);
 
         // 2. VERIFICAR QUE TENGA TIENDA (A menos que sea Super Admin)
         if (!isGlobalAdmin && admin.getTienda() == null) {
@@ -55,7 +58,7 @@ public class AdminController {
             stats.put("gananciasTotales", total != null ? total : 0.0);
             stats.put("nombreTienda", "Panel Global");
         } else {
-            // Lógica Admin de Tienda 🏪
+            // Lógica Admin de Tienda (Incluye ROLE_ADMIN ahora) 🏪
             Long tiendaId = admin.getTienda().getId();
             stats.put("totalUsuarios", 0); 
             stats.put("subastasActivas", productoRepository.countByTiendaIdAndEstado(tiendaId, "SUBASTA"));
@@ -73,7 +76,8 @@ public class AdminController {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
         
-        boolean isGlobalAdmin = admin.getRol() == Role.ROLE_ADMIN || admin.getRol() == Role.ROLE_SUPER_ADMIN;
+        String roleName = admin.getRol() != null ? admin.getRol().name() : "";
+        boolean isGlobalAdmin = "ROLE_SUPER_ADMIN".equals(roleName);
 
         if (isGlobalAdmin) {
             var subastas = productoRepository.findByEstado("SUBASTA");
@@ -146,7 +150,10 @@ public class AdminController {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
 
-        boolean isGlobalAdmin = admin.getRol() == Role.ROLE_ADMIN || admin.getRol() == Role.ROLE_SUPER_ADMIN;
+        String roleName = admin.getRol() != null ? admin.getRol().name() : "";
+        boolean isGlobalAdmin = "ROLE_SUPER_ADMIN".equals(roleName);
+
+        System.out.println("DEBUG: Listing products for " + email + " role: " + roleName + " isGlobal: " + isGlobalAdmin);
 
         if (isGlobalAdmin) {
             // Super Admin ve TODO 👑

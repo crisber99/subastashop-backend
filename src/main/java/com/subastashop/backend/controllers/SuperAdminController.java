@@ -20,7 +20,7 @@ public class SuperAdminController {
     @Autowired
     private TiendaRepository tiendaRepository;
     @Autowired
-    private UsuarioRepository usuarioRepository;
+    private AppUserRepository usuarioRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
 

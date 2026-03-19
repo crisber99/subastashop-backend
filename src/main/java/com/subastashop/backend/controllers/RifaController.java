@@ -6,7 +6,7 @@ import com.subastashop.backend.models.TicketRifa;
 import com.subastashop.backend.models.GanadorRifa; // 👈 Importante
 import com.subastashop.backend.repositories.ProductoRepository;
 import com.subastashop.backend.repositories.TicketRifaRepository;
-import com.subastashop.backend.repositories.UsuarioRepository;
+import com.subastashop.backend.repositories.AppUserRepository;
 import com.subastashop.backend.repositories.GanadorRifaRepository; // 👈 Importante
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +36,7 @@ public class RifaController {
     private GanadorRifaRepository ganadorRepository;
 
     @Autowired
-    private UsuarioRepository usuarioRepository;
+    private AppUserRepository usuarioRepository;
 
     @Autowired
     private com.subastashop.backend.services.EmailService emailService;
