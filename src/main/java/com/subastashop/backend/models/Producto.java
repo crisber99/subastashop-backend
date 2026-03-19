@@ -44,8 +44,8 @@ public class Producto extends BaseEntity {
     private BigDecimal precioActual;
     private LocalDateTime fechaFinSubasta;
 
-    @Column(columnDefinition = "varchar(20) default 'DISPONIBLE'")
-    private String estado;
+    @Column(length = 20)
+    private String estado = "DISPONIBLE";
 
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 

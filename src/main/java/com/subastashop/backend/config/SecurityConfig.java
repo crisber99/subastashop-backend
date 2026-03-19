@@ -90,11 +90,25 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Permitimos tanto localhost (pruebas) como Azure (producción)
-        configuration.setAllowedOriginPatterns(Arrays.asList("*")); 
+        // IMPORTANTE: Cuando allowCredentials es true, NO se puede usar "*" en origins ni headers.
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:4200",
+                frontendUrl,
+                "https://storagesubastasapp.z20.web.core.windows.net",
+                "https://storagesubastasapp.z20.web.core.windows.net/"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization", 
+                "Content-Type", 
+                "X-Requested-With", 
+                "Accept", 
+                "Origin", 
+                "Access-Control-Request-Method", 
+                "Access-Control-Request-Headers",
+                "x-tenant-id" // 👈 ESTO ES LO QUE EL FRONTEND ESTABA PIDIENDO
+        ));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "x-tenant-id"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
