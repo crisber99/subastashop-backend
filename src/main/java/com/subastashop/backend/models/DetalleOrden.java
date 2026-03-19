@@ -26,9 +26,9 @@ public class DetalleOrden {
     @com.fasterxml.jackson.annotation.JsonIgnore
     private Orden orden;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "producto_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "detalles", "tienda"})
     private Producto producto;
 
     private Integer cantidad;
