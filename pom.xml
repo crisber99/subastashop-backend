@@ -144,13 +144,6 @@
 					</excludes>
 				</configuration>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<classifier>full</classifier>
-				</configuration>
-			</plugin>
 		</plugins>
 	</build>
 
