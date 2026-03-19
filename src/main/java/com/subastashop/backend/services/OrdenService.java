@@ -154,16 +154,13 @@ public class OrdenService {
 
     @Transactional
     public Orden obtenerOrdenPorId(Integer id, String email) {
-        Orden orden = ordenRepository.findById(id)
+        Orden orden = ordenRepository.findByIdConDetalles(id)
                 .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
 
         if (!orden.getUsuario().getEmail().equals(email)) {
              throw new RuntimeException("No tienes permiso para ver esta orden");
         }
 
-        // Aseguramos que los detalles estén cargados
-        orden.getDetalles().size();
-        
         return orden;
     }
 }

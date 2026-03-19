@@ -48,6 +48,8 @@ public class Orden extends BaseEntity {
     // Relación Bidireccional
     @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<DetalleOrden> detalles = new ArrayList<>();
     
     // Método de ayuda para agregar detalles y mantener la coherencia

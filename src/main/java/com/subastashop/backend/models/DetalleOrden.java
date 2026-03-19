@@ -22,6 +22,7 @@ public class DetalleOrden {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orden_id", nullable = false)
     @ToString.Exclude // Importante para evitar bucles infinitos al imprimir logs
+    @EqualsAndHashCode.Exclude
     @com.fasterxml.jackson.annotation.JsonIgnore
     private Orden orden;
 
