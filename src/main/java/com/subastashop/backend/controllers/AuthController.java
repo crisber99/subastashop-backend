@@ -40,6 +40,9 @@ public class AuthController {
     @Autowired
     private com.subastashop.backend.services.EmailService emailService;
 
+    @Autowired
+    private com.subastashop.backend.repositories.PasswordResetTokenRepository tokenRepository;
+
     // LOGIN
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
@@ -77,12 +80,12 @@ public class AuthController {
     // REGISTRO
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request, @RequestHeader("X-Tenant-ID") String tenantId) {
+        // ... (existing code stays same)
         if (userRepository.existsByEmailAndTenantId(request.getEmail(), tenantId)) {
             throw new ApiException("El email ya existe en esta tienda");
         }
 
         // VALIDACIÓN DE CONTRASEÑA 🔐
-        // Al menos 8 caracteres, una letra y un número
         String passwordPattern = "^(?=.*[0-9])(?=.*[a-zA-Z]).{8,}$";
         if (request.getPassword() == null || !request.getPassword().matches(passwordPattern)) {
             throw new ApiException("La contraseña debe tener al menos 8 caracteres e incluir letras y números.");
@@ -103,7 +106,7 @@ public class AuthController {
         String asunto = "¡Bienvenido a SubastaShop!";
         String mensaje = "Hola " + user.getNombreCompleto() + ",<br><br>" +
                              "¡Bienvenido a <b>SubastaShop</b>!<br><br>" +
-                             "Tu cuenta ha sido creada exitosamente. Explora nuestras tiendas, únete a subastas y participa en nuestras rifas exclusivas.<br><br>" +
+                             "Tu cuenta ha sido creada exitosamente.<br><br>" +
                              "Saludos,<br>El equipo de SubastaShop";
         emailService.enviarCorreo(user.getEmail(), asunto, mensaje);
 
@@ -121,4 +124,71 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
-}
+
+    // --- RECUPERACIÓN DE CONTRASEÑA ---
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        AppUsers user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException("No encontramos una cuenta con ese correo."));
+
+        // Limpiar tokens viejos
+        tokenRepository.deleteByEmail(email);
+
+        // Generar código de 6 dígitos
+        String code = String.format("%06d", new java.util.Random().nextInt(999999));
+        
+        com.subastashop.backend.models.PasswordResetToken token = new com.subastashop.backend.models.PasswordResetToken();
+        token.setEmail(email);
+        token.setToken(code);
+        token.setExpiryDate(java.time.LocalDateTime.now().plusMinutes(15));
+        tokenRepository.save(token);
+
+        // Enviar email
+        String asunto = "Código de Recuperación - SubastaShop";
+        String mensaje = "Hola " + user.getNombreCompleto() + ",<br><br>" +
+                         "Has solicitado restablecer tu contraseña. Tu código de seguridad es:<br><br>" +
+                         "<h2 style='color: #6366f1;'>" + code + "</h2><br>" +
+                         "Este código expirará en 15 minutos.<br><br>" +
+                         "Si no solicitaste esto, puedes ignorar este correo.<br><br>" +
+                         "Saludos,<br>El equipo de SubastaShop";
+        
+        emailService.enviarCorreo(email, asunto, mensaje);
+
+        return ResponseEntity.ok(Map.of("message", "Código enviado exitosamente."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String code = request.get("code");
+        String newPassword = request.get("newPassword");
+
+        com.subastashop.backend.models.PasswordResetToken token = tokenRepository.findByToken(code)
+                .filter(t -> t.getEmail().equals(email))
+                .orElseThrow(() -> new ApiException("Código inválido o correo incorrecto."));
+
+        if (token.isExpired()) {
+            tokenRepository.delete(token);
+            throw new ApiException("El código ha expirado. Por favor solicita uno nuevo.");
+        }
+
+        // Validar nueva contraseña
+        String passwordPattern = "^(?=.*[0-9])(?=.*[a-zA-Z]).{8,}$";
+        if (newPassword == null || !newPassword.matches(passwordPattern)) {
+            throw new ApiException("La nueva contraseña debe tener al menos 8 caracteres e incluir letras y números.");
+        }
+
+        AppUsers user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException("Usuario no encontrado."));
+        
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Borrar token usado
+        tokenRepository.delete(token);
+
+        return ResponseEntity.ok(Map.of("message", "Contraseña actualizada con éxito."));
+    }
+}
