@@ -60,7 +60,8 @@ public class ProductoController {
             @RequestParam(value = "fechaFin", required = false) String fechaFinIso,
             @RequestParam(value = "precioTicket", required = false) BigDecimal precioTicket,
             @RequestParam(value = "cantidadNumeros", required = false) Integer cantidadNumeros,
-            @RequestParam(value = "cantidadGanadores", required = false) Integer cantidadGanadores) throws java.io.IOException {
+            @RequestParam(value = "cantidadGanadores", required = false) Integer cantidadGanadores,
+            @RequestParam(value = "categoriaId", required = false) Integer categoriaId) throws java.io.IOException {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         boolean isSuperAdmin = SecurityContextHolder.getContext().getAuthentication()
@@ -68,7 +69,7 @@ public class ProductoController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
         Producto nuevo = productoService.crearProducto(email, isSuperAdmin, archivos, nombre, descripcion,
-                tipoVenta, precioBase, stock, fechaFinIso, precioTicket, cantidadNumeros, cantidadGanadores);
+                tipoVenta, precioBase, stock, fechaFinIso, precioTicket, cantidadNumeros, cantidadGanadores, categoriaId);
 
         return ResponseEntity.ok(productoService.toDTO(nuevo));
     }
@@ -89,13 +90,14 @@ public class ProductoController {
             @RequestParam("descripcion") String descripcion,
             @RequestParam("precioBase") BigDecimal precioBase,
             @RequestParam(value = "fechaFin", required = false) String fechaFin,
-            @RequestParam(value = "archivos", required = false) List<MultipartFile> archivos) throws java.io.IOException {
+            @RequestParam(value = "archivos", required = false) List<MultipartFile> archivos,
+            @RequestParam(value = "categoriaId", required = false) Integer categoriaId) throws java.io.IOException {
 
         boolean isSuperAdmin = SecurityContextHolder.getContext().getAuthentication()
                 .getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
-        Producto producto = productoService.editarProducto(id, isSuperAdmin, nombre, descripcion, precioBase, fechaFin, archivos);
+        Producto producto = productoService.editarProducto(id, isSuperAdmin, nombre, descripcion, precioBase, fechaFin, archivos, categoriaId);
         return ResponseEntity.ok(productoService.toDTO(producto));
     }
 }

@@ -46,11 +46,11 @@ public class MercadoPagoService {
 
         List<PreferenceItemRequest> items = new ArrayList<>();
         PreferenceItemRequest item = PreferenceItemRequest.builder()
-                .id("subs-123")
-                .title("Suscripcion Mensual SubastaShop")
-                .description("Acceso Premium a la plataforma SubastaShop")
+                .id("subs-premium-4990")
+                .title("Suscripción Pro SubastaShop")
+                .description("Acceso Premium mensual a SubastaShop")
                 .quantity(1)
-                .unitPrice(new BigDecimal("10000")) 
+                .unitPrice(new BigDecimal("4990")) 
                 .currencyId("CLP")
                 .build();
         items.add(item);

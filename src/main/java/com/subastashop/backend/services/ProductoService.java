@@ -6,6 +6,7 @@ import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.Producto;
 import com.subastashop.backend.models.Tienda;
 import com.subastashop.backend.repositories.AppUserRepository;
+import com.subastashop.backend.repositories.CategoriaRepository;
 import com.subastashop.backend.repositories.ProductoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,9 +31,13 @@ public class ProductoService {
     @Autowired
     private ContentSecurityService securityService;
 
+    @Autowired
+    private CategoriaRepository categoriaRepository;
+
     public Producto crearProducto(String email, boolean isSuperAdmin, List<MultipartFile> archivos, String nombre,
                                   String descripcion, String tipoVenta, BigDecimal precioBase, Integer stock,
-                                  String fechaFinIso, BigDecimal precioTicket, Integer cantidadNumeros, Integer cantidadGanadores) throws java.io.IOException {
+                                  String fechaFinIso, BigDecimal precioTicket, Integer cantidadNumeros, Integer cantidadGanadores,
+                                  Integer categoriaId) throws java.io.IOException {
 
         if (securityService.tieneContenidoIlegal(nombre) || securityService.tieneContenidoIlegal(descripcion)) {
             throw new ApiException("CensoredContent: Tu publicación contiene palabras prohibidas por nuestras normas de comunidad.");
@@ -97,11 +102,15 @@ public class ProductoService {
             p.setEstado("DISPONIBLE");
         }
 
+        if (categoriaId != null) {
+            categoriaRepository.findById(categoriaId).ifPresent(p::setCategoria);
+        }
+
         return productoRepository.save(p);
     }
 
     public Producto editarProducto(Integer id, boolean isSuperAdmin, String nombre, String descripcion, BigDecimal precioBase,
-                                   String fechaFin, List<MultipartFile> archivos) throws java.io.IOException {
+                                   String fechaFin, List<MultipartFile> archivos, Integer categoriaId) throws java.io.IOException {
 
         if (securityService.tieneContenidoIlegal(nombre) || securityService.tieneContenidoIlegal(descripcion)) {
             throw new ApiException("CensoredContent: No puedes actualizar el producto con términos prohibidos.");
@@ -147,6 +156,10 @@ public class ProductoService {
             producto.setImagenes(urlsSubidas);
         }
 
+        if (categoriaId != null) {
+            categoriaRepository.findById(categoriaId).ifPresent(producto::setCategoria);
+        }
+
         return productoRepository.save(producto);
     }
 
@@ -170,6 +183,11 @@ public class ProductoService {
         if (p.getTienda() != null) {
             dto.setNombreTienda(p.getTienda().getNombre());
             dto.setSlugTienda(p.getTienda().getSlug());
+        }
+
+        if (p.getCategoria() != null) {
+            dto.setCategoriaId(p.getCategoria().getId());
+            dto.setCategoriaNombre(p.getCategoria().getNombre());
         }
         
         return dto;

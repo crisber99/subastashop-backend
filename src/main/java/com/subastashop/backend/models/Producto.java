@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-@EqualsAndHashCode(callSuper = true) // Importante para que Lombok incluya el TenantId en el equals
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "Productos")
 public class Producto extends BaseEntity {
@@ -61,4 +61,9 @@ public class Producto extends BaseEntity {
     @JoinColumn(name = "tienda_id")
     @JsonIgnoreProperties({"productos", "password", "usuario", "hibernateLazyInitializer", "handler"})
     private Tienda tienda;
+
+    @ManyToOne
+    @JoinColumn(name = "categoria_id")
+    @JsonIgnoreProperties({"productos", "hibernateLazyInitializer", "handler"})
+    private Categoria categoria;
 }
