@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.subastashop.backend.models.Role;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.ByteArrayOutputStream;
@@ -51,7 +52,7 @@ public class AdminController {
         if (isGlobalAdmin) {
             // Lógica Super Admin 👑
             stats.put("totalUsuarios", usuarioRepository.count());
-            stats.put("subastasActivas", productoRepository.countByEstado("SUBASTA"));
+            stats.put("subastasActivas", productoRepository.countByEstado("EN_SUBASTA"));
             stats.put("ventasCerradas", productoRepository.countByEstado("VENDIDO"));
             
             Double total = ordenRepository.sumTotalPagado();
@@ -61,7 +62,7 @@ public class AdminController {
             // Lógica Admin de Tienda (Incluye ROLE_ADMIN ahora) 🏪
             Long tiendaId = admin.getTienda().getId();
             stats.put("totalUsuarios", 0); 
-            stats.put("subastasActivas", productoRepository.countByTiendaIdAndEstado(tiendaId, "SUBASTA"));
+            stats.put("subastasActivas", productoRepository.countByTiendaIdAndEstado(tiendaId, "EN_SUBASTA"));
             stats.put("ventasCerradas", productoRepository.countByTiendaIdAndEstado(tiendaId, "VENDIDO"));
             stats.put("gananciasTotales", 0);
             stats.put("nombreTienda", admin.getTienda().getNombre());
@@ -71,6 +72,7 @@ public class AdminController {
     }
 
     // 🚀 ACCIÓN: DETENER TODAS LAS SUBASTAS ACTIVAS
+    @Transactional
     @PostMapping("/detener-subastas")
     public ResponseEntity<?> detenerSubastas() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -80,7 +82,7 @@ public class AdminController {
         boolean isGlobalAdmin = "ROLE_SUPER_ADMIN".equals(roleName);
 
         if (isGlobalAdmin) {
-            var subastas = productoRepository.findByEstado("SUBASTA");
+            var subastas = productoRepository.findByEstado("EN_SUBASTA");
             subastas.forEach(p -> p.setEstado("FINALIZADA"));
             productoRepository.saveAll(subastas);
             return ResponseEntity.ok("Se han detenido " + subastas.size() + " subastas globales.");
@@ -91,11 +93,11 @@ public class AdminController {
         }
 
         Long tiendaId = admin.getTienda().getId();
-        var subastas = productoRepository.findByTiendaIdAndEstado(tiendaId, "SUBASTA");
+        var subastas = productoRepository.findByTiendaIdAndEstado(tiendaId, "EN_SUBASTA");
         for (Producto p : subastas) {
             p.setEstado("FINALIZADA");
-            productoRepository.save(p);
         }
+        productoRepository.saveAll(subastas);
 
         return ResponseEntity.ok("Se han detenido " + subastas.size() + " subastas.");
     }
