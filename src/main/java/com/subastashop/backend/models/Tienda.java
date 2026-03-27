@@ -7,11 +7,16 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "tiendas")
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE tiendas SET deleted = 1 WHERE id=?")
+@org.hibernate.annotations.Where(clause = "deleted = 0")
 public class Tienda {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
+    private boolean deleted = false;
 
     private String nombre;
     private String slug;

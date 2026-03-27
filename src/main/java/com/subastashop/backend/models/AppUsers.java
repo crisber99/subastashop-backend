@@ -13,11 +13,16 @@ import java.util.List;
 @Data
 @Entity
 @Table(name = "AppUsers")
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE AppUsers SET deleted = 1 WHERE id=?")
+@org.hibernate.annotations.Where(clause = "deleted = 0")
 public class AppUsers implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(nullable = false)
+    private boolean deleted = false;
 
     private String tenantId;
 

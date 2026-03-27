@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, Integer> {
@@ -28,6 +30,9 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
 
     // Buscar productos de UNA tienda específica
     List<Producto> findByTiendaId(Long tiendaId);
+
+    // Buscar productos paginados de UNA tienda específica
+    Page<Producto> findByTiendaId(Long tiendaId, Pageable pageable);
 
     // Buscar productos de una tienda y que estén activos (para el público)
     List<Producto> findByTiendaSlugAndEstado(String slug, String estado);

@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable; 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,6 +45,7 @@ public class PublicController {
 
     // Endpoint para la Landing Page (Listar Tiendas)
     @GetMapping("/tiendas")
+    @Cacheable("tiendasActivas")
     public List<TiendaPublicDTO> obtenerTiendasActivas() {
         return tiendaRepository.findAll().stream()
                 .map(this::mapToDTO)
@@ -49,10 +53,12 @@ public class PublicController {
     }
 
     @GetMapping("/productos/tienda/{slug}")
-    public ResponseEntity<List<Producto>> obtenerProductosPorTienda(@PathVariable("slug") String slug) {
+    public ResponseEntity<Page<Producto>> obtenerProductosPorTienda(
+            @PathVariable("slug") String slug, 
+            Pageable pageable) {
         Tienda tienda = tiendaRepository.findBySlug(slug.toLowerCase())
                 .orElseThrow(() -> new RuntimeException("Tienda no encontrada: " + slug));
-        List<Producto> productos = productoRepository.findByTiendaId(tienda.getId());
+        Page<Producto> productos = productoRepository.findByTiendaId(tienda.getId(), pageable);
         return ResponseEntity.ok(productos);
     }
 

@@ -15,11 +15,16 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "Productos")
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE Productos SET deleted = 1 WHERE id=?")
+@org.hibernate.annotations.Where(clause = "deleted = 0")
 public class Producto extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(nullable = false)
+    private boolean deleted = false;
 
     @Column(nullable = false)
     private String nombre;
