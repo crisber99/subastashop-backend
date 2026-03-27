@@ -4,6 +4,7 @@ import com.subastashop.backend.models.Categoria;
 import com.subastashop.backend.repositories.CategoriaRepository;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.cache.annotation.Cacheable;
 import java.util.List;
 
 @RestController
@@ -17,6 +18,7 @@ public class CategoriaController {
     }
 
     @GetMapping
+    @Cacheable("categorias")
     public List<Categoria> listarTodas() {
         return categoriaRepository.findAll();
     }

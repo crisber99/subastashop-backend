@@ -53,6 +53,7 @@ public class PublicController {
     }
 
     @GetMapping("/productos/tienda/{slug}")
+    @Cacheable(value = "productosPublicos", key = "#slug + '_' + #pageable.pageNumber")
     public ResponseEntity<Page<Producto>> obtenerProductosPorTienda(
             @PathVariable("slug") String slug, 
             Pageable pageable) {
