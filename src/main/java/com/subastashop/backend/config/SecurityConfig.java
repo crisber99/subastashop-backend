@@ -53,6 +53,7 @@ public class SecurityConfig {
                 // Lectura de Catálogo (GET)
                 .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/rifas/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/categorias/**").permitAll()
 
                 // ================================================================
                 // 2. ZONA PROTEGIDA (Roles Específicos) 👮‍♂️
