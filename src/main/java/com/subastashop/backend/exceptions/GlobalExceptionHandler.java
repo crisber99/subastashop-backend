@@ -34,4 +34,20 @@ public class GlobalExceptionHandler {
         });
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
     }
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<Map<String, String>> handleAuthenticationException(org.springframework.security.core.AuthenticationException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Credenciales incorrectas");
+        response.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Error interno");
+        response.put("message", ex.getMessage());
+        // Devolver 400 Bad Request o 401 dependiendo del contexto, usamos 400 por defecto para que no de 403
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
 }

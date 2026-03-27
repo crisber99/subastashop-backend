@@ -39,6 +39,7 @@ public class SecurityConfig {
                 // ================================================================
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/ws-subastas/**").permitAll()
+                .requestMatchers("/error").permitAll() // <-- AÑADIDO: Para evitar que errores internos o BadCredentialsException mascarados por Spring terminen en 403
 
                 // Autenticación (Login/Registro)
                 .requestMatchers("/api/auth/**").permitAll()
@@ -96,15 +97,8 @@ public class SecurityConfig {
                 "https://storagesubastasapp.z20.web.core.windows.net",
                 "https://storagesubastasapp.z20.web.core.windows.net/"
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList(
-                "Authorization", 
-                "Content-Type", 
-                "X-Requested-With", 
-                "Accept", 
-                "Origin", 
-                "x-tenant-id"
-        ));
+        configuration.setAllowedMethods(Arrays.asList("*")); // Permitimos TODOS los métodos por simplicidad
+        configuration.setAllowedHeaders(Arrays.asList("*")); // Permitimos TODOS los headers
         configuration.setExposedHeaders(Arrays.asList("Authorization", "x-tenant-id"));
         configuration.setAllowCredentials(true);
 
