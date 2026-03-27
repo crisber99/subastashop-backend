@@ -25,6 +25,7 @@ public class AppUsers implements UserDetails {
     private String email;
 
     @Column(nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private String passwordHash;
 
     private String nombreCompleto;
@@ -39,6 +40,7 @@ public class AppUsers implements UserDetails {
 
     @ManyToOne
     @JoinColumn(name = "tienda_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"rutEmpresa", "datosBancarios", "documentoAnversoUrl", "documentoReversoUrl", "fechaAceptacionTerminos"})
     private Tienda tienda;
 
     // --- Campos de Suscripción y Trial ---
@@ -49,9 +51,11 @@ public class AppUsers implements UserDetails {
     private Boolean suscripcionActiva = false;
 
     @Column(name = "stripe_customer_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private String stripeCustomerId;
 
     @Column(name = "stripe_subscription_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private String stripeSubscriptionId;
 
     public boolean isSuscripcionActiva() {

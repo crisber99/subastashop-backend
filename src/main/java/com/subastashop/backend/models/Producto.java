@@ -59,7 +59,7 @@ public class Producto extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "tienda_id")
-    @JsonIgnoreProperties({"productos", "password", "usuario", "hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"productos", "usuario", "hibernateLazyInitializer", "handler", "rutEmpresa", "datosBancarios", "documentoAnversoUrl", "documentoReversoUrl", "fechaAceptacionTerminos"})
     private Tienda tienda;
 
     @ManyToOne
