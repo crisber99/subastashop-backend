@@ -17,12 +17,11 @@ import java.util.List;
 @Service
 public class WebPushService {
 
-    // VAPID Keys dinámicas (las generaremos en Angular) o estáticas
-    // Por simplicidad en producción, es mejor tener un par estático inyectado o definido
-    @Value("${vapid.public.key:BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuB-3qND7BroqhVWeJ2Q-nU8bI}")
+    // VAPID Keys inyectadas por properties o variables de entorno (Azure)
+    @Value("${vapid.public.key:}")
     private String publicKey;
     
-    @Value("${vapid.private.key:A18P2P0z7_QyKXX-cXX9XKXbZ3y0vQxx8eZXX7_YXX0}")
+    @Value("${vapid.private.key:}")
     private String privateKey;
 
     private PushService pushService;

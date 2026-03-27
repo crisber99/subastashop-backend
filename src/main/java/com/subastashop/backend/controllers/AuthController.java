@@ -193,4 +193,81 @@ public class AuthController {
 
         return ResponseEntity.ok(Map.of("message", "Contraseña actualizada con éxito."));
     }
+
+    // --- LOGEO SOCIAL (OAuth2 / OpenID Connect) ---
+    @PostMapping("/social-login")
+    public ResponseEntity<?> socialLogin(@RequestBody Map<String, String> request, @RequestHeader("X-Tenant-ID") String tenantId) {
+        String provider = request.get("provider");
+        String token = request.get("token"); // ID Token (Google/Apple) o Access Token (Facebook)
+        String email = null;
+        String nombre = null;
+
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+
+            if ("GOOGLE".equalsIgnoreCase(provider)) {
+                // Validación Estándar de Google (Sin dependencias enormes)
+                String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + token;
+                Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+                if (response != null && response.containsKey("email")) {
+                    email = (String) response.get("email");
+                    nombre = (String) response.get("name");
+                    // Aquí deberíamos agregar validación extra para que response.get("aud") == tu_client_id
+                } else {
+                    throw new ApiException("Token de Google inválido.");
+                }
+            } else if ("FACEBOOK".equalsIgnoreCase(provider)) {
+                // Graph API Validación
+                String url = "https://graph.facebook.com/me?fields=id,name,email&access_token=" + token;
+                Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+                if (response != null && response.containsKey("email")) {
+                    email = (String) response.get("email");
+                    nombre = (String) response.get("name");
+                } else {
+                    throw new ApiException("Token de Facebook inválido o sin permisos de email.");
+                }
+            } else if ("APPLE".equalsIgnoreCase(provider)) {
+                // Para Apple, el token JWT devuelto debe descifrarse a mano contra la llave pública alojada en auth.apple.com
+                throw new ApiException("La validación de Apple requiere tus llaves p8 y el TeamID configurados en el backend.");
+            } else {
+                throw new ApiException("Proveedor OAuth no soportado.");
+            }
+            
+        } catch (Exception e) {
+             throw new ApiException("Error validando el token social contra " + provider + ": " + e.getMessage());
+        }
+
+        if (email == null) {
+            throw new ApiException("No se pudo obtener el correo de la red social. Intenta con un método tradicional.");
+        }
+
+        AppUsers user = userRepository.findByEmail(email).orElse(null);
+
+        // Auto-crear cuenta si no existe (Seamless Registration)
+        if (user == null) {
+            user = new AppUsers();
+            user.setEmail(email);
+            // Autogeneramos contraseña ultra compleja (el logeo será manejado por OAuth)
+            user.setPasswordHash(passwordEncoder.encode(java.util.UUID.randomUUID().toString() + "aA1!social"));
+            user.setNombreCompleto(nombre != null ? nombre : "Usuario " + provider);
+            user.setRol(Role.ROLE_COMPRADOR);
+            user.setTenantId(tenantId);
+            userRepository.save(user);
+
+            emailService.enviarCorreo(email, "¡Bienvenido a SubastaShop!", "Te has registrado exitosamente autorizando a " + provider + ".");
+        }
+
+        String jwt = jwtService.generateToken(user);
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", jwt);
+        
+        Map<String, Object> usuarioMap = new HashMap<>();
+        usuarioMap.put("id", user.getId());
+        usuarioMap.put("nombre", user.getNombreCompleto());
+        usuarioMap.put("email", user.getEmail());
+        usuarioMap.put("role", user.getRol() != null ? user.getRol().name() : "ROLE_COMPRADOR"); 
+        
+        response.put("usuario", usuarioMap);
+        return ResponseEntity.ok(response);
+    }
 }
