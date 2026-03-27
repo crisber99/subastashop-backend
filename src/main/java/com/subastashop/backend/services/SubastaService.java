@@ -21,6 +21,9 @@ public class SubastaService {
     @Autowired
     private PujaRepository pujaRepository;
 
+    @Autowired
+    private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+
     @Transactional // <--- ¡Vital! O todo o nada.
     public Puja realizarPuja(Integer productoId, Integer usuarioId, BigDecimal montoOferta) {
         String tenantId = TenantContext.getTenantId();
@@ -50,7 +53,11 @@ public class SubastaService {
             throw new RuntimeException("Tu oferta debe ser mayor a $" + precioGanadorActual);
         }
 
-        // 3. Registrar la Puja
+        // 3. Buscar al postor anterior para notificarle que lo superaron
+        java.util.List<Puja> pujasAnteriores = pujaRepository.findByProductoIdOrderByMontoDesc(productoId);
+        Puja pujaAnteriorMax = pujasAnteriores.isEmpty() ? null : pujasAnteriores.get(0);
+
+        // 4. Registrar la Puja
         Puja nuevaPuja = new Puja();
         nuevaPuja.setProducto(producto);
         nuevaPuja.setUsuarioId(usuarioId);
@@ -59,9 +66,21 @@ public class SubastaService {
 
         pujaRepository.save(nuevaPuja);
 
-        // 4. Actualizar el precio del producto en tiempo real
+        // 5. Actualizar el precio del producto en tiempo real
         producto.setPrecioActual(montoOferta);
         productoRepository.save(producto);
+
+        // 6. Notificación Global Privada: Avisar al postor anterior si alguien más lo superó
+        if (pujaAnteriorMax != null && !pujaAnteriorMax.getUsuarioId().equals(usuarioId)) {
+            java.util.Map<String, Object> notificacionOutbid = new java.util.HashMap<>();
+            notificacionOutbid.put("tipo", "OUTBID");
+            notificacionOutbid.put("productoId", producto.getId());
+            notificacionOutbid.put("productoNombre", producto.getNombre());
+            notificacionOutbid.put("nuevoPrecio", montoOferta);
+            
+            // Enviamos el mensaje al canal privado de ese usuario en particular
+            messagingTemplate.convertAndSend("/topic/usuario/" + pujaAnteriorMax.getUsuarioId(), notificacionOutbid);
+        }
 
         return nuevaPuja;
     }

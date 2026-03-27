@@ -66,6 +66,7 @@ public class AuthController {
         response.put("token", jwt);
         
         Map<String, Object> usuarioMap = new HashMap<>();
+        usuarioMap.put("id", userCompleto.getId()); // ID del usuario para notificaciones y perfiles
         usuarioMap.put("nombre", userCompleto.getNombreCompleto());
         usuarioMap.put("email", userCompleto.getEmail());
         usuarioMap.put("role", userCompleto.getRol() != null ? userCompleto.getRol().name() : "ROLE_USER"); 
@@ -115,6 +116,7 @@ public class AuthController {
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
         Map<String, Object> usuarioMap = new HashMap<>();
+        usuarioMap.put("id", user.getId()); // Añadiendo ID para ws
         usuarioMap.put("nombre", user.getNombreCompleto());
         usuarioMap.put("email", user.getEmail());
         usuarioMap.put("role", user.getRol() != null ? user.getRol().name() : "ROLE_COMPRADOR");
