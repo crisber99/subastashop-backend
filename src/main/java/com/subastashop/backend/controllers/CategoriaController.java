@@ -2,7 +2,6 @@ package com.subastashop.backend.controllers;
 
 import com.subastashop.backend.models.Categoria;
 import com.subastashop.backend.repositories.CategoriaRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,8 +11,11 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class CategoriaController {
 
-    @Autowired
-    private CategoriaRepository categoriaRepository;
+    private final CategoriaRepository categoriaRepository;
+
+    public CategoriaController(CategoriaRepository categoriaRepository) {
+        this.categoriaRepository = categoriaRepository;
+    }
 
     @GetMapping
     public List<Categoria> listarTodas() {
