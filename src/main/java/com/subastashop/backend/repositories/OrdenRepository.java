@@ -18,4 +18,7 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
 
     @org.springframework.data.jpa.repository.Query("SELECT COALESCE(SUM(o.total), 0.0) FROM Orden o WHERE o.estado = 'PAGADO'")
     Double sumTotalPagado();
+
+    @org.springframework.data.jpa.repository.Query("SELECT CASE WHEN COUNT(o) > 0 THEN true ELSE false END FROM Orden o JOIN o.detalles d WHERE o.usuario.email = :email AND d.producto.id = :productoId AND (o.estado = 'PAGADO' OR o.estado = 'COMPLETADA' OR o.estado = 'ENTREGADO')")
+    boolean hasUserBoughtProduct(@org.springframework.data.repository.query.Param("email") String email, @org.springframework.data.repository.query.Param("productoId") Integer productoId);
 }

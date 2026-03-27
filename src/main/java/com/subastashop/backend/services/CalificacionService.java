@@ -18,13 +18,16 @@ public class CalificacionService {
     private final CalificacionRepository calificacionRepository;
     private final ProductoRepository productoRepository;
     private final AppUserRepository userRepository;
+    private final com.subastashop.backend.repositories.OrdenRepository ordenRepository;
 
     public CalificacionService(CalificacionRepository calificacionRepository,
                                ProductoRepository productoRepository,
-                               AppUserRepository userRepository) {
+                               AppUserRepository userRepository,
+                               com.subastashop.backend.repositories.OrdenRepository ordenRepository) {
         this.calificacionRepository = calificacionRepository;
         this.productoRepository = productoRepository;
         this.userRepository = userRepository;
+        this.ordenRepository = ordenRepository;
     }
 
     public List<Calificacion> obtenerPorProducto(Long productoId) {
@@ -37,6 +40,14 @@ public class CalificacionService {
         
         Producto producto = productoRepository.findById(requestDto.productoId())
                 .orElseThrow(() -> new NoSuchElementException("Producto no encontrado con id: " + requestDto.productoId()));
+
+        // --- VALIDACIÓN ANTI-SPAM ---
+        // Verificar que el usuario tenga una orden completada para este producto
+        boolean comproProducto = ordenRepository.hasUserBoughtProduct(userEmail, requestDto.productoId());
+        
+        if (!comproProducto) {
+            throw new RuntimeException("No puedes calificar un producto que no has comprado.");
+        }
 
         Calificacion calificacion = new Calificacion();
         calificacion.setProducto(producto);
