@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -49,6 +50,7 @@ public class ProductoController {
     }
 
     // --- CREAR PRODUCTO ---
+    @CacheEvict(value = "productosPublicos", allEntries = true)
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> crearProducto(
             @RequestParam(value = "archivos", required = false) List<MultipartFile> archivos,
@@ -83,6 +85,7 @@ public class ProductoController {
     }
 
     // --- EDITAR PRODUCTO ---
+    @CacheEvict(value = "productosPublicos", allEntries = true)
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> editarProducto(
             @PathVariable Integer id,

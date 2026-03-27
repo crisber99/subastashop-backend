@@ -19,8 +19,8 @@ public class BackendApplication {
 
 	@PostConstruct
     public void init() {
-        // Forzamos a que la aplicación Java use UTC, igual que Azure SQL
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        // Configuramos la app para usar la zona horaria chilena (GMT-3/-4) para que los tiempos de subasta coincidan con el front
+        TimeZone.setDefault(TimeZone.getTimeZone("America/Santiago"));
         System.out.println("Zona horaria configurada a: " + new java.util.Date());
     }
 
