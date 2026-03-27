@@ -51,9 +51,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/productos/imagen/**").permitAll()
 
                 // Lectura de Catálogo (GET)
-                .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/rifas/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/categorias/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/productos", "/api/productos/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/rifas", "/api/rifas/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/categorias", "/api/categorias/**").permitAll()
 
                 // ================================================================
                 // 2. ZONA PROTEGIDA (Roles Específicos) 👮‍♂️
