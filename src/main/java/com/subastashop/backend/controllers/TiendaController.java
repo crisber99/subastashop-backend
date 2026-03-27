@@ -15,7 +15,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/tiendas")
@@ -61,23 +60,25 @@ public class TiendaController {
             @RequestParam(value = "colorPrimario", required = false) String colorPrimario,
             @RequestParam(value = "fotoAnverso", required = false) MultipartFile fotoAnverso,
             @RequestParam(value = "fotoReverso", required = false) MultipartFile fotoReverso,
-            @RequestParam(value = "aceptaTerminos", required = false) Boolean aceptaTerminos
-    ) {
+            @RequestParam(value = "aceptaTerminos", required = false) Boolean aceptaTerminos) {
         try {
             // A. Identificar al usuario logueado
             String email = SecurityContextHolder.getContext().getAuthentication().getName();
             AppUsers admin = usuarioRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-            
+
             Tienda tienda = admin.getTienda();
             if (tienda == null) {
                 return ResponseEntity.badRequest().body("❌ Error: No tienes tienda asignada.");
             }
 
             // B. Actualizar datos de texto (si vienen en la petición)
-            if (rutEmpresa != null && !rutEmpresa.isEmpty()) tienda.setRutEmpresa(rutEmpresa);
-            if (datosBancarios != null && !datosBancarios.isEmpty()) tienda.setDatosBancarios(datosBancarios);
-            if (colorPrimario != null && !colorPrimario.isEmpty()) tienda.setColorPrimario(colorPrimario);
+            if (rutEmpresa != null && !rutEmpresa.isEmpty())
+                tienda.setRutEmpresa(rutEmpresa);
+            if (datosBancarios != null && !datosBancarios.isEmpty())
+                tienda.setDatosBancarios(datosBancarios);
+            if (colorPrimario != null && !colorPrimario.isEmpty())
+                tienda.setColorPrimario(colorPrimario);
 
             // C. Subir Fotos a Azure (si el usuario seleccionó archivos)
             if (fotoAnverso != null && !fotoAnverso.isEmpty()) {

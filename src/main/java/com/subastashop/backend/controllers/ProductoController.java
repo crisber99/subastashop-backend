@@ -4,10 +4,14 @@ import com.subastashop.backend.config.TenantContext;
 import com.subastashop.backend.dto.ProductoDTO;
 import com.subastashop.backend.models.Producto;
 import com.subastashop.backend.models.Tienda;
+import com.subastashop.backend.repositories.AppUserRepository;
 import com.subastashop.backend.repositories.ProductoRepository;
 import com.subastashop.backend.repositories.TiendaRepository;
+import com.subastashop.backend.services.AzureBlobService;
 import com.subastashop.backend.services.ProductoService;
+import com.subastashop.backend.services.WebPushService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +21,7 @@ import org.springframework.cache.annotation.CacheEvict;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/productos")
@@ -27,6 +32,15 @@ public class ProductoController {
 
     @Autowired
     private TiendaRepository tiendaRepository;
+
+    @Autowired
+    private AzureBlobService azureBlobService;
+
+    @Autowired
+    private AppUserRepository appUserRepository;
+
+    @Autowired
+    private WebPushService webPushService;
 
     @Autowired
     private ProductoService productoService;
@@ -72,6 +86,17 @@ public class ProductoController {
 
         Producto nuevo = productoService.crearProducto(email, isSuperAdmin, archivos, nombre, descripcion,
                 tipoVenta, precioBase, stock, fechaFinIso, precioTicket, cantidadNumeros, cantidadGanadores, categoriaId);
+
+        // Enviar notificación Push Global
+        try {
+            webPushService.enviarGlobal(
+                "¡Nuevo Producto Añadido! 🎉", 
+                "Se ha publicado en tienda: " + nuevo.getNombre(), 
+                "https://subastasapp.z20.web.core.windows.net/producto/" + nuevo.getId()
+            );
+        } catch (Exception e) {
+            System.err.println("Error al enviar push notification: " + e.getMessage());
+        }
 
         return ResponseEntity.ok(productoService.toDTO(nuevo));
     }

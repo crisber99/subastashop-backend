@@ -20,7 +20,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class OrdenService {
@@ -65,9 +64,10 @@ public class OrdenService {
             String destino = orden.getUsuario().getEmail();
             String asunto = "Pago Exitoso - Orden #" + orden.getId();
             String mensaje = "Hola " + orden.getUsuario().getNombreCompleto() + ",<br><br>" +
-                             "Hemos recibido el pago de tu orden #" + orden.getId() + " por un total de $" + orden.getTotal() + ".<br><br>" +
-                             "¡Gracias por tu compra en SubastaShop!<br><br>" +
-                             "Saludos,<br>El equipo de SubastaShop";
+                    "Hemos recibido el pago de tu orden #" + orden.getId() + " por un total de $" + orden.getTotal()
+                    + ".<br><br>" +
+                    "¡Gracias por tu compra en SubastaShop!<br><br>" +
+                    "Saludos,<br>El equipo de SubastaShop";
             emailService.enviarCorreo(destino, asunto, mensaje);
         } catch (Exception e) {
             // Ignorar para no interrumpir el flujo de la orden
@@ -88,27 +88,27 @@ public class OrdenService {
         Long primerProductoId = request.getDetalles().get(0).getProductoId();
         Producto primerProducto = productoRepo.findById(primerProductoId.intValue())
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-        
+
         Tienda tiendaOrden = primerProducto.getTienda();
 
         Orden orden = new Orden();
         orden.setUsuario(usuarioActual);
         orden.setTienda(tiendaOrden);
         orden.setFechaCreacion(LocalDateTime.now());
-        orden.setFechaExpiracionReserva(LocalDateTime.now().plusHours(24)); 
+        orden.setFechaExpiracionReserva(LocalDateTime.now().plusHours(24));
         orden.setEstado("PENDIENTE_PAGO");
         orden.setTotal(BigDecimal.ZERO);
-        
-        orden = ordenRepository.save(orden); 
 
-        BigDecimal totalOrden = BigDecimal.ZERO; 
+        orden = ordenRepository.save(orden);
+
+        BigDecimal totalOrden = BigDecimal.ZERO;
         List<DetalleOrden> detallesGuardados = new ArrayList<>();
 
         for (DetalleRequest d : request.getDetalles()) {
             Integer idProducto = d.getProductoId().intValue();
             Producto p = productoRepo.findById(idProducto)
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado ID: " + idProducto));
-            
+
             BigDecimal precioAUsar = BigDecimal.ZERO;
 
             if ("DIRECTA".equals(d.getTipoCompra())) {
@@ -123,7 +123,7 @@ public class OrdenService {
             } else if ("SUBASTA".equals(d.getTipoCompra())) {
                 precioAUsar = p.getPrecioActual();
             }
-            
+
             totalOrden = totalOrden.add(precioAUsar);
 
             DetalleOrden detalle = new DetalleOrden();
@@ -139,11 +139,11 @@ public class OrdenService {
         }
 
         orden.setTotal(totalOrden);
-        
+
         if (!detallesGuardados.isEmpty()) {
             orden.setTienda(detallesGuardados.get(0).getProducto().getTienda());
         }
-        
+
         return ordenRepository.save(orden);
     }
 
@@ -162,7 +162,7 @@ public class OrdenService {
                 .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
 
         if (!orden.getUsuario().getEmail().equals(email)) {
-             throw new RuntimeException("No tienes permiso para ver esta orden");
+            throw new RuntimeException("No tienes permiso para ver esta orden");
         }
 
         return orden;

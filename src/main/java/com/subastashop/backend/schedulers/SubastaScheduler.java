@@ -15,7 +15,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -101,13 +100,16 @@ public class SubastaScheduler {
                     String destino = usuarioGanador.getEmail();
                     String asunto = "¡Ganaste la subasta de " + p.getNombre() + "!";
                     String mensaje = "Hola " + usuarioGanador.getNombreCompleto() + ",<br><br>" +
-                                     "¡Excelentes noticias! Tu puja de <b>$" + ganadora.getMonto() + "</b> fue la más alta y has ganado la subasta de '" + p.getNombre() + "'.<br><br>" +
-                                     "Hemos generado automáticamente una orden de compra en tu cuenta con un plazo de reserva de 3 horas. Por favor, ingresa a la plataforma y completa el pago lo antes posible para asegurar tu producto.<br><br>" +
-                                     "¡Felicidades y gracias por participar en SubastaShop!<br><br>" +
-                                     "Saludos,<br>El equipo de SubastaShop";
+                            "¡Excelentes noticias! Tu puja de <b>$" + ganadora.getMonto()
+                            + "</b> fue la más alta y has ganado la subasta de '" + p.getNombre() + "'.<br><br>" +
+                            "Hemos generado automáticamente una orden de compra en tu cuenta con un plazo de reserva de 3 horas. Por favor, ingresa a la plataforma y completa el pago lo antes posible para asegurar tu producto.<br><br>"
+                            +
+                            "¡Felicidades y gracias por participar en SubastaShop!<br><br>" +
+                            "Saludos,<br>El equipo de SubastaShop";
                     emailService.enviarCorreo(destino, asunto, mensaje);
                 } catch (Exception e) {
-                    System.err.println("Error enviando correo a ganador de subasta " + p.getId() + ": " + e.getMessage());
+                    System.err
+                            .println("Error enviando correo a ganador de subasta " + p.getId() + ": " + e.getMessage());
                 }
             }
 
