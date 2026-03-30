@@ -183,6 +183,8 @@ public class ProductoService {
         if (p.getTienda() != null) {
             dto.setNombreTienda(p.getTienda().getNombre());
             dto.setSlugTienda(p.getTienda().getSlug());
+            // Obtener el ID del dueño (admin) de la tienda
+            dto.setTiendaUsuarioId(usuarioRepository.findOwnerIdByTiendaId(p.getTienda().getId()));
         }
 
         if (p.getCategoria() != null) {

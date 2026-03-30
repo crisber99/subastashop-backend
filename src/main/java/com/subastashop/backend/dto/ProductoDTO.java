@@ -23,6 +23,7 @@ public class ProductoDTO {
     private BigDecimal precioTicket;
     private String nombreTienda;
     private String slugTienda;
+    private Integer tiendaUsuarioId;
     private Integer categoriaId;
     private String categoriaNombre;
 }
