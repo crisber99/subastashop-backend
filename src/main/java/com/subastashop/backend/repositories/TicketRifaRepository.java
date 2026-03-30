@@ -7,5 +7,6 @@ import java.util.List;
 public interface TicketRifaRepository extends JpaRepository<TicketRifa, Long> {
     long countByRifaId(Integer rifaId);
     List<TicketRifa> findByRifaId(Integer rifaId);
+    List<TicketRifa> findByRifaIdAndCompradorId(Integer rifaId, Integer compradorId);
     boolean existsByRifaIdAndNumeroTicket(Integer rifaId, Integer numeroTicket);
 }
