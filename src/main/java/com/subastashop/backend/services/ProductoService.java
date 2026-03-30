@@ -78,7 +78,7 @@ public class ProductoService {
         p.setNombre(nombre);
         p.setDescripcion(descripcion);
         p.setTipoVenta(tipoVenta);
-        p.setPrecioBase(precioBase);
+        p.setPrecioBase(precioBase != null ? precioBase : java.math.BigDecimal.ZERO);
         p.setImagenes(urlsSubidas);
         p.setTienda(admin.getTienda());
 

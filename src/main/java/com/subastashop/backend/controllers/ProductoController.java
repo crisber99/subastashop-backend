@@ -71,7 +71,7 @@ public class ProductoController {
             @RequestParam("nombre") String nombre,
             @RequestParam("descripcion") String descripcion,
             @RequestParam("tipoVenta") String tipoVenta,
-            @RequestParam("precioBase") BigDecimal precioBase,
+            @RequestParam(value = "precioBase", required = false) java.math.BigDecimal precioBase,
             @RequestParam(value = "stock", required = false, defaultValue = "1") Integer stock,
             @RequestParam(value = "fechaFin", required = false) String fechaFinIso,
             @RequestParam(value = "precioTicket", required = false) BigDecimal precioTicket,
