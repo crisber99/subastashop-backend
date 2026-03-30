@@ -63,7 +63,7 @@ public class RifaService {
 
             // 1. Notificar inicio de preparación (Teatro)
             messagingTemplate.convertAndSend("/topic/rifa/" + productoId, 
-                Map.of("status", "PREPARANDO", "mensaje", "Iniciando sorteo en vivo..."));
+                Map.of("status", "PREPARANDO", "productoId", productoId, "mensaje", "Iniciando sorteo en vivo..."));
 
             // 2. Pausa dramática de 5 segundos
             Thread.sleep(5000);
@@ -89,10 +89,13 @@ public class RifaService {
                 ganadorRepository.save(ganador);
 
                 // DTO para notificación
+                String emailOriginal = ticketGanador.getComprador().getEmail();
+                String emailOculto = enmascararEmail(emailOriginal);
+
                 Map<String, Object> dto = new HashMap<>();
                 dto.put("puesto", i + 1);
                 dto.put("numeroTicket", ticketGanador.getNumeroTicket());
-                dto.put("comprador", ticketGanador.getComprador().getEmail());
+                dto.put("comprador", emailOculto);
                 listaGanadoresDTO.add(dto);
 
                 // Enviar correo (Async por definición de EmailService ahora)
@@ -105,7 +108,7 @@ public class RifaService {
 
             // 5. Notificar Resultados Finales
             messagingTemplate.convertAndSend("/topic/rifa/" + productoId, 
-                Map.of("status", "FINALIZADO", "ganadores", listaGanadoresDTO));
+                Map.of("status", "FINALIZADO", "productoId", productoId, "ganadores", listaGanadoresDTO));
 
             log.info("Sorteo finalizado exitosamente para la rifa ID: {}", productoId);
 
@@ -128,5 +131,14 @@ public class RifaService {
             rifa.getNombre()
         );
         emailService.enviarCorreo(ticket.getComprador().getEmail(), asunto, mensaje);
+    }
+
+    private String enmascararEmail(String email) {
+        if (email == null || !email.contains("@")) return email;
+        String[] parts = email.split("@");
+        String name = parts[0];
+        String domain = parts[1];
+        if (name.length() <= 1) return email;
+        return name.charAt(0) + "***@" + domain;
     }
 }

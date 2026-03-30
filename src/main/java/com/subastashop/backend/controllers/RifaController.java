@@ -122,11 +122,22 @@ public class RifaController {
         List<Map<String, Object>> respuesta = ganadores.stream().map(g -> {
             Map<String, Object> dto = new HashMap<>();
             dto.put("puesto", g.getPuesto());
-            dto.put("numeroTicket", g.getTicketGanador().getNumeroTicket());
-            dto.put("comprador", g.getTicketGanador().getComprador().getEmail());
+            dto.put("numeroTicket", g.getTicketGanador() != null ? g.getTicketGanador().getNumeroTicket() : 0);
+            
+            String emailOriginal = g.getTicketGanador() != null ? g.getTicketGanador().getComprador().getEmail() : "p***@mail.com";
+            dto.put("comprador", enmascararEmail(emailOriginal));
             return dto;
         }).collect(Collectors.toList());
         
         return ResponseEntity.ok(respuesta);
+    }
+
+    private String enmascararEmail(String email) {
+        if (email == null || !email.contains("@")) return email;
+        String[] parts = email.split("@");
+        String name = parts[0];
+        String domain = parts[1];
+        if (name.length() <= 1) return email;
+        return name.charAt(0) + "***@" + domain;
     }
 }
