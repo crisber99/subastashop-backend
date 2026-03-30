@@ -11,6 +11,7 @@ import jakarta.annotation.PostConstruct;
 @SpringBootApplication
 @EnableScheduling
 @EnableCaching
+@org.springframework.scheduling.annotation.EnableAsync
 public class BackendApplication {
 
 	public static void main(String[] args) {

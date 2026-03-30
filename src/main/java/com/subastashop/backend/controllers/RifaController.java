@@ -39,82 +39,21 @@ public class RifaController {
     private AppUserRepository usuarioRepository;
 
     @Autowired
-    private com.subastashop.backend.services.EmailService emailService;
+    private com.subastashop.backend.services.RifaService rifaService;
 
-    // 👇 MÉTODO ACTUALIZADO: AHORA GUARDA EN BD Y AVISA POR SOCKET Y CORREO
+    // 👇 MÉTODO ACTUALIZADO: AHORA DELEGA AL SERVICIO ASÍNCRONO
     @PostMapping("/{productoId}/lanzar")
     public ResponseEntity<?> lanzarRifa(@PathVariable Integer productoId) {
-        
-        // 1. Validaciones
-        Producto rifa = productoRepository.findById(productoId)
-                .orElseThrow(() -> new RuntimeException("Rifa no encontrada"));
-
-        // Evitar lanzar dos veces
-        // (Asume que crearás este método en el repo, o puedes chequear si rifa.getEstado() == "FINALIZADA")
-        if ("FINALIZADA".equals(rifa.getEstado())) { 
-             return ResponseEntity.badRequest().body("El sorteo ya fue realizado.");
-        }
-
-        List<TicketRifa> todosLosTickets = ticketRepository.findByRifaId(productoId);
-
-        if (todosLosTickets.size() < rifa.getCantidadNumeros()) {
-            return ResponseEntity.badRequest().body("Aún faltan números por vender.");
-        }
-
-        // 2. EL SORTEO 🎲 (Mezclar tickets)
-        Collections.shuffle(todosLosTickets);
-
-        // 3. Seleccionar, Guardar y Preparar Notificación
-        int cantidadGanadores = rifa.getCantidadGanadores();
-        List<Map<String, Object>> listaGanadoresDTO = new ArrayList<>();
-
-        for (int i = 0; i < cantidadGanadores && i < todosLosTickets.size(); i++) {
-            TicketRifa ticketGanador = todosLosTickets.get(i);
-
-            // A) Guardar en Base de Datos (Persistencia)
-            GanadorRifa ganador = new GanadorRifa();
-            ganador.setRifa(rifa);
-            ganador.setTicketGanador(ticketGanador);
-            ganador.setPuesto(i + 1); // 1, 2, 3...
-            ganador.setFechaGanador(LocalDateTime.now());
-            ganadorRepository.save(ganador);
-
-            // B) Preparar objeto para el Frontend (DTO)
-            Map<String, Object> dto = new HashMap<>();
-            dto.put("puesto", i + 1);
-            dto.put("numeroTicket", ticketGanador.getNumeroTicket());
-            dto.put("comprador", ticketGanador.getComprador().getEmail());
-            // Puedes agregar más datos si quieres
-            listaGanadoresDTO.add(dto);
+        try {
+            // El servicio valida el estado inicial y dispara el "show" asíncrono
+            rifaService.lanzarRifa(productoId);
             
-            // C) ✉️ Enviar correo al ganador
-            try {
-                String destino = ticketGanador.getComprador().getEmail();
-                String asunto = "¡Felicidades! Eres ganador en una Rifa de SubastaShop 🎉";
-                String mensaje = "Hola " + ticketGanador.getComprador().getNombreCompleto() + ",<br><br>" +
-                                 "¡Tenemos el agrado de informarte que tu ticket <b>#" + ticketGanador.getNumeroTicket() + 
-                                 "</b> ha resultado ganador (Puesto " + (i + 1) + ") en la rifa de '" + rifa.getNombre() + "'!<br><br>" +
-                                 "Por favor, revisa tus órdenes y ponte en contacto para coordinar la entrega.<br><br>" +
-                                 "Saludos,<br>El equipo de SubastaShop";
-                emailService.enviarCorreo(destino, asunto, mensaje);
-            } catch (Exception e) {
-                // Ignorar error de correo para no frenar el sorteo
-            }
+            Map<String, String> respuesta = new HashMap<>();
+            respuesta.put("mensaje", "Sorteo iniciado exitosamente. Los resultados aparecerán en breve.");
+            return ResponseEntity.ok(respuesta);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al iniciar el sorteo: " + e.getMessage());
         }
-
-        // 4. Actualizar estado de la Rifa
-        rifa.setEstado("FINALIZADA");
-        productoRepository.save(rifa);
-
-        // 5. 📢 GRITO AL SOCKET: "¡YA HAY GANADORES!"
-        Map<String, Object> notificacion = new HashMap<>();
-        notificacion.put("tipo", "SORTEO_FINALIZADO");
-        notificacion.put("ganadores", listaGanadoresDTO); // Enviamos la lista
-        notificacion.put("productoId", productoId);
-
-        messagingTemplate.convertAndSend("/topic/producto/" + productoId, notificacion);
-
-        return ResponseEntity.ok(listaGanadoresDTO);
     }
 
 

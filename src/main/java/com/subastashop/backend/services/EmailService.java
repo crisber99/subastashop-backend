@@ -14,6 +14,7 @@ public class EmailService {
     @Autowired(required = false)
     private JavaMailSender mailSender;
 
+    @org.springframework.scheduling.annotation.Async
     public void enviarCorreo(String destinatario, String asunto, String mensaje) {
         if (mailSender == null) {
             log.warn("Servicio de Email no configurado. Simulando envío a: {}", destinatario);
