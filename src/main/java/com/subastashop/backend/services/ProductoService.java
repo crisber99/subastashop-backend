@@ -167,6 +167,7 @@ public class ProductoService {
         ProductoDTO dto = new ProductoDTO();
         dto.setId(p.getId());
         dto.setNombre(p.getNombre());
+        dto.setSlug(p.getSlug());
         dto.setDescripcion(p.getDescripcion());
         dto.setImagenes(p.getImagenes());
         dto.setTipoVenta(p.getTipoVenta());

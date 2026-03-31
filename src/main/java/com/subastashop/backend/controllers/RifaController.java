@@ -63,13 +63,14 @@ public class RifaController {
 
     @PostMapping("/{productoId}/comprar/{numeroTicket}")
     public ResponseEntity<?> comprarTicket(@PathVariable Integer productoId, @PathVariable Integer numeroTicket) {
+        return comprarTicketsMultiple(productoId, Collections.singletonList(numeroTicket));
+    }
+
+    @PostMapping("/{productoId}/comprar-multiple")
+    public ResponseEntity<?> comprarTicketsMultiple(@PathVariable Integer productoId, @RequestBody List<Integer> numeros) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         AppUsers usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        if (ticketRepository.existsByRifaIdAndNumeroTicket(productoId, numeroTicket)) {
-            return ResponseEntity.badRequest().body("⛔ Este número ya fue vendido.");
-        }
 
         Producto rifa = productoRepository.findById(productoId)
                 .orElseThrow(() -> new RuntimeException("Rifa no encontrada"));
@@ -78,39 +79,54 @@ public class RifaController {
             return ResponseEntity.badRequest().body("⛔ Esta rifa no está disponible para compra.");
         }
 
-        TicketRifa ticket = new TicketRifa();
-        ticket.setRifa(rifa);
-        ticket.setNumeroTicket(numeroTicket);
-        ticket.setComprador(usuario);
-        ticket.setFechaCompra(LocalDateTime.now());
-        ticketRepository.save(ticket);
+        List<Integer> compradosOk = new ArrayList<>();
+        List<Integer> yaVendidos = new ArrayList<>();
 
-        // Notificación WebSocket
-        Map<String, Object> notificacion = new HashMap<>();
-        notificacion.put("tipo", "TICKET_VENDIDO");
-        notificacion.put("numero", numeroTicket);
-        notificacion.put("productoId", productoId);
-        messagingTemplate.convertAndSend("/topic/producto/" + productoId, notificacion);
+        for (Integer num : numeros) {
+            if (ticketRepository.existsByRifaIdAndNumeroTicket(productoId, num)) {
+                yaVendidos.add(num);
+                continue;
+            }
 
-        // Buscar todos los tickets del usuario en esta rifa para el comprobante agrupado
+            TicketRifa ticket = new TicketRifa();
+            ticket.setRifa(rifa);
+            ticket.setNumeroTicket(num);
+            ticket.setComprador(usuario);
+            ticket.setFechaCompra(LocalDateTime.now());
+            ticketRepository.save(ticket);
+            compradosOk.add(num);
+
+            // Notificación WebSocket individual para animaciones en tiempo real
+            Map<String, Object> notificacion = new HashMap<>();
+            notificacion.put("tipo", "TICKET_VENDIDO");
+            notificacion.put("numero", num);
+            notificacion.put("productoId", productoId);
+            messagingTemplate.convertAndSend("/topic/producto/" + productoId, notificacion);
+        }
+
+        if (compradosOk.isEmpty()) {
+            return ResponseEntity.badRequest().body("⛔ Ninguno de los números seleccionados está disponible: " + yaVendidos);
+        }
+
+        // Buscar todos los tickets del usuario en esta rifa para el comprobante agrupado actualizado
         List<TicketRifa> todosMisTickets = ticketRepository.findByRifaIdAndCompradorId(productoId, usuario.getId());
-        List<Integer> numerosTickets = todosMisTickets.stream()
+        List<Integer> totalNumeros = todosMisTickets.stream()
                 .map(TicketRifa::getNumeroTicket)
                 .sorted()
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
 
-        // Enviar comprobante agrupado por email (solo 1 email con todos sus tickets)
-        enviarComprobanteEmail(usuario, rifa, numerosTickets);
+        // Enviar comprobante agrupado por email (SOLO 1 EMAIL FINAL)
+        enviarComprobanteEmail(usuario, rifa, totalNumeros);
 
-        // Retornar datos del ticket para el comprobante en frontend
         Map<String, Object> respuesta = new HashMap<>();
-        respuesta.put("mensaje", "Ticket comprado con éxito");
-        respuesta.put("numeroTicket", numeroTicket);
+        respuesta.put("mensaje", "Compra procesada exitosamente");
+        respuesta.put("comprados", compradosOk);
+        respuesta.put("omitidos", yaVendidos);
         respuesta.put("nombreRifa", rifa.getNombre());
         respuesta.put("precioTicket", rifa.getPrecioTicket());
         respuesta.put("comprador", usuario.getNombreCompleto());
-        respuesta.put("fecha", ticket.getFechaCompra().toString());
-        respuesta.put("codigoVerificacion", "SS-" + rifa.getId() + "-" + ticket.getNumeroTicket() + "-" + usuario.getId());
+        respuesta.put("codigoVerificacion", "SS-" + rifa.getId() + "-" + usuario.getId());
+        
         return ResponseEntity.ok(respuesta);
     }
 

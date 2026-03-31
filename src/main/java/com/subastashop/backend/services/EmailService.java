@@ -32,8 +32,8 @@ public class EmailService {
             // El true al final indica que es HTML en vez de texto plano
             helper.setText(mensaje, true);
             
-            // Aquí configuramos el NOMBRE DEL REMITENTE ("SubastaShop")
-            helper.setFrom("notificaciones@subastashop.com", "SubastaShop");
+            // Aquí configuramos el NOMBRE DEL REMITENTE ("SubastaShop") con el nuevo correo verificado
+            helper.setFrom("adminshop@subastashop.cl", "SubastaShop");
 
             mailSender.send(message);
             log.info("Email enviado exitosamente a: {}", destinatario);

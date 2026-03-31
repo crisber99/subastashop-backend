@@ -92,7 +92,7 @@ public class ProductoController {
             webPushService.enviarGlobal(
                 "¡Nuevo Producto Añadido! 🎉", 
                 "Se ha publicado en tienda: " + nuevo.getNombre(), 
-                "https://subastasapp.z20.web.core.windows.net/producto/" + nuevo.getId()
+                "https://www.subastashop.cl/producto/" + nuevo.getSlug()
             );
         } catch (Exception e) {
             System.err.println("Error al enviar push notification: " + e.getMessage());
@@ -105,6 +105,14 @@ public class ProductoController {
     public ResponseEntity<ProductoDTO> obtenerProducto(@PathVariable Integer id) {
         String currentTenant = TenantContext.getTenantId();
         return productoRepository.findByIdAndTenantId(id, currentTenant)
+                .map(p -> ResponseEntity.ok(productoService.toDTO(p)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/p/{slug}")
+    public ResponseEntity<ProductoDTO> obtenerProductoPorSlug(@PathVariable String slug) {
+        String currentTenant = TenantContext.getTenantId();
+        return productoRepository.findBySlugAndTenantId(slug, currentTenant)
                 .map(p -> ResponseEntity.ok(productoService.toDTO(p)))
                 .orElse(ResponseEntity.notFound().build());
     }

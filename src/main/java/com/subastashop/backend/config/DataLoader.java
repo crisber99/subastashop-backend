@@ -20,6 +20,7 @@ import java.util.Map;
 public class DataLoader implements CommandLineRunner {
 
     private final CategoriaRepository categoriaRepository;
+    private final com.subastashop.backend.repositories.ProductoRepository productoRepository;
 
     // Categorías faltantes: slug -> {nombre, icono}
     private static final List<Map<String, String>> CATEGORIAS_NUEVAS = List.of(
@@ -27,7 +28,9 @@ public class DataLoader implements CommandLineRunner {
     );
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void run(String... args) {
+        // 1. Verificar Categorías
         for (Map<String, String> cat : CATEGORIAS_NUEVAS) {
             String slug = cat.get("slug");
             boolean existe = categoriaRepository.findAll().stream()
@@ -42,5 +45,15 @@ public class DataLoader implements CommandLineRunner {
                 log.info("✅ Categoría creada: {}", cat.get("nombre"));
             }
         }
+
+        // 2. Generar Slugs para productos existentes si no tienen
+        productoRepository.findAll().forEach(p -> {
+            if (p.getSlug() == null || p.getSlug().isEmpty()) {
+                // Forzamos la generación llamando al método interno del modelo (o dejando que JPA lo haga)
+                // Al estar en una transacción y llamar a save, el @PrePersist/@PreUpdate actuará.
+                productoRepository.save(p);
+                log.info("ℹ️ Slug generado para producto ID: {}", p.getId());
+            }
+        });
     }
 }

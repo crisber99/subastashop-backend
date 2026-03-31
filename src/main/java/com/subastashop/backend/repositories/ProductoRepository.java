@@ -21,6 +21,10 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     // Buscar un producto específico, asegurando que pertenezca al tenant
     Optional<Producto> findByIdAndTenantId(Integer id, String tenantId);
 
+    Optional<Producto> findBySlug(String slug);
+
+    Optional<Producto> findBySlugAndTenantId(String slug, String tenantId);
+
     @Query(value = "SELECT * FROM Productos WHERE Estado = 'EN_SUBASTA' AND FechaFinSubasta < :ahora", nativeQuery = true)
     List<Producto> buscarSubastasPorCerrar(@Param("ahora") LocalDateTime ahora);
 

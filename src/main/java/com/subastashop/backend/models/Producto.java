@@ -29,6 +29,9 @@ public class Producto extends BaseEntity {
     @Column(nullable = false)
     private String nombre;
 
+    @Column(unique = true)
+    private String slug;
+
     private String descripcion;
     
     @ElementCollection
@@ -71,4 +74,20 @@ public class Producto extends BaseEntity {
     @JoinColumn(name = "categoria_id")
     @JsonIgnoreProperties({"productos", "hibernateLazyInitializer", "handler"})
     private Categoria categoria;
+
+    @PrePersist
+    @PreUpdate
+    private void generateSlug() {
+        if (this.slug == null || this.slug.isEmpty()) {
+            if (this.nombre != null) {
+                this.slug = this.nombre.toLowerCase()
+                    .replaceAll("[^a-z0-9]", "-")
+                    .replaceAll("-+", "-")
+                    .replaceAll("^-|-$", "");
+                
+                // Add a small random suffix to ensure "encryption" feel and uniqueness
+                this.slug += "-" + java.util.UUID.randomUUID().toString().substring(0, 5);
+            }
+        }
+    }
 }
