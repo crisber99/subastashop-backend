@@ -74,6 +74,18 @@ public class MercadoPagoService {
     public void processPaymentNotification(String paymentId) {
         // Lógica para consultar el pago en MP y activar la suscripción
         log.info("Procesando notificación de pago MP: {}", paymentId);
-        // Aquí iría la llamada a PaymentClient.get(paymentId)
+        // Aquí iría la llamada a PaymentClient.get(paymentId) para obtener el status y external_reference
+    }
+
+    /**
+     * SIMULACIÓN: Activa manualmente la suscripción de un usuario.
+     */
+    public void confirmSubscription(Integer userId) {
+        AppUsers user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado (ID: " + userId + ")"));
+        
+        user.setSuscripcionActiva(true);
+        userRepository.save(user);
+        log.info("✅ Suscripción activada manualmente para el usuario: {}", user.getEmail());
     }
 }

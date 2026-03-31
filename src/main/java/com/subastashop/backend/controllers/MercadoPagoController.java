@@ -40,4 +40,17 @@ public class MercadoPagoController {
         // Aquí se procesaría la notificación IPN/Webhook para confirmar el pago
         return ResponseEntity.ok("Received");
     }
+
+    /**
+     * Endpoint de prueba para simular éxito de pago.
+     */
+    @PostMapping("/test/simulate-success/{userId}")
+    public ResponseEntity<Map<String, String>> simulateSuccess(@PathVariable("userId") Integer userId) {
+        try {
+            mpService.confirmSubscription(userId);
+            return ResponseEntity.ok(Map.of("message", "Suscripción activada con éxito (Simulación)"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }
