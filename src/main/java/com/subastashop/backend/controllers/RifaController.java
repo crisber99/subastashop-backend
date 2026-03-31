@@ -108,15 +108,10 @@ public class RifaController {
             return ResponseEntity.badRequest().body("⛔ Ninguno de los números seleccionados está disponible: " + yaVendidos);
         }
 
-        // Buscar todos los tickets del usuario en esta rifa para el comprobante agrupado actualizado
-        List<TicketRifa> todosMisTickets = ticketRepository.findByRifaIdAndCompradorId(productoId, usuario.getId());
-        List<Integer> totalNumeros = todosMisTickets.stream()
-                .map(TicketRifa::getNumeroTicket)
-                .sorted()
-                .collect(Collectors.toList());
 
-        // Enviar comprobante agrupado por email (SOLO 1 EMAIL FINAL)
-        enviarComprobanteEmail(usuario, rifa, totalNumeros);
+
+        // Enviar comprobante agrupado por email (SOLO LOS RECIÉN COMPRADOS EN ESTA TRANSACCIÓN)
+        enviarComprobanteEmail(usuario, rifa, compradosOk);
 
         Map<String, Object> respuesta = new HashMap<>();
         respuesta.put("mensaje", "Compra procesada exitosamente");
