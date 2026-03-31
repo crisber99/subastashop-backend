@@ -6,6 +6,7 @@ import com.subastashop.backend.repositories.AppUserRepository;
 import com.subastashop.backend.repositories.TiendaRepository;
 import com.subastashop.backend.services.AzureBlobService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -54,6 +55,7 @@ public class TiendaController {
     // 2. ACTUALIZAR CONFIGURACIÓN (RUT, Banco, Fotos, Colores)
     // ========================================================================
     @PutMapping(value = "/mi-tienda/configuracion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @CacheEvict(value = "tiendasActivas", allEntries = true)
     public ResponseEntity<?> actualizarConfiguracionTienda(
             @RequestParam(value = "nombreTienda", required = false) String nombreTienda,
             @RequestParam(value = "rutEmpresa", required = false) String rutEmpresa,
