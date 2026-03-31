@@ -14,6 +14,12 @@ public class EmailService {
     @Autowired(required = false)
     private JavaMailSender mailSender;
 
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.host:unknown}")
+    private String mailHost;
+
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.username:unknown}")
+    private String mailUsername;
+
     @org.springframework.scheduling.annotation.Async
     public void enviarCorreo(String destinatario, String asunto, String mensaje) {
         if (mailSender == null) {
@@ -21,6 +27,9 @@ public class EmailService {
             log.info("Asunto: {} | Mensaje: {}", asunto, mensaje);
             return;
         }
+
+        log.info("Intento de envío de email a: {}. Configuración activa -> Host: {} | Usuario: {}", 
+                 destinatario, mailHost, mailUsername);
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
