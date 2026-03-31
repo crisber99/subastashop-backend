@@ -55,9 +55,11 @@ public class TiendaController {
     // ========================================================================
     @PutMapping(value = "/mi-tienda/configuracion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> actualizarConfiguracionTienda(
+            @RequestParam(value = "nombreTienda", required = false) String nombreTienda,
             @RequestParam(value = "rutEmpresa", required = false) String rutEmpresa,
             @RequestParam(value = "datosBancarios", required = false) String datosBancarios,
             @RequestParam(value = "colorPrimario", required = false) String colorPrimario,
+            @RequestParam(value = "fotoLogo", required = false) MultipartFile fotoLogo,
             @RequestParam(value = "fotoAnverso", required = false) MultipartFile fotoAnverso,
             @RequestParam(value = "fotoReverso", required = false) MultipartFile fotoReverso,
             @RequestParam(value = "aceptaTerminos", required = false) Boolean aceptaTerminos) {
@@ -73,6 +75,8 @@ public class TiendaController {
             }
 
             // B. Actualizar datos de texto (si vienen en la petición)
+            if (nombreTienda != null && !nombreTienda.isEmpty())
+                tienda.setNombre(nombreTienda);
             if (rutEmpresa != null && !rutEmpresa.isEmpty())
                 tienda.setRutEmpresa(rutEmpresa);
             if (datosBancarios != null && !datosBancarios.isEmpty())
@@ -80,7 +84,13 @@ public class TiendaController {
             if (colorPrimario != null && !colorPrimario.isEmpty())
                 tienda.setColorPrimario(colorPrimario);
 
-            // C. Subir Fotos a Azure (si el usuario seleccionó archivos)
+            // C. Subir Logo a Azure (si el usuario seleccionó un logo)
+            if (fotoLogo != null && !fotoLogo.isEmpty()) {
+                String urlLogo = azureBlobService.subirImagen(fotoLogo);
+                tienda.setLogoUrl(urlLogo);
+            }
+
+            // D. Subir Fotos a Azure (si el usuario seleccionó archivos - Mantenido por compatibilidad)
             if (fotoAnverso != null && !fotoAnverso.isEmpty()) {
                 String urlAnverso = azureBlobService.subirImagen(fotoAnverso);
                 tienda.setDocumentoAnversoUrl(urlAnverso);
