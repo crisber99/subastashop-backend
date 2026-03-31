@@ -54,6 +54,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/productos", "/api/productos/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/rifas", "/api/rifas/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categorias", "/api/categorias/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/categorias").hasAuthority("ROLE_SUPER_ADMIN")
 
                 // ================================================================
                 // 2. ZONA PROTEGIDA (Roles Específicos) 👮‍♂️

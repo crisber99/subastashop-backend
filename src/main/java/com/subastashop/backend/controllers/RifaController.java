@@ -92,8 +92,15 @@ public class RifaController {
         notificacion.put("productoId", productoId);
         messagingTemplate.convertAndSend("/topic/producto/" + productoId, notificacion);
 
-        // Enviar comprobante por email (asíncrono)
-        enviarComprobanteEmail(usuario, rifa, ticket);
+        // Buscar todos los tickets del usuario en esta rifa para el comprobante agrupado
+        List<TicketRifa> todosMisTickets = ticketRepository.findByRifaIdAndCompradorId(productoId, usuario.getId());
+        List<Integer> numerosTickets = todosMisTickets.stream()
+                .map(TicketRifa::getNumeroTicket)
+                .sorted()
+                .collect(java.util.stream.Collectors.toList());
+
+        // Enviar comprobante agrupado por email (solo 1 email con todos sus tickets)
+        enviarComprobanteEmail(usuario, rifa, numerosTickets);
 
         // Retornar datos del ticket para el comprobante en frontend
         Map<String, Object> respuesta = new HashMap<>();
@@ -103,7 +110,7 @@ public class RifaController {
         respuesta.put("precioTicket", rifa.getPrecioTicket());
         respuesta.put("comprador", usuario.getNombreCompleto());
         respuesta.put("fecha", ticket.getFechaCompra().toString());
-        respuesta.put("codigoVerificacion", "SS-" + rifa.getId() + "-" + numeroTicket + "-" + usuario.getId());
+        respuesta.put("codigoVerificacion", "SS-" + rifa.getId() + "-" + ticket.getNumeroTicket() + "-" + usuario.getId());
         return ResponseEntity.ok(respuesta);
     }
 
@@ -128,9 +135,22 @@ public class RifaController {
         return ResponseEntity.ok(result);
     }
 
-    private void enviarComprobanteEmail(AppUsers usuario, Producto rifa, TicketRifa ticket) {
-        String codigo = "SS-" + rifa.getId() + "-" + ticket.getNumeroTicket() + "-" + usuario.getId();
-        String asunto = "🎟️ Tu Comprobante de Ticket - SubastaShop";
+    private void enviarComprobanteEmail(AppUsers usuario, Producto rifa, List<Integer> numerosTickets) {
+        String codigo = "SS-" + rifa.getId() + "-" + usuario.getId();
+        int totalTickets = numerosTickets.size();
+        double total = totalTickets * (rifa.getPrecioTicket() != null ? rifa.getPrecioTicket().doubleValue() : 0);
+        String asunto = "🎟️ Tu Comprobante de Tickets - SubastaShop";
+
+        // Generar tickets HTML
+        StringBuilder ticketsHtml = new StringBuilder();
+        for (int num : numerosTickets) {
+            ticketsHtml.append(
+                "<div style='display:inline-block;background:linear-gradient(135deg,#6f42c1,#0d6efd);border-radius:12px;padding:15px 25px;margin:6px;text-align:center;'>" +
+                "<p style='color:rgba(255,255,255,0.7);margin:0 0 2px;font-size:10px;text-transform:uppercase;letter-spacing:2px;'>TICKET</p>" +
+                "<p style='color:#fff;margin:0;font-size:32px;font-weight:900;line-height:1;'>#" + num + "</p>" +
+                "</div>"
+            );
+        }
 
         String html = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'>" +
             "<meta name='viewport' content='width=device-width, initial-scale=1.0'></head>" +
@@ -140,46 +160,38 @@ public class RifaController {
             // Header
             "<tr><td style='background:linear-gradient(135deg,#6f42c1,#0d6efd);padding:30px;text-align:center;'>" +
             "<h1 style='color:#fff;margin:0;font-size:28px;font-weight:900;letter-spacing:2px;'>🎟️ SUBASTA<span style='color:#ffc107'>SHOP</span></h1>" +
-            "<p style='color:rgba(255,255,255,0.8);margin:5px 0 0;font-size:14px;text-transform:uppercase;letter-spacing:3px;'>Comprobante de Ticket Oficial</p>" +
+            "<p style='color:rgba(255,255,255,0.8);margin:5px 0 0;font-size:14px;text-transform:uppercase;letter-spacing:3px;'>Comprobante Oficial de Tickets</p>" +
             "</td></tr>" +
-            // Ticket body
+            // Body
             "<tr><td style='padding:40px 30px;'>" +
             "<p style='color:#a0a0c0;margin:0 0 5px;font-size:13px;text-transform:uppercase;letter-spacing:2px;'>Hola,</p>" +
             "<h2 style='color:#ffffff;margin:0 0 25px;font-size:22px;'>" + usuario.getNombreCompleto() + "</h2>" +
-            // Ticket card
-            "<div style='background:linear-gradient(135deg,#16213e,#0f3460);border-radius:16px;padding:25px;border:1px solid rgba(109,66,193,0.3);position:relative;margin-bottom:25px;'>" +
-            "<div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;'>" +
-            "<div>" +
+            // Rifa info
             "<p style='color:#a0a0c0;margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:2px;'>Rifa / Sorteo</p>" +
-            "<h3 style='color:#ffffff;margin:0;font-size:18px;font-weight:700;'>" + rifa.getNombre() + "</h3>" +
+            "<h3 style='color:#ffffff;margin:0 0 20px;font-size:18px;font-weight:700;'>" + rifa.getNombre() + "</h3>" +
+            // Tickets
+            "<p style='color:#a0a0c0;margin:0 0 10px;font-size:11px;text-transform:uppercase;letter-spacing:2px;'>Tus Tickets (" + totalTickets + ")</p>" +
+            "<div style='text-align:center;margin-bottom:25px;'>" + ticketsHtml + "</div>" +
+            // Total
+            "<div style='display:flex;justify-content:space-between;align-items:center;background:#16213e;border-radius:10px;padding:15px 20px;margin-bottom:20px;'>" +
+            "<div>" +
+            "<p style='color:#a0a0c0;margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:1px;'>Total a Pagar</p>" +
+            "<p style='color:#ffc107;margin:0;font-size:24px;font-weight:700;'>$" + String.format("%,.0f", total) + "</p>" +
             "</div>" +
-            "<div style='text-align:center;background:linear-gradient(135deg,#6f42c1,#0d6efd);border-radius:12px;padding:15px 25px;'>" +
-            "<p style='color:rgba(255,255,255,0.7);margin:0 0 2px;font-size:10px;text-transform:uppercase;letter-spacing:2px;'>Número</p>" +
-            "<p style='color:#ffffff;margin:0;font-size:42px;font-weight:900;line-height:1;'>#" + ticket.getNumeroTicket() + "</p>" +
-            "</div>" +
-            "</div>" +
-            "<hr style='border:none;border-top:1px dashed rgba(255,255,255,0.1);margin:20px 0;'>" +
-            "<table width='100%'><tr>" +
-            "<td width='50%'>" +
-            "<p style='color:#a0a0c0;margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:1px;'>💰 Precio</p>" +
-            "<p style='color:#ffc107;margin:0;font-size:18px;font-weight:700;'>$" + rifa.getPrecioTicket() + "</p>" +
-            "</td>" +
-            "<td width='50%'>" +
-            "<p style='color:#a0a0c0;margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:1px;'>📅 Fecha</p>" +
-            "<p style='color:#ffffff;margin:0;font-size:14px;'>" + ticket.getFechaCompra().toLocalDate() + "</p>" +
-            "</td>" +
-            "</tr></table>" +
-            "</div>" +
-            // Verification code
-            "<div style='background:#0a0a14;border-radius:10px;padding:15px 20px;border:1px solid rgba(255,193,7,0.2);text-align:center;margin-bottom:25px;'>" +
+            "<div style='text-align:right;'>" +
+            "<p style='color:#a0a0c0;margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:1px;'>Fecha</p>" +
+            "<p style='color:#fff;margin:0;font-size:13px;'>" + java.time.LocalDate.now() + "</p>" +
+            "</div></div>" +
+            // Codigo
+            "<div style='background:#0a0a14;border-radius:10px;padding:15px 20px;border:1px solid rgba(255,193,7,0.2);text-align:center;margin-bottom:20px;'>" +
             "<p style='color:#a0a0c0;margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:2px;'>Código de Verificación</p>" +
             "<p style='color:#ffc107;margin:0;font-size:16px;font-weight:700;font-family:monospace;letter-spacing:3px;'>" + codigo + "</p>" +
             "</div>" +
-            // Info
+            // Instrucciones
             "<div style='background:rgba(13,110,253,0.1);border-radius:10px;padding:15px;border-left:3px solid #0d6efd;'>" +
             "<p style='color:#a0a0c0;margin:0;font-size:13px;line-height:1.6;'>📌 <strong style='color:#fff;'>Instrucciones de Pago:</strong><br>" +
-            "Para confirmar tu participación, deberás presentar este comprobante y realizar el pago según las instrucciones del organizador de la tienda. " +
-            "Guarda este código de verificación — será solicitado ante cualquier consulta.</p>" +
+            "Para confirmar tu participación, deberás contactar al organizador de la tienda y realizar la transferencia según sus instrucciones. " +
+            "Presenta este código de verificación ante cualquier consulta.</p>" +
             "</div>" +
             "</td></tr>" +
             // Footer
