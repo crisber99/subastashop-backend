@@ -112,8 +112,21 @@ public class ProductoController {
     @GetMapping("/p/{slug}")
     public ResponseEntity<ProductoDTO> obtenerProductoPorSlug(@PathVariable String slug) {
         String currentTenant = TenantContext.getTenantId();
-        return productoRepository.findBySlugAndTenantId(slug, currentTenant)
-                .map(p -> ResponseEntity.ok(productoService.toDTO(p)))
+        
+        // 1. Intentar buscar por Slug
+        java.util.Optional<Producto> op = productoRepository.findBySlugAndTenantId(slug, currentTenant);
+        
+        // 2. Si no se encuentra, y el 'slug' parece ser un ID (numérico), intentar buscar por ID
+        if (op.isEmpty()) {
+            try {
+                Integer id = Integer.parseInt(slug);
+                op = productoRepository.findByIdAndTenantId(id, currentTenant);
+            } catch (NumberFormatException e) {
+                // No es un número, ignorar el fallback por ID
+            }
+        }
+
+        return op.map(p -> ResponseEntity.ok(productoService.toDTO(p)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
