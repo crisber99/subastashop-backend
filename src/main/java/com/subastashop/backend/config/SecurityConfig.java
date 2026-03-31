@@ -92,14 +92,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Ajuste para evitar error 500 "When allowCredentials is true, use allowedOriginPatterns"
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:4200",
+                "https://www.subastashop.cl",
+                "https://subastashop.cl",
                 "https://storagesubastasapp.z20.web.core.windows.net",
                 "https://storagesubastasapp.z20.web.core.windows.net/"
         ));
-        configuration.setAllowedMethods(Arrays.asList("*")); // Permitimos TODOS los métodos por simplicidad
-        configuration.setAllowedHeaders(Arrays.asList("*")); // Permitimos TODOS los headers
+        configuration.setAllowedMethods(Arrays.asList("*"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "x-tenant-id"));
         configuration.setAllowCredentials(true);
 
