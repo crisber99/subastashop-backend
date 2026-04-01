@@ -50,7 +50,7 @@ public class MercadoPagoService {
                 .title("Suscripción Pro SubastaShop")
                 .description("Acceso Premium mensual a SubastaShop")
                 .quantity(1)
-                .unitPrice(new BigDecimal("4990")) 
+                .unitPrice(new BigDecimal("10")) 
                 .currencyId("CLP")
                 .build();
         items.add(item);
