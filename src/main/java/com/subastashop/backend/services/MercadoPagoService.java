@@ -143,20 +143,22 @@ public class MercadoPagoService {
 
         // Construir el body manualmente
         Map<String, Object> body = new HashMap<>();
-        body.put("reason", "Suscripción PRO SubastaShop (Renovación Automática)");
+        body.put("reason", "Suscripción Mensual PRO SubastaShop");
         body.put("external_reference", user.getId().toString());
-        body.put("payer_email", user.getEmail()); // REQUERIDO por la API de Pre-approvals
-        body.put("back_url", frontendUrl + "/admin/configuracion?status=success");
+        body.put("payer_email", user.getEmail());
+        body.put("back_url", (frontendUrl != null ? frontendUrl : "https://www.subastashop.cl") + "/admin/configuracion?status=success");
         body.put("status", "authorized");
 
         Map<String, Object> autoRecurring = new HashMap<>();
         autoRecurring.put("frequency", 1);
         autoRecurring.put("frequency_type", "months");
-        autoRecurring.put("transaction_amount", amount);
+        autoRecurring.put("transaction_amount", amount.intValue()); // Chile CLP requiere enteros usualmente
         autoRecurring.put("currency_id", "CLP");
+        
         body.put("auto_recurring", autoRecurring);
 
         String jsonBody = objectMapper.writeValueAsString(body);
+        log.info("Enviando JSON a Mercado Pago: {}", jsonBody);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.mercadopago.com/preapproval"))
