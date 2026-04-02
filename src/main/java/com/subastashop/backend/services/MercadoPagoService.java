@@ -145,7 +145,7 @@ public class MercadoPagoService {
         Map<String, Object> body = new HashMap<>();
         body.put("reason", "Suscripción PRO SubastaShop (Renovación Automática)");
         body.put("external_reference", user.getId().toString());
-        body.put("payer_email", user.getEmail());
+        // Quitemos payer_email para que MP lo gestione o use el logueado, evita errores de Sandbox
         body.put("back_url", frontendUrl + "/admin/configuracion?status=success");
         body.put("status", "authorized");
 
