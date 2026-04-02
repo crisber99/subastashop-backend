@@ -131,6 +131,49 @@ public class MercadoPagoService {
     }
 
     /**
+     * Cancela una suscripción activa en Mercado Pago.
+     */
+    public boolean cancelSubscription(String userEmail) throws Exception {
+        AppUsers user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        String subId = user.getSubscriptionId();
+        if (subId == null || subId.isEmpty()) {
+            log.warn("El usuario {} no tiene un ID de suscripción registrado localmente.", userEmail);
+            user.setPagoAutomatico(false);
+            userRepository.save(user);
+            return true;
+        }
+
+        log.info("Cancelando suscripción {} para el usuario {}", subId, userEmail);
+
+        Map<String, String> body = new HashMap<>();
+        body.put("status", "cancelled");
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.mercadopago.com/preapproval/" + subId))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + accessToken)
+                .PUT(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() >= 300) {
+            log.error("Error al cancelar suscripción en MP: {}", response.body());
+            throw new RuntimeException("Mercado Pago no pudo cancelar la suscripción: " + response.body());
+        }
+
+        // Actualización local
+        user.setSubscriptionId(null);
+        user.setPagoAutomatico(false);
+        userRepository.save(user);
+
+        log.info("✅ Suscripción {} cancelada exitosamente para {}", subId, userEmail);
+        return true;
+    }
+
+    /**
      * Crea una suscripción (Preapproval) usando un token de tarjeta directamente.
      * Esto evita el flujo de login de Mercado Pago.
      */

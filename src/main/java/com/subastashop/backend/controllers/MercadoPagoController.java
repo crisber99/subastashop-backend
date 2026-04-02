@@ -3,6 +3,7 @@ package com.subastashop.backend.controllers;
 import com.mercadopago.exceptions.MPApiException;
 import com.subastashop.backend.services.MercadoPagoService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -102,6 +103,22 @@ public class MercadoPagoController {
         }
         
         return ResponseEntity.ok("Received");
+    }
+
+    /**
+     * Cancela la suscripción del usuario autenticado.
+     */
+    @PostMapping("/cancel-subscription")
+    public ResponseEntity<?> cancelSubscription(Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            boolean success = mpService.cancelSubscription(email);
+            return ResponseEntity.ok(Map.of("success", success, "message", "Suscripción cancelada correctamente"));
+        } catch (Exception e) {
+            log.error("Error al cancelar suscripción: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
     }
 
     /**
