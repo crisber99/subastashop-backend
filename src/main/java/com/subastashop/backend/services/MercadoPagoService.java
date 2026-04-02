@@ -27,6 +27,9 @@ public class MercadoPagoService {
     @Value("${app.frontend.url:http://localhost:4200}")
     private String frontendUrl;
 
+    @Value("${mercadopago.notification.url:http://localhost:8080/api/mercadopago/webhook}")
+    private String notificationUrl;
+
     private final AppUserRepository userRepository;
 
     public MercadoPagoService(AppUserRepository userRepository) {
@@ -64,6 +67,7 @@ public class MercadoPagoService {
         PreferenceRequest request = PreferenceRequest.builder()
                 .items(items)
                 .backUrls(backUrls)
+                .notificationUrl(notificationUrl)
                 .externalReference(user.getId().toString())
                 .build();
 
