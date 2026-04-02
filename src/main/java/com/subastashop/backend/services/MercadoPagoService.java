@@ -5,8 +5,11 @@ import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
 import com.mercadopago.client.preference.PreferenceClient;
 import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.client.preference.PreferenceRequest;
+import com.mercadopago.client.payment.PaymentClient;
+import com.mercadopago.resources.payment.Payment;
 import com.mercadopago.resources.preference.Preference;
 import com.subastashop.backend.models.AppUsers;
+import com.subastashop.backend.models.Role;
 import com.subastashop.backend.repositories.AppUserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -78,9 +81,23 @@ public class MercadoPagoService {
     }
 
     public void processPaymentNotification(String paymentId) {
-        // Lógica para consultar el pago en MP y activar la suscripción
-        log.info("Procesando notificación de pago MP: {}", paymentId);
-        // Aquí iría la llamada a PaymentClient.get(paymentId) para obtener el status y external_reference
+        log.info("🔔 Notificación de Mercado Pago recibida: ID de Pago {}", paymentId);
+        try {
+            PaymentClient client = new PaymentClient();
+            Payment payment = client.get(Long.parseLong(paymentId));
+            
+            if ("approved".equalsIgnoreCase(payment.getStatus())) {
+                String userIdStr = payment.getExternalReference();
+                if (userIdStr != null) {
+                    Integer userId = Integer.parseInt(userIdStr);
+                    confirmSubscription(userId);
+                }
+            } else {
+                log.info("⚠️ El pago {} no está aprobado (Status: {})", paymentId, payment.getStatus());
+            }
+        } catch (Exception e) {
+            log.error("❌ Error procesando notificación de Mercado Pago", e);
+        }
     }
 
     /**
@@ -91,7 +108,8 @@ public class MercadoPagoService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado (ID: " + userId + ")"));
         
         user.setSuscripcionActiva(true);
+        user.setRol(Role.ROLE_ADMIN); // 🛠️ OTORGAMOS PERMISOS DE ADMINISTRADOR (PRO)
         userRepository.save(user);
-        log.info("✅ Suscripción activada manualmente para el usuario: {}", user.getEmail());
+        log.info("✅ Suscripción y rol ADMIN activados para el usuario: {}", user.getEmail());
     }
 }

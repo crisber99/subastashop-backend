@@ -37,7 +37,22 @@ public class MercadoPagoController {
     @PostMapping("/webhook")
     public ResponseEntity<String> handleWebhook(@RequestBody Map<String, Object> payload) {
         log.info("Webhook recibido de Mercado Pago: {}", payload);
-        // Aquí se procesaría la notificación IPN/Webhook para confirmar el pago
+        
+        try {
+            // El formato de notificación de MP puede variar entre Webhook e IPN
+            // Generalmente, para pagos es: { "data": { "id": "12345" } }
+            if (payload.get("data") instanceof Map<?, ?>) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> data = (Map<String, Object>) payload.get("data");
+                if (data.containsKey("id")) {
+                    String paymentId = String.valueOf(data.get("id"));
+                    mpService.processPaymentNotification(paymentId);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error al procesar el webhook: {}", e.getMessage());
+        }
+        
         return ResponseEntity.ok("Received");
     }
 
