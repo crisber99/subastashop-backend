@@ -305,7 +305,7 @@ public class MercadoPagoService {
      */
     private String getOrCreatePlanId(String reason, BigDecimal amount) throws Exception {
         // Primero intentamos buscar si ya existe un plan con esa razón
-        String searchUri = "https://api.mercadopago.com/v1/preapproval_plan/search?reason=" + reason.replace(" ", "%20");
+        String searchUri = "https://api.mercadopago.com/preapproval_plan/search?reason=" + reason.replace(" ", "%20");
         
         HttpRequest searchReq = HttpRequest.newBuilder()
                 .uri(URI.create(searchUri))
@@ -341,7 +341,7 @@ public class MercadoPagoService {
         log.info("Creando nuevo Plan de Suscripción: {}", jsonPlan);
 
         HttpRequest createReq = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.mercadopago.com/v1/preapproval_plan"))
+                .uri(URI.create("https://api.mercadopago.com/preapproval_plan"))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + accessToken.trim())
                 .POST(HttpRequest.BodyPublishers.ofString(jsonPlan))
