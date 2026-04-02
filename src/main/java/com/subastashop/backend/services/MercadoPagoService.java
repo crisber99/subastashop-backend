@@ -53,7 +53,7 @@ public class MercadoPagoService {
                 .title("Suscripción Pro SubastaShop")
                 .description("Acceso Premium mensual a SubastaShop")
                 .quantity(1)
-                .unitPrice(new BigDecimal("10")) 
+                .unitPrice(new BigDecimal("4990")) 
                 .currencyId("CLP")
                 .build();
         items.add(item);
@@ -67,6 +67,8 @@ public class MercadoPagoService {
         PreferenceRequest request = PreferenceRequest.builder()
                 .items(items)
                 .backUrls(backUrls)
+                .autoReturn("approved")
+                .statementDescriptor("SUBASTASHOP")
                 .notificationUrl(notificationUrl)
                 .externalReference(user.getId().toString())
                 .build();
