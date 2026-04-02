@@ -11,7 +11,6 @@ import com.mercadopago.resources.preference.Preference;
 import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.Role;
 import com.subastashop.backend.repositories.AppUserRepository;
-import com.subastashop.backend.services.EmailService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -54,14 +53,40 @@ public class MercadoPagoService {
 
         PreferenceClient client = new PreferenceClient();
 
-        // Calculamos precio base $4.990 por mes
-        BigDecimal unitPrice = new BigDecimal("4990").multiply(new BigDecimal(months));
+        // --- LÓGICA DE PRECIOS DINÁMICOS ---
+        BigDecimal unitPrice;
+        String title;
+
+        if (months == 1) {
+            // Promoción: $4.990 para los primeros 100 usuarios PRO
+            long totalProUsers = userRepository.countByRol(Role.ROLE_ADMIN);
+            if (totalProUsers < 100) {
+                unitPrice = new BigDecimal("4990");
+                title = "Oferta Lanzamiento: 1 Mes Pro";
+            } else {
+                unitPrice = new BigDecimal("9990");
+                title = "SuscripciónMensual Pro";
+            }
+        } else if (months == 3) {
+            unitPrice = new BigDecimal("26970"); // 10% dcto aprox
+            title = "Plan Trimestral Pro (3 Meses)";
+        } else if (months == 6) {
+            unitPrice = new BigDecimal("50940"); // 15% dcto aprox
+            title = "Plan Semestral Pro (6 Meses)";
+        } else if (months == 12) {
+            unitPrice = new BigDecimal("99900"); // 2 meses gratis
+            title = "Plan Anual Pro (12 Meses)";
+        } else {
+            // Default x mes estándar
+            unitPrice = new BigDecimal("9990").multiply(new BigDecimal(months));
+            title = "Suscripción Pro - " + months + " meses";
+        }
 
         List<PreferenceItemRequest> items = new ArrayList<>();
         PreferenceItemRequest item = PreferenceItemRequest.builder()
                 .id("subs-premium-" + months)
-                .title("Suscripción Pro SubastaShop - " + months + (months == 1 ? " mes" : " meses"))
-                .description("Acceso Premium por " + months + (months == 1 ? " mes" : " meses") + " a SubastaShop")
+                .title(title)
+                .description("Acceso Premium a SubastaShop por " + months + (months == 1 ? " mes" : " meses"))
                 .quantity(1)
                 .unitPrice(unitPrice) 
                 .currencyId("CLP")
