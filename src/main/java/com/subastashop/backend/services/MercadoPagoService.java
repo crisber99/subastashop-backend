@@ -36,6 +36,9 @@ public class MercadoPagoService {
     @Value("${mercadopago.access.token}")
     private String accessToken;
 
+    @Value("${mercadopago.public.key:}")
+    private String publicKey;
+
     @Value("${app.frontend.url:http://localhost:4200}")
     private String frontendUrl;
 
@@ -125,6 +128,62 @@ public class MercadoPagoService {
 
         Preference preference = client.create(request);
         return preference.getInitPoint(); 
+    }
+
+    /**
+     * Crea una suscripción (Preapproval) usando un token de tarjeta directamente.
+     * Esto evita el flujo de login de Mercado Pago.
+     */
+    public Map<String, Object> subscribeWithCardToken(String userEmail, String cardTokenId) throws Exception {
+        AppUsers user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // 1. Asegurar Plan V6
+        String planName = "SubastaShop PRO V6";
+        BigDecimal amount = new BigDecimal("9990");
+        long totalProUsers = userRepository.countByRol(Role.ROLE_ADMIN);
+        if (totalProUsers < 100) {
+            planName = "SubastaShop PRO Promo V6";
+            amount = new BigDecimal("4990");
+        }
+        String planId = getOrCreatePlanId(planName, amount);
+
+        // 2. Crear Preapproval con el Token
+        Map<String, Object> subBody = new HashMap<>();
+        subBody.put("preapproval_plan_id", planId);
+        subBody.put("payer_email", userEmail);
+        subBody.put("card_token_id", cardTokenId); // CLAVE: Aquí enviamos el token de la tarjeta
+        subBody.put("back_url", "https://www.subastashop.cl/admin/configuracion");
+        subBody.put("reason", planName);
+        subBody.put("status", "authorized"); // Lo enviamos como autorizado si ya hay token
+        subBody.put("external_reference", user.getId().toString());
+
+        String jsonSub = objectMapper.writeValueAsString(subBody);
+        log.info("Creando suscripción directa con token para {}: {}", userEmail, jsonSub);
+
+        HttpRequest subReq = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.mercadopago.com/preapproval"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + accessToken.trim())
+                .POST(HttpRequest.BodyPublishers.ofString(jsonSub))
+                .build();
+
+        HttpResponse<String> subRes = httpClient.send(subReq, HttpResponse.BodyHandlers.ofString());
+        Map<String, Object> response = objectMapper.readValue(subRes.body(), Map.class);
+
+        if (subRes.statusCode() >= 300) {
+            log.error("Error en suscripción con token: {}", subRes.body());
+            return response;
+        }
+
+        // Si se autoriza con éxito, activamos al usuario inmediatamente
+        if ("authorized".equalsIgnoreCase(String.valueOf(response.get("status")))) {
+            confirmSubscription(user.getId(), 1, true);
+            user.setSubscriptionId(String.valueOf(response.get("id")));
+            userRepository.save(user);
+        }
+
+        return response;
     }
 
     /**

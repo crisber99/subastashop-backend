@@ -53,6 +53,26 @@ public class MercadoPagoController {
         }
     }
 
+    /**
+     * Procesa la suscripción directamente usando un token de tarjeta (Card Token).
+     * Evita redirecciones externas complejas.
+     */
+    @PostMapping("/subscribe-with-token")
+    public ResponseEntity<Map<String, Object>> subscribeWithToken(Authentication authentication, @RequestBody Map<String, String> body) {
+        try {
+            String cardTokenId = body.get("token");
+            if (cardTokenId == null || cardTokenId.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Token de tarjeta es obligatorio"));
+            }
+            
+            Map<String, Object> result = mpService.subscribeWithCardToken(authentication.getName(), cardTokenId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error en suscripción con token", e);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/webhook")
     public ResponseEntity<String> handleWebhook(@RequestBody Map<String, Object> payload) {
         log.info("Webhook recibido de Mercado Pago: {}", payload);
