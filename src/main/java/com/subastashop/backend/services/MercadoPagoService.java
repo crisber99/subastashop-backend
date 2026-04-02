@@ -141,29 +141,29 @@ public class MercadoPagoService {
             amount = new BigDecimal("4990");
         }
 
-        // Construir el body manualmente
+        // Construir el body siguiendo estrictamente el estándar de Mercado Pago para suscripciones
         Map<String, Object> body = new HashMap<>();
-        body.put("reason", "Suscripción Mensual PRO SubastaShop");
+        body.put("reason", "SubastaShop PRO");
         body.put("external_reference", user.getId().toString());
         body.put("payer_email", user.getEmail());
-        body.put("back_url", (frontendUrl != null ? frontendUrl : "https://www.subastashop.cl") + "/admin/configuracion?status=success");
+        body.put("back_url", "https://www.subastashop.cl/admin/configuracion");
         body.put("status", "authorized");
 
         Map<String, Object> autoRecurring = new HashMap<>();
         autoRecurring.put("frequency", 1);
         autoRecurring.put("frequency_type", "months");
-        autoRecurring.put("transaction_amount", amount.intValue()); // Chile CLP requiere enteros usualmente
+        autoRecurring.put("transaction_amount", amount.intValue());
         autoRecurring.put("currency_id", "CLP");
         
         body.put("auto_recurring", autoRecurring);
 
         String jsonBody = objectMapper.writeValueAsString(body);
-        log.info("Enviando JSON a Mercado Pago: {}", jsonBody);
+        log.info("JSON final enviado a MP: {}", jsonBody);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.mercadopago.com/preapproval"))
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", "Bearer " + accessToken.trim())
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 
