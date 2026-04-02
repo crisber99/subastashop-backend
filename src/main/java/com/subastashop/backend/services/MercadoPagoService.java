@@ -169,7 +169,8 @@ public class MercadoPagoService {
 
         if (response.statusCode() >= 300) {
             log.error("Error creando suscripción en MP: {} - {}", response.statusCode(), response.body());
-            throw new RuntimeException("No se pudo iniciar la suscripción automática");
+            // Devolvemos el error real de MP para diagnosticar (ej: "payer and seller cannot be the same")
+            throw new RuntimeException("Error MP: " + response.body());
         }
 
         Map<String, Object> responseMap = objectMapper.readValue(response.body(), Map.class);
