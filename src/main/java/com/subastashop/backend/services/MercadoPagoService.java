@@ -277,36 +277,10 @@ public class MercadoPagoService {
     }
 
     /**
-     * Busca un plan por nombre o lo crea, devolviendo su init_point.
-     * Espejo exacto del CURL funcional proporcionado por el usuario.
+     * Crea el plan siguiendo la estructura EXACTA que te funcionó en el CURL.
+     * Versión V6 para asegurar un inicio limpio.
      */
     private String getOrCreatePlanInitPoint(String reason, BigDecimal amount) throws Exception {
-        // Primero intentamos buscar si ya existe un plan con esa razón
-        String searchUri = "https://api.mercadopago.com/preapproval_plan/search?reason=" + reason.replace(" ", "%20");
-        
-        HttpRequest searchReq = HttpRequest.newBuilder()
-                .uri(URI.create(searchUri))
-                .header("Authorization", "Bearer " + accessToken.trim())
-                .GET()
-                .build();
-
-        HttpResponse<String> searchRes = httpClient.send(searchReq, HttpResponse.BodyHandlers.ofString());
-        
-        if (searchRes.statusCode() == 200) {
-            Map<String, Object> results = objectMapper.readValue(searchRes.body(), Map.class);
-            List<Map<String, Object>> resultsList = (List<Map<String, Object>>) results.get("results");
-            
-            if (resultsList != null && !resultsList.isEmpty()) {
-                Map<String, Object> existingPlan = resultsList.get(0);
-                String initPoint = (String) existingPlan.get("init_point");
-                if (initPoint != null) {
-                    log.info("Plan existente {} encontrado. InitPoint: {}", reason, initPoint);
-                    return initPoint;
-                }
-            }
-        }
-
-        // Si no existe, lo creamos siguiendo EXACTAMENTE el esquema del curl del usuario
         Map<String, Object> planBody = new HashMap<>();
         planBody.put("reason", reason);
         planBody.put("back_url", "https://www.subastashop.cl/admin/configuracion");
@@ -315,27 +289,30 @@ public class MercadoPagoService {
         autoRecurring.put("frequency", 1);
         autoRecurring.put("frequency_type", "months");
         autoRecurring.put("repetitions", 12);
-        autoRecurring.put("billing_day", 1); // Cobrar el día 1 (o el día que se suscribe)
-        autoRecurring.put("billing_day_proportional", false); // Evita prorrateos complejos que dan 412
+        autoRecurring.put("billing_day", 1);
+        autoRecurring.put("billing_day_proportional", false);
         autoRecurring.put("transaction_amount", amount.intValue());
         autoRecurring.put("currency_id", "CLP");
-        
-        // Opcional: Trial de 1 día (a veces ayuda a validar el checkout sin cobrar impacto inmediato)
-        // Pero en tu curl ponías 1 mes, lo omitiré para cobrar de una vez si es necesario.
-        
         planBody.put("auto_recurring", autoRecurring);
 
-        // Métodos permitidos como en tu curl
+        // Mirror exacto de los métodos de pago de tu curl funcional
         Map<String, Object> paymentMethods = new HashMap<>();
         List<Map<String, String>> typeList = new ArrayList<>();
-        Map<String, String> cardType = new HashMap<>();
-        cardType.put("id", "visa"); // Solo Visa como en el ejemplo para probar
-        typeList.add(cardType);
+        Map<String, String> visaType = new HashMap<>();
+        visaType.put("id", "visa");
+        typeList.add(visaType);
         paymentMethods.put("payment_types", typeList);
-        // planBody.put("payment_methods_allowed", paymentMethods); // Lo comentamos para no restringir demasiado
+        
+        List<Map<String, String>> methodList = new ArrayList<>();
+        Map<String, String> visaMethod = new HashMap<>();
+        visaMethod.put("id", "visa");
+        methodList.add(visaMethod);
+        paymentMethods.put("payment_methods", methodList);
+        
+        planBody.put("payment_methods_allowed", paymentMethods);
 
         String jsonPlan = objectMapper.writeValueAsString(planBody);
-        log.info("Creando nuevo Plan Robusto V5 (Mirror CURL): {}", jsonPlan);
+        log.info("Creando Plan V6 (IDÉNTICO AL CURL): {}", jsonPlan);
 
         HttpRequest createReq = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.mercadopago.com/preapproval_plan"))
@@ -347,8 +324,8 @@ public class MercadoPagoService {
         HttpResponse<String> createRes = httpClient.send(createReq, HttpResponse.BodyHandlers.ofString());
 
         if (createRes.statusCode() >= 300) {
-            log.error("Error creando Plan V5 en MP: {} - {}", createRes.statusCode(), createRes.body());
-            throw new RuntimeException("Error MP al crear Plan: " + createRes.body());
+            log.error("Error creando Plan V6 en MP: {} - {}", createRes.statusCode(), createRes.body());
+            throw new RuntimeException("Error MP al crear Plan V6: " + createRes.body());
         }
 
         Map<String, Object> createdPlan = objectMapper.readValue(createRes.body(), Map.class);
