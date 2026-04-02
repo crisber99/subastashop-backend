@@ -149,9 +149,14 @@ public class MercadoPagoService {
         // 3. Crear la suscripción vinculada al Plan
         Map<String, Object> body = new HashMap<>();
         body.put("preapproval_plan_id", planId);
-        body.put("payer_email", user.getEmail());
+        Map<String, Object> payer = new HashMap<>();
+        payer.put("email", user.getEmail());
+        body.put("payer", payer);
+        
         body.put("external_reference", user.getId().toString());
         body.put("back_url", "https://www.subastashop.cl/admin/configuracion");
+        body.put("status", "pending"); 
+
         String jsonBody = objectMapper.writeValueAsString(body);
         log.info("Creando suscripción final (v2) vinculada al plan {}: {}", planId, jsonBody);
 
