@@ -152,13 +152,11 @@ public class MercadoPagoService {
         body.put("payer_email", user.getEmail());
         body.put("external_reference", user.getId().toString());
         body.put("back_url", "https://www.subastashop.cl/admin/configuracion");
-        body.put("status", "pending"); // 'pending' es la clave para que nos devuelva el init_point
-
         String jsonBody = objectMapper.writeValueAsString(body);
-        log.info("Creando suscripción (v1) vinculada al plan {}: {}", planId, jsonBody);
+        log.info("Creando suscripción final (v2) vinculada al plan {}: {}", planId, jsonBody);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.mercadopago.com/v1/preapproval"))
+                .uri(URI.create("https://api.mercadopago.com/preapproval"))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + accessToken.trim())
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
