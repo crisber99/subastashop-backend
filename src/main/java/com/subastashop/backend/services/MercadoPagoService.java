@@ -11,6 +11,14 @@ import com.mercadopago.resources.preference.Preference;
 import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.Role;
 import com.subastashop.backend.repositories.AppUserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Map;
+import java.util.HashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -36,6 +44,8 @@ public class MercadoPagoService {
 
     private final AppUserRepository userRepository;
     private final EmailService emailService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpClient httpClient = HttpClient.newHttpClient();
 
     public MercadoPagoService(AppUserRepository userRepository, EmailService emailService) {
         this.userRepository = userRepository;
@@ -114,37 +124,129 @@ public class MercadoPagoService {
                 .build();
 
         Preference preference = client.create(request);
-        return preference.getInitPoint(); // Devolvemos el link universal (detecta sandbox/prod automáticamente)
+        return preference.getInitPoint(); 
+    }
+
+    /**
+     * Crea una suscripción recurrente mensual (Pre-approval) vía REST.
+     */
+    public String createRecurringSubscription(String userEmail) throws Exception {
+        AppUsers user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Determinar precio según la promoción de los 100 usuarios
+        BigDecimal amount = new BigDecimal("9990");
+        long totalProUsers = userRepository.countByRol(Role.ROLE_ADMIN);
+        if (totalProUsers < 100) {
+            amount = new BigDecimal("4990");
+        }
+
+        // Construir el body manualmente
+        Map<String, Object> body = new HashMap<>();
+        body.put("reason", "Suscripción PRO SubastaShop (Renovación Automática)");
+        body.put("external_reference", user.getId().toString());
+        body.put("payer_email", user.getEmail());
+        body.put("back_url", frontendUrl + "/admin/configuracion?status=success");
+        body.put("status", "authorized");
+
+        Map<String, Object> autoRecurring = new HashMap<>();
+        autoRecurring.put("frequency", 1);
+        autoRecurring.put("frequency_type", "months");
+        autoRecurring.put("transaction_amount", amount);
+        autoRecurring.put("currency_id", "CLP");
+        body.put("auto_recurring", autoRecurring);
+
+        String jsonBody = objectMapper.writeValueAsString(body);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.mercadopago.com/preapproval"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + accessToken)
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() >= 300) {
+            log.error("Error creando suscripción en MP: {} - {}", response.statusCode(), response.body());
+            throw new RuntimeException("No se pudo iniciar la suscripción automática");
+        }
+
+        Map<String, Object> responseMap = objectMapper.readValue(response.body(), Map.class);
+        
+        // Marcamos que el usuario tiene intención de pago automático
+        user.setPagoAutomatico(true);
+        userRepository.save(user);
+
+        return String.valueOf(responseMap.get("init_point"));
     }
 
     public void processPaymentNotification(String paymentId) {
-        log.info("🔔 Notificación de Mercado Pago recibida: ID de Pago {}", paymentId);
+        log.info("🔔 Notificación de Mercado Pago (Pago) recibida: ID {}", paymentId);
         try {
             PaymentClient client = new PaymentClient();
             Payment payment = client.get(Long.parseLong(paymentId));
             
             if ("approved".equalsIgnoreCase(payment.getStatus())) {
                 String externalRef = payment.getExternalReference();
+                
+                // Si el pago viene de una suscripción recurrente, el externalRef suele ser solo el ID del usuario
+                // Si viene de una preferencia manual, es "userId:months"
                 if (externalRef != null) {
-                    // El formato es "userId:months"
-                    String[] parts = externalRef.split(":");
-                    Integer userId = Integer.parseInt(parts[0]);
-                    Integer months = parts.length > 1 ? Integer.parseInt(parts[1]) : 1;
-                    
-                    confirmSubscription(userId, months);
+                    if (externalRef.contains(":")) {
+                        // Flujo MANUAL
+                        String[] parts = externalRef.split(":");
+                        Integer userId = Integer.parseInt(parts[0]);
+                        Integer months = parts.length > 1 ? Integer.parseInt(parts[1]) : 1;
+                        confirmSubscription(userId, months, false);
+                    } else {
+                        // Flujo AUTOMÁTICO (Cobro Recurrente)
+                        Integer userId = Integer.parseInt(externalRef);
+                        confirmSubscription(userId, 1, true);
+                    }
                 }
-            } else {
-                log.info("⚠️ El pago {} no está aprobado (Status: {})", paymentId, payment.getStatus());
             }
         } catch (Exception e) {
-            log.error("❌ Error procesando notificación de Mercado Pago", e);
+            log.error("❌ Error procesando pago de Mercado Pago", e);
         }
     }
 
     /**
-     * SIMULACIÓN: Activa manualmente la suscripción de un usuario.
+     * Procesa notificaciones de tipo 'preapproval' (Suscripciones) vía REST.
      */
-    public void confirmSubscription(Integer userId, Integer months) {
+    public void processSubscriptionNotification(String preapprovalId) {
+        log.info("🔔 Notificación de Suscripción recibida: ID {}", preapprovalId);
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.mercadopago.com/preapproval/" + preapprovalId))
+                    .header("Authorization", "Bearer " + accessToken)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                Map<String, Object> preApproval = objectMapper.readValue(response.body(), Map.class);
+                
+                if ("authorized".equalsIgnoreCase(String.valueOf(preApproval.get("status")))) {
+                    Integer userId = Integer.parseInt(String.valueOf(preApproval.get("external_reference")));
+                    AppUsers user = userRepository.findById(userId).orElse(null);
+                    if (user != null) {
+                        user.setSubscriptionId(preapprovalId);
+                        user.setPagoAutomatico(true);
+                        userRepository.save(user);
+                        log.info("✅ suscripción {} vinculada al usuario {}", preapprovalId, user.getEmail());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("❌ Error procesando suscripción vía REST", e);
+        }
+    }
+
+    /**
+     * Activa o renueva la suscripción de un usuario.
+     */
+    public void confirmSubscription(Integer userId, Integer months, boolean esAutomatico) {
         AppUsers user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado (ID: " + userId + ")"));
         
@@ -156,38 +258,44 @@ public class MercadoPagoService {
         
         user.setFechaVencimientoSuscripcion(fechaBase.plusMonths(months));
         user.setSuscripcionActiva(true);
-        user.setRol(Role.ROLE_ADMIN); // 🛠️ OTORGAMOS PERMISOS DE ADMINISTRADOR (PRO)
+        user.setRol(Role.ROLE_ADMIN); 
+        user.setPagoAutomatico(esAutomatico); // Guardamos la preferencia actual del usuario
         userRepository.save(user);
 
-        log.info("✅ Suscripción y rol ADMIN activados por {} meses para el usuario: {}", months, user.getEmail());
+        log.info("✅ [{} PLAN] Suscripción activada por {} meses para: {}", 
+                 esAutomatico ? "AUTO" : "MANUAL", months, user.getEmail());
 
-        // --- ENVIAR EMAIL DE BIENVENIDA ---
-        enviarEmailBienvenidaPro(user, months);
+        // --- ENVIAR EMAIL DE BIENVENIDA O RENOVACIÓN ---
+        enviarEmailConfirmacion(user, months, esAutomatico);
     }
 
-    private void enviarEmailBienvenidaPro(AppUsers user, Integer months) {
-        String asunto = "🚀 ¡Bienvenido al Nivel PRO de SubastaShop!";
+    private void enviarEmailConfirmacion(AppUsers user, Integer months, boolean esAutomatico) {
+        String asunto = esAutomatico ? "✅ Pago Automático Exitoso - SubastaShop" : "🚀 ¡Bienvenido al Nivel PRO de SubastaShop!";
         String durationText = months + (months == 1 ? " mes" : " meses");
         
-        String html = "<div style='font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;'>" +
-                "<h1 style='color: #6366f1; text-align: center;'>¡Felicidades, " + user.getNombreCompleto() + "!</h1>" +
-                "<p style='font-size: 1.1em;'>Estamos muy felices de confirmarte que tu cuenta ha sido actualizada al nivel <b>PRO</b> exitosamente.</p>" +
+        String html = "<div style='font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; border-top: 5px solid #6366f1;'>" +
+                "<h1 style='color: #1e293b; text-align: center;'>" + (esAutomatico ? "Cobro Recurrente Confirmado" : "¡Suscripción Activada!") + "</h1>" +
+                "<p style='font-size: 1.1em; color: #475569;'>Hola <b>" + user.getNombreCompleto() + "</b>,</p>" +
+                "<p style='font-size: 1.1em; color: #475569;'>" + 
+                (esAutomatico ? "Tu suscripción mensual se ha renovado automáticamente con éxito." : "Gracias por confiar en SubastaShop. Tu cuenta ha sido actualizada al nivel PRO.") + 
+                "</p>" +
                 "<div style='background: #f8fafc; padding: 15px; border-radius: 5px; margin: 20px 0;'>" +
                 "<p style='margin: 5px 0;'>💎 <b>Nivel:</b> PRO Administrator</p>" +
-                "<p style='margin: 5px 0;'>⏳ <b>Duración añadida:</b> " + durationText + "</p>" +
-                "<p style='margin: 5px 0;'>📅 <b>Vencimiento:</b> " + user.getFechaVencimientoSuscripcion().toLocalDate() + "</p>" +
+                "<p style='margin: 5px 0;'>⏳ <b>Periodo Añadido:</b> " + durationText + "</p>" +
+                "<p style='margin: 5px 0;'>📅 <b>Nueva Fecha de Vencimiento:</b> " + user.getFechaVencimientoSuscripcion().toLocalDate() + "</p>" +
+                "<p style='margin: 5px 0;'>⚙️ <b>Tipo de Renovación:</b> " + (esAutomatico ? "Automática 🔄" : "Manual 👆") + "</p>" +
                 "</div>" +
-                "<h3>¿Qué sigue ahora?</h3>" +
+                (esAutomatico ? "" : 
+                "<h3>¿Qué puedes hacer ahora?</h3>" +
                 "<ul>" +
-                "<li><b>Crea tu tienda:</b> Ya tienes acceso al panel de configuración para subir tu logo y elegir tus colores.</li>" +
-                "<li><b>Publica sin límites:</b> Tus subastas y rifas ya pueden ser publicadas globalmente.</li>" +
-                "<li><b>Ventas directas:</b> Configura tus datos bancarios para recibir transferencias de tus ganadores.</li>" +
-                "</ul>" +
+                "<li>Configurar tu tienda y logo.</li>" +
+                "<li>Publicar subastas y ventas directas sin límites.</li>" +
+                "<li>Recibir pagos directos de tus clientes.</li>" +
+                "</ul>") +
                 "<p style='text-align: center; margin-top: 30px;'>" +
-                "<a href='" + frontendUrl + "/admin/configuracion' style='background: #6366f1; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;'>IR A MI PANEL DE TIENDA</a>" +
+                "<a href='" + frontendUrl + "/admin/configuracion' style='background: #6366f1; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;'>IR A MI DASHBOARD</a>" +
                 "</p>" +
-                "<br><p style='color: #64748b; font-size: 0.9em;'>Si tienes alguna duda, responde a este correo. ¡Mucho éxito con tus ventas!</p>" +
-                "<p style='font-size: 0.8em; color: #cbd5e1;'>Atentamente,<br>El equipo de SubastaShop</p>" +
+                "<br><p style='color: #94a3b8; font-size: 0.9em;'>Puedes cambiar tu método de pago o cancelar en cualquier momento desde tu panel.</p>" +
                 "</div>";
 
         emailService.enviarCorreo(user.getEmail(), asunto, html);

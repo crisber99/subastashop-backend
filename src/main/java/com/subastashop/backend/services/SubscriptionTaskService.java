@@ -56,7 +56,7 @@ public class SubscriptionTaskService {
 
         // Buscamos usuarios que vencen en esa fecha exacta
         List<AppUsers> usuarios = userRepository.findAll().stream()
-                .filter(u -> u.getRol() == Role.ROLE_ADMIN && u.isSuscripcionActiva())
+                .filter(u -> u.getRol() == Role.ROLE_ADMIN && u.isSuscripcionActiva() && !u.isPagoAutomatico())
                 .filter(u -> u.getFechaVencimientoSuscripcion() != null 
                         && u.getFechaVencimientoSuscripcion().isAfter(inicio) 
                         && u.getFechaVencimientoSuscripcion().isBefore(fin))
@@ -74,7 +74,7 @@ public class SubscriptionTaskService {
         LocalDateTime fin = fechaAyer.atTime(LocalTime.MAX);
 
         List<AppUsers> usuariosParaBaja = userRepository.findAll().stream()
-                .filter(u -> u.getRol() == Role.ROLE_ADMIN && u.isSuscripcionActiva())
+                .filter(u -> u.getRol() == Role.ROLE_ADMIN && u.isSuscripcionActiva() && !u.isPagoAutomatico())
                 .filter(u -> u.getFechaVencimientoSuscripcion() != null 
                         && u.getFechaVencimientoSuscripcion().isAfter(inicio) 
                         && u.getFechaVencimientoSuscripcion().isBefore(fin))

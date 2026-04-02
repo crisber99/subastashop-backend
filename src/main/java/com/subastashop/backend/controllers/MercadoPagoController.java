@@ -31,10 +31,24 @@ public class MercadoPagoController {
             String initPoint = mpService.createSubscriptionPreference(authentication.getName(), months);
             return ResponseEntity.ok(Map.of("id", initPoint)); 
         } catch (MPApiException e) {
-            log.error("Error de API de Mercado Pago: {}", e.getApiResponse().getContent());
-            return ResponseEntity.badRequest().body(Map.of("error", "Error en la pasarela de pago"));
+            log.error("API Error: {}", e.getApiResponse().getContent());
+            return ResponseEntity.badRequest().body(Map.of("error", "Error en la pasarela"));
         } catch (Exception e) {
-            log.error("Error creando preferencia de Mercado Pago", e);
+            log.error("Error preference", e);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Crea una suscripción automática (Pre-approval).
+     */
+    @PostMapping("/create-subscription")
+    public ResponseEntity<Map<String, String>> createSubscription(Authentication authentication) {
+        try {
+            String initPoint = mpService.createRecurringSubscription(authentication.getName());
+            return ResponseEntity.ok(Map.of("id", initPoint));
+        } catch (Exception e) {
+            log.error("Error creando suscripción recurrente", e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
@@ -44,14 +58,23 @@ public class MercadoPagoController {
         log.info("Webhook recibido de Mercado Pago: {}", payload);
         
         try {
-            // El formato de notificación de MP puede variar entre Webhook e IPN
-            // Generalmente, para pagos es: { "data": { "id": "12345" } }
-            if (payload.get("data") instanceof Map<?, ?>) {
-                @SuppressWarnings("unchecked")
+            String type = String.valueOf(payload.get("type"));
+            String action = String.valueOf(payload.get("action"));
+            
+            // Caso 1: Notificación de Pago (Manual o Automática)
+            if ("payment".equals(type) || payload.containsKey("data")) {
                 Map<String, Object> data = (Map<String, Object>) payload.get("data");
-                if (data.containsKey("id")) {
+                if (data != null && data.containsKey("id")) {
                     String paymentId = String.valueOf(data.get("id"));
                     mpService.processPaymentNotification(paymentId);
+                }
+            } 
+            // Caso 2: Notificación de Suscripción (Pre-approval)
+            else if ("subscription_preapproval".equals(type) || "preapproval".equals(type)) {
+                Map<String, Object> data = (Map<String, Object>) payload.get("data");
+                if (data != null && data.containsKey("id")) {
+                    String preapprovalId = String.valueOf(data.get("id"));
+                    mpService.processSubscriptionNotification(preapprovalId);
                 }
             }
         } catch (Exception e) {
@@ -67,7 +90,8 @@ public class MercadoPagoController {
     @PostMapping("/test/simulate-success/{userId}")
     public ResponseEntity<Map<String, String>> simulateSuccess(@PathVariable("userId") Integer userId) {
         try {
-            mpService.confirmSubscription(userId, 1); // Simulación por defecto de 1 mes
+            // Simulación manual de 1 mes
+            mpService.confirmSubscription(userId, 1, false); 
             return ResponseEntity.ok(Map.of("message", "Suscripción activada con éxito (Simulación 1 mes)"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

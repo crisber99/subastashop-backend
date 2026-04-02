@@ -53,10 +53,17 @@ public class AppUsers implements UserDetails {
     private LocalDateTime fechaFinPrueba = LocalDateTime.now().plusDays(15);
 
     @Column(name = "suscripcion_activa")
-    private Boolean suscripcionActiva = false;
+    private boolean suscripcionActiva = false;
 
     @Column(name = "fecha_vencimiento_suscripcion")
     private LocalDateTime fechaVencimientoSuscripcion;
+
+    // --- Campos para Suscripción Automática (Mercado Pago Pre-approvals) ---
+    @Column(name = "subscription_id")
+    private String subscriptionId;
+
+    @Column(name = "pago_automatico")
+    private boolean pagoAutomatico = false;
 
     @Column(name = "stripe_customer_id")
     @com.fasterxml.jackson.annotation.JsonIgnore
@@ -65,10 +72,6 @@ public class AppUsers implements UserDetails {
     @Column(name = "stripe_subscription_id")
     @com.fasterxml.jackson.annotation.JsonIgnore
     private String stripeSubscriptionId;
-
-    public boolean isSuscripcionActiva() {
-        return suscripcionActiva != null && suscripcionActiva;
-    }
 
     // --- MÉTODOS DE USERDETAILS ---
 
