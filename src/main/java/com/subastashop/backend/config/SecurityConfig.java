@@ -44,6 +44,9 @@ public class SecurityConfig {
                 // Autenticación (Login/Registro)
                 .requestMatchers("/api/auth/**").permitAll()
 
+                // Mercado Pago Webhooks (Público para recibir notificaciones)
+                .requestMatchers("/api/mercadopago/webhook").permitAll()
+
                 // Landing Page y Tiendas Públicas
                 .requestMatchers("/api/public/**").permitAll()
 
