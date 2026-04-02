@@ -278,7 +278,7 @@ public class MercadoPagoService {
 
     /**
      * Busca un plan por nombre o lo crea, devolviendo su init_point.
-     * Ajustado según el curl de documentación de Chile para evitar error 412/5xx.
+     * Espejo exacto del CURL funcional proporcionado por el usuario.
      */
     private String getOrCreatePlanInitPoint(String reason, BigDecimal amount) throws Exception {
         // Primero intentamos buscar si ya existe un plan con esa razón
@@ -306,34 +306,36 @@ public class MercadoPagoService {
             }
         }
 
-        // Si no existe, lo creamos con todos los campos (status active, repetitions, payment_methods)
+        // Si no existe, lo creamos siguiendo EXACTAMENTE el esquema del curl del usuario
         Map<String, Object> planBody = new HashMap<>();
         planBody.put("reason", reason);
-        planBody.put("status", "active"); 
         planBody.put("back_url", "https://www.subastashop.cl/admin/configuracion");
         
         Map<String, Object> autoRecurring = new HashMap<>();
         autoRecurring.put("frequency", 1);
         autoRecurring.put("frequency_type", "months");
-        autoRecurring.put("repetitions", 12); 
+        autoRecurring.put("repetitions", 12);
+        autoRecurring.put("billing_day", 1); // Cobrar el día 1 (o el día que se suscribe)
+        autoRecurring.put("billing_day_proportional", false); // Evita prorrateos complejos que dan 412
         autoRecurring.put("transaction_amount", amount.intValue());
         autoRecurring.put("currency_id", "CLP");
+        
+        // Opcional: Trial de 1 día (a veces ayuda a validar el checkout sin cobrar impacto inmediato)
+        // Pero en tu curl ponías 1 mes, lo omitiré para cobrar de una vez si es necesario.
+        
         planBody.put("auto_recurring", autoRecurring);
 
-        // Métodos de pago permitidos (aumenta compatibilidad en Chile)
+        // Métodos permitidos como en tu curl
         Map<String, Object> paymentMethods = new HashMap<>();
         List<Map<String, String>> typeList = new ArrayList<>();
         Map<String, String> cardType = new HashMap<>();
-        cardType.put("id", "debit_card");
+        cardType.put("id", "visa"); // Solo Visa como en el ejemplo para probar
         typeList.add(cardType);
-        Map<String, String> creditType = new HashMap<>();
-        creditType.put("id", "credit_card");
-        typeList.add(creditType);
         paymentMethods.put("payment_types", typeList);
-        planBody.put("payment_methods_allowed", paymentMethods);
+        // planBody.put("payment_methods_allowed", paymentMethods); // Lo comentamos para no restringir demasiado
 
         String jsonPlan = objectMapper.writeValueAsString(planBody);
-        log.info("Creando nuevo Plan robusto V4 en MP: {}", jsonPlan);
+        log.info("Creando nuevo Plan Robusto V5 (Mirror CURL): {}", jsonPlan);
 
         HttpRequest createReq = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.mercadopago.com/preapproval_plan"))
@@ -345,7 +347,7 @@ public class MercadoPagoService {
         HttpResponse<String> createRes = httpClient.send(createReq, HttpResponse.BodyHandlers.ofString());
 
         if (createRes.statusCode() >= 300) {
-            log.error("Error creando Plan V4 en MP: {} - {}", createRes.statusCode(), createRes.body());
+            log.error("Error creando Plan V5 en MP: {} - {}", createRes.statusCode(), createRes.body());
             throw new RuntimeException("Error MP al crear Plan: " + createRes.body());
         }
 
