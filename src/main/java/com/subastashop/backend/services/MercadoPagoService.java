@@ -152,7 +152,6 @@ public class MercadoPagoService {
         body.put("payer_email", user.getEmail());
         body.put("external_reference", user.getId().toString());
         body.put("back_url", "https://www.subastashop.cl/admin/configuracion");
-        body.put("status", "authorized");
 
         String jsonBody = objectMapper.writeValueAsString(body);
         log.info("Creando suscripción vinculada al plan {}: {}", planId, jsonBody);
