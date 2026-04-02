@@ -136,12 +136,12 @@ public class MercadoPagoService {
         AppUsers user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // 1. Determinar precio y nombre del plan
-        String planName = "SubastaShop PRO Estándar";
+        // 1. Determinar precio y nombre del plan (Versión V3 para asegurar limpieza total)
+        String planName = "SubastaShop PRO Estándar V3";
         BigDecimal amount = new BigDecimal("9990");
         long totalProUsers = userRepository.countByRol(Role.ROLE_ADMIN);
         if (totalProUsers < 100) {
-            planName = "SubastaShop PRO Promo";
+            planName = "SubastaShop PRO Promo V3";
             amount = new BigDecimal("4990");
         }
 
@@ -278,6 +278,7 @@ public class MercadoPagoService {
 
     /**
      * Busca un plan por nombre o lo crea, devolviendo su init_point.
+     * Ajustado según el curl de documentación de Chile para evitar error 412/5xx.
      */
     private String getOrCreatePlanInitPoint(String reason, BigDecimal amount) throws Exception {
         // Primero intentamos buscar si ya existe un plan con esa razón
@@ -299,26 +300,40 @@ public class MercadoPagoService {
                 Map<String, Object> existingPlan = resultsList.get(0);
                 String initPoint = (String) existingPlan.get("init_point");
                 if (initPoint != null) {
-                    log.info("Plan existente encontrado. InitPoint: {}", initPoint);
+                    log.info("Plan existente {} encontrado. InitPoint: {}", reason, initPoint);
                     return initPoint;
                 }
             }
         }
 
-        // Si no existe, lo creamos
+        // Si no existe, lo creamos con todos los campos (status active, repetitions, payment_methods)
         Map<String, Object> planBody = new HashMap<>();
         planBody.put("reason", reason);
+        planBody.put("status", "active"); 
         planBody.put("back_url", "https://www.subastashop.cl/admin/configuracion");
         
         Map<String, Object> autoRecurring = new HashMap<>();
         autoRecurring.put("frequency", 1);
         autoRecurring.put("frequency_type", "months");
+        autoRecurring.put("repetitions", 12); 
         autoRecurring.put("transaction_amount", amount.intValue());
         autoRecurring.put("currency_id", "CLP");
         planBody.put("auto_recurring", autoRecurring);
 
+        // Métodos de pago permitidos (aumenta compatibilidad en Chile)
+        Map<String, Object> paymentMethods = new HashMap<>();
+        List<Map<String, String>> typeList = new ArrayList<>();
+        Map<String, String> cardType = new HashMap<>();
+        cardType.put("id", "debit_card");
+        typeList.add(cardType);
+        Map<String, String> creditType = new HashMap<>();
+        creditType.put("id", "credit_card");
+        typeList.add(creditType);
+        paymentMethods.put("payment_types", typeList);
+        planBody.put("payment_methods_allowed", paymentMethods);
+
         String jsonPlan = objectMapper.writeValueAsString(planBody);
-        log.info("Creando nuevo Plan y obteniendo InitPoint: {}", jsonPlan);
+        log.info("Creando nuevo Plan robusto V4 en MP: {}", jsonPlan);
 
         HttpRequest createReq = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.mercadopago.com/preapproval_plan"))
@@ -330,7 +345,7 @@ public class MercadoPagoService {
         HttpResponse<String> createRes = httpClient.send(createReq, HttpResponse.BodyHandlers.ofString());
 
         if (createRes.statusCode() >= 300) {
-            log.error("Error creando Plan en MP: {} - {}", createRes.statusCode(), createRes.body());
+            log.error("Error creando Plan V4 en MP: {} - {}", createRes.statusCode(), createRes.body());
             throw new RuntimeException("Error MP al crear Plan: " + createRes.body());
         }
 
