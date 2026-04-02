@@ -148,13 +148,6 @@ public class MercadoPagoService {
         // 2. Obtener el enlace directo (init_point) del Plan
         String initPoint = getOrCreatePlanInitPoint(planName, amount);
         
-        // 3. Añadir referencia externa para identificar al usuario en el webhook
-        if (initPoint.contains("?")) {
-            initPoint += "&external_reference=" + user.getId();
-        } else {
-            initPoint += "?external_reference=" + user.getId();
-        }
-        
         // Marcamos intención de pago en el usuario
         user.setPagoAutomatico(true);
         userRepository.save(user);
