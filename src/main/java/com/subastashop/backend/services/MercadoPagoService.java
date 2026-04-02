@@ -128,7 +128,9 @@ public class MercadoPagoService {
     }
 
     /**
-     * Crea una suscripción recurrente mensual (Pre-approval) vía REST usando PLANES.
+     * Crea una suscripción recurrente mensual (Pre-approval) usando el enlace directo del PLAN.
+     * Descubrimos en la documentación de Chile que el Plan mismo tiene un init_point
+     * que evita el error de card_token_id.
      */
     public String createRecurringSubscription(String userEmail) throws Exception {
         AppUsers user = userRepository.findByEmail(userEmail)
@@ -143,44 +145,22 @@ public class MercadoPagoService {
             amount = new BigDecimal("4990");
         }
 
-        // 2. Obtener o crear el Plan ID en Mercado Pago
-        String planId = getOrCreatePlanId(planName, amount);
-
-        // 3. Crear la suscripción vinculada al Plan
-        Map<String, Object> body = new HashMap<>();
-        body.put("preapproval_plan_id", planId);
-        Map<String, Object> payer = new HashMap<>();
-        payer.put("email", user.getEmail());
-        body.put("payer", payer);
+        // 2. Obtener el enlace directo (init_point) del Plan
+        String initPoint = getOrCreatePlanInitPoint(planName, amount);
         
-        body.put("external_reference", user.getId().toString());
-        body.put("back_url", "https://www.subastashop.cl/admin/configuracion");
-        body.put("status", "pending"); 
-
-        String jsonBody = objectMapper.writeValueAsString(body);
-        log.info("Creando suscripción final (v2) vinculada al plan {}: {}", planId, jsonBody);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.mercadopago.com/preapproval"))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + accessToken.trim())
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() >= 300) {
-            log.error("Error al suscribir usuario al plan: {} - {}", response.statusCode(), response.body());
-            throw new RuntimeException("Error MP al suscribir: " + response.body());
+        // 3. Añadir referencia externa para identificar al usuario en el webhook
+        if (initPoint.contains("?")) {
+            initPoint += "&external_reference=" + user.getId();
+        } else {
+            initPoint += "?external_reference=" + user.getId();
         }
-
-        Map<String, Object> responseMap = objectMapper.readValue(response.body(), Map.class);
         
-        // Marcamos que el usuario tiene intención de pago automático
+        // Marcamos intención de pago en el usuario
         user.setPagoAutomatico(true);
         userRepository.save(user);
 
-        return String.valueOf(responseMap.get("init_point"));
+        log.info("Redirigiendo usuario {} al Checkout del Plan: {}", userEmail, initPoint);
+        return initPoint;
     }
 
     public void processPaymentNotification(String paymentId) {
@@ -304,9 +284,9 @@ public class MercadoPagoService {
     }
 
     /**
-     * Busca un plan existente o crea uno nuevo si no existe.
+     * Busca un plan por nombre o lo crea, devolviendo su init_point.
      */
-    private String getOrCreatePlanId(String reason, BigDecimal amount) throws Exception {
+    private String getOrCreatePlanInitPoint(String reason, BigDecimal amount) throws Exception {
         // Primero intentamos buscar si ya existe un plan con esa razón
         String searchUri = "https://api.mercadopago.com/preapproval_plan/search?reason=" + reason.replace(" ", "%20");
         
@@ -319,11 +299,16 @@ public class MercadoPagoService {
         HttpResponse<String> searchRes = httpClient.send(searchReq, HttpResponse.BodyHandlers.ofString());
         
         if (searchRes.statusCode() == 200) {
-            Map<String, Object> searchResult = objectMapper.readValue(searchRes.body(), Map.class);
-            List<Map<String, Object>> results = (List<Map<String, Object>>) searchResult.get("results");
-            if (results != null && !results.isEmpty()) {
-                // Retornamos el primer plan activo encontrado
-                return String.valueOf(results.get(0).get("id"));
+            Map<String, Object> results = objectMapper.readValue(searchRes.body(), Map.class);
+            List<Map<String, Object>> resultsList = (List<Map<String, Object>>) results.get("results");
+            
+            if (resultsList != null && !resultsList.isEmpty()) {
+                Map<String, Object> existingPlan = resultsList.get(0);
+                String initPoint = (String) existingPlan.get("init_point");
+                if (initPoint != null) {
+                    log.info("Plan existente encontrado. InitPoint: {}", initPoint);
+                    return initPoint;
+                }
             }
         }
 
@@ -337,11 +322,10 @@ public class MercadoPagoService {
         autoRecurring.put("frequency_type", "months");
         autoRecurring.put("transaction_amount", amount.intValue());
         autoRecurring.put("currency_id", "CLP");
-        
         planBody.put("auto_recurring", autoRecurring);
 
         String jsonPlan = objectMapper.writeValueAsString(planBody);
-        log.info("Creando nuevo Plan de Suscripción: {}", jsonPlan);
+        log.info("Creando nuevo Plan y obteniendo InitPoint: {}", jsonPlan);
 
         HttpRequest createReq = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.mercadopago.com/preapproval_plan"))
@@ -358,6 +342,6 @@ public class MercadoPagoService {
         }
 
         Map<String, Object> createdPlan = objectMapper.readValue(createRes.body(), Map.class);
-        return String.valueOf(createdPlan.get("id"));
+        return (String) createdPlan.get("init_point");
     }
 }
