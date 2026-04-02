@@ -136,24 +136,120 @@ public class MercadoPagoService {
         AppUsers user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // 1. Determinar precio y nombre del plan (Versión V3 para asegurar limpieza total)
-        String planName = "SubastaShop PRO Estándar V3";
+        // 1. Aseguramos que existe el plan (V6)
+        String planName = "SubastaShop PRO V6";
         BigDecimal amount = new BigDecimal("9990");
         long totalProUsers = userRepository.countByRol(Role.ROLE_ADMIN);
         if (totalProUsers < 100) {
-            planName = "SubastaShop PRO Promo V3";
+            planName = "SubastaShop PRO Promo V6";
             amount = new BigDecimal("4990");
         }
-
-        // 2. Obtener el enlace directo (init_point) del Plan
-        String initPoint = getOrCreatePlanInitPoint(planName, amount);
         
-        // Marcamos intención de pago en el usuario
+        // Obtenemos el ID del plan (debería ser el que te funcionó)
+        String planId = getOrCreatePlanId(planName, amount);
+
+        // 2. Creamos una suscripción (preapproval) específica para ESTE usuario y ESTE email
+        // Esto es lo que permite que MP intente el flujo de "Invitado" o pre-llene los datos
+        Map<String, Object> subBody = new HashMap<>();
+        subBody.put("preapproval_plan_id", planId);
+        subBody.put("payer_email", userEmail);
+        subBody.put("back_url", "https://www.subastashop.cl/admin/configuracion");
+        subBody.put("reason", planName);
+        subBody.put("status", "pending");
+        subBody.put("external_reference", user.getId().toString());
+
+        String jsonSub = objectMapper.writeValueAsString(subBody);
+        log.info("Creando Preapproval específica para {} : {}", userEmail, jsonSub);
+
+        HttpRequest subReq = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.mercadopago.com/preapproval"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + accessToken.trim())
+                .POST(HttpRequest.BodyPublishers.ofString(jsonSub))
+                .build();
+
+        HttpResponse<String> subRes = httpClient.send(subReq, HttpResponse.BodyHandlers.ofString());
+
+        if (subRes.statusCode() >= 300) {
+            log.error("Error creando Suscripción para {}: {}", userEmail, subRes.body());
+            throw new RuntimeException("Error MP al crear Suscripción: " + subRes.body());
+        }
+
+        Map<String, Object> subscription = objectMapper.readValue(subRes.body(), Map.class);
+        String initPoint = (String) subscription.get("init_point");
+
+        // Guardamos intención
         user.setPagoAutomatico(true);
         userRepository.save(user);
 
-        log.info("Redirigiendo usuario {} al Checkout del Plan: {}", userEmail, initPoint);
+        log.info("Redirigiendo usuario {} al Checkout Personalizado: {}", userEmail, initPoint);
         return initPoint;
+    }
+
+    /**
+     * Versión auxiliar que devuelve solo el ID del plan.
+     */
+    private String getOrCreatePlanId(String reason, BigDecimal amount) throws Exception {
+        // Reutilizamos la lógica de creación pero devolvemos el ID
+        String searchUri = "https://api.mercadopago.com/preapproval_plan/search?reason=" + reason.replace(" ", "%20");
+        HttpRequest searchReq = HttpRequest.newBuilder()
+                .uri(URI.create(searchUri))
+                .header("Authorization", "Bearer " + accessToken.trim())
+                .GET()
+                .build();
+        HttpResponse<String> searchRes = httpClient.send(searchReq, HttpResponse.BodyHandlers.ofString());
+        
+        if (searchRes.statusCode() == 200) {
+            Map<String, Object> results = objectMapper.readValue(searchRes.body(), Map.class);
+            List<Map<String, Object>> resultsList = (List<Map<String, Object>>) results.get("results");
+            if (resultsList != null && !resultsList.isEmpty()) {
+                return (String) resultsList.get(0).get("id");
+            }
+        }
+
+        // Si no existe, usamos el método robusto para crear uno nuevo y devolver su ID
+        return createNewPlanAndGetId(reason, amount);
+    }
+
+    private String createNewPlanAndGetId(String reason, BigDecimal amount) throws Exception {
+        Map<String, Object> planBody = new HashMap<>();
+        planBody.put("reason", reason);
+        planBody.put("back_url", "https://www.subastashop.cl/admin/configuracion");
+        
+        Map<String, Object> autoRecurring = new HashMap<>();
+        autoRecurring.put("frequency", 1);
+        autoRecurring.put("frequency_type", "months");
+        autoRecurring.put("repetitions", 12);
+        autoRecurring.put("billing_day", 1);
+        autoRecurring.put("billing_day_proportional", false);
+        autoRecurring.put("transaction_amount", amount.intValue());
+        autoRecurring.put("currency_id", "CLP");
+        planBody.put("auto_recurring", autoRecurring);
+
+        Map<String, Object> paymentMethods = new HashMap<>();
+        List<Map<String, String>> typeList = new ArrayList<>();
+        Map<String, String> visaType = new HashMap<>();
+        visaType.put("id", "visa");
+        typeList.add(visaType);
+        paymentMethods.put("payment_types", typeList);
+        
+        List<Map<String, String>> methodList = new ArrayList<>();
+        Map<String, String> visaMethod = new HashMap<>();
+        visaMethod.put("id", "visa");
+        methodList.add(visaMethod);
+        paymentMethods.put("payment_methods", methodList);
+        planBody.put("payment_methods_allowed", paymentMethods);
+
+        HttpRequest createReq = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.mercadopago.com/preapproval_plan"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + accessToken.trim())
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(planBody)))
+                .build();
+
+        HttpResponse<String> createRes = httpClient.send(createReq, HttpResponse.BodyHandlers.ofString());
+        Map<String, Object> createdPlan = objectMapper.readValue(createRes.body(), Map.class);
+        return (String) createdPlan.get("id");
     }
 
     public void processPaymentNotification(String paymentId) {
