@@ -350,8 +350,8 @@ public class MercadoPagoService {
         HttpResponse<String> createRes = httpClient.send(createReq, HttpResponse.BodyHandlers.ofString());
 
         if (createRes.statusCode() >= 300) {
-            log.error("Error creando Plan en MP: {}", createRes.body());
-            throw new RuntimeException("No se pudo crear el plan de suscripción en Mercado Pago");
+            log.error("Error creando Plan en MP: {} - {}", createRes.statusCode(), createRes.body());
+            throw new RuntimeException("Error MP al crear Plan: " + createRes.body());
         }
 
         Map<String, Object> createdPlan = objectMapper.readValue(createRes.body(), Map.class);
