@@ -51,4 +51,22 @@ public class AzureBlobService {
         // 5. Devolver URL
         return blobClient.getBlobUrl();
     }
+
+    /**
+     * Elimina todos los archivos del contenedor (para limpieza).
+     */
+    public void eliminarTodo() {
+        if (connectionString == null || connectionString.contains("placeholder")) return;
+
+        BlobContainerClient containerClient = new BlobServiceClientBuilder()
+                .connectionString(connectionString)
+                .buildClient()
+                .getBlobContainerClient(containerName);
+
+        if (containerClient.exists()) {
+            containerClient.listBlobs().forEach(blobItem -> {
+                containerClient.getBlobClient(blobItem.getName()).delete();
+            });
+        }
+    }
 }

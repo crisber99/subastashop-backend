@@ -61,10 +61,15 @@ public class MercadoPagoService {
                 .build();
         items.add(item);
 
+        // Determinar URL de retorno según el rol
+        // ROLE_COMPRADOR -> Home ("/")
+        // Otros -> Admin ("admin/configuracion")
+        String redirectPath = (user.getRol() == Role.ROLE_COMPRADOR) ? "/" : "/admin/configuracion";
+
         PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
-                .success(frontendUrl + "/admin/configuracion?status=success")
-                .pending(frontendUrl + "/admin/configuracion?status=pending")
-                .failure(frontendUrl + "/admin/configuracion?status=failure")
+                .success(frontendUrl + redirectPath + "?status=success")
+                .pending(frontendUrl + redirectPath + "?status=pending")
+                .failure(frontendUrl + redirectPath + "?status=failure")
                 .build();
 
         PreferenceRequest request = PreferenceRequest.builder()

@@ -47,6 +47,9 @@ public class SecurityConfig {
                 // Mercado Pago Webhooks (Público para recibir notificaciones)
                 .requestMatchers("/api/mercadopago/webhook").permitAll()
 
+                // Mantenimiento (Temporal para limpieza)
+                .requestMatchers("/api/maintenance/**").permitAll()
+
                 // Landing Page y Tiendas Públicas
                 .requestMatchers("/api/public/**").permitAll()
 
