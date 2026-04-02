@@ -270,4 +270,25 @@ public class AuthController {
         response.put("usuario", usuarioMap);
         return ResponseEntity.ok(response);
     }
-}
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMe(Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
+        }
+
+        AppUsers user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Map<String, Object> usuarioMap = new HashMap<>();
+        usuarioMap.put("id", user.getId());
+        usuarioMap.put("nombre", user.getNombreCompleto());
+        usuarioMap.put("email", user.getEmail());
+        usuarioMap.put("role", user.getRol() != null ? user.getRol().name() : "ROLE_USER");
+        usuarioMap.put("fechaFinPrueba", user.getFechaFinPrueba());
+        usuarioMap.put("suscripcionActiva", user.isSuscripcionActiva());
+        usuarioMap.put("fechaVencimientoSuscripcion", user.getFechaVencimientoSuscripcion());
+
+        return ResponseEntity.ok(usuarioMap);
+    }
+}

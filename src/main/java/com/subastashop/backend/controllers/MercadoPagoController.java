@@ -21,9 +21,14 @@ public class MercadoPagoController {
     }
 
     @PostMapping("/create-preference")
-    public ResponseEntity<Map<String, String>> createPreference(Authentication authentication) {
+    public ResponseEntity<Map<String, String>> createPreference(Authentication authentication, @RequestBody(required = false) Map<String, Object> body) {
         try {
-            String initPoint = mpService.createSubscriptionPreference(authentication.getName());
+            Integer months = 1;
+            if (body != null && body.containsKey("months")) {
+                months = Integer.parseInt(body.get("months").toString());
+            }
+            
+            String initPoint = mpService.createSubscriptionPreference(authentication.getName(), months);
             return ResponseEntity.ok(Map.of("id", initPoint)); 
         } catch (MPApiException e) {
             log.error("Error de API de Mercado Pago: {}", e.getApiResponse().getContent());
@@ -62,8 +67,8 @@ public class MercadoPagoController {
     @PostMapping("/test/simulate-success/{userId}")
     public ResponseEntity<Map<String, String>> simulateSuccess(@PathVariable("userId") Integer userId) {
         try {
-            mpService.confirmSubscription(userId);
-            return ResponseEntity.ok(Map.of("message", "Suscripción activada con éxito (Simulación)"));
+            mpService.confirmSubscription(userId, 1); // Simulación por defecto de 1 mes
+            return ResponseEntity.ok(Map.of("message", "Suscripción activada con éxito (Simulación 1 mes)"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

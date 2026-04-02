@@ -55,6 +55,9 @@ public class AppUsers implements UserDetails {
     @Column(name = "suscripcion_activa")
     private Boolean suscripcionActiva = false;
 
+    @Column(name = "fecha_vencimiento_suscripcion")
+    private LocalDateTime fechaVencimientoSuscripcion;
+
     @Column(name = "stripe_customer_id")
     @com.fasterxml.jackson.annotation.JsonIgnore
     private String stripeCustomerId;

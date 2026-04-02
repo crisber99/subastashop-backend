@@ -4,14 +4,11 @@ import com.subastashop.backend.config.TenantContext;
 import com.subastashop.backend.dto.ProductoDTO;
 import com.subastashop.backend.models.Producto;
 import com.subastashop.backend.models.Tienda;
-import com.subastashop.backend.repositories.AppUserRepository;
 import com.subastashop.backend.repositories.ProductoRepository;
 import com.subastashop.backend.repositories.TiendaRepository;
-import com.subastashop.backend.services.AzureBlobService;
 import com.subastashop.backend.services.ProductoService;
 import com.subastashop.backend.services.WebPushService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,7 +18,6 @@ import org.springframework.cache.annotation.CacheEvict;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/productos")
@@ -32,12 +28,6 @@ public class ProductoController {
 
     @Autowired
     private TiendaRepository tiendaRepository;
-
-    @Autowired
-    private AzureBlobService azureBlobService;
-
-    @Autowired
-    private AppUserRepository appUserRepository;
 
     @Autowired
     private WebPushService webPushService;

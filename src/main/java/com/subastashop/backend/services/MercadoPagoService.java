@@ -11,12 +11,14 @@ import com.mercadopago.resources.preference.Preference;
 import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.Role;
 import com.subastashop.backend.repositories.AppUserRepository;
+import com.subastashop.backend.services.EmailService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,9 +36,11 @@ public class MercadoPagoService {
     private String notificationUrl;
 
     private final AppUserRepository userRepository;
+    private final EmailService emailService;
 
-    public MercadoPagoService(AppUserRepository userRepository) {
+    public MercadoPagoService(AppUserRepository userRepository, EmailService emailService) {
         this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
     @PostConstruct
@@ -44,19 +48,22 @@ public class MercadoPagoService {
         MercadoPagoConfig.setAccessToken(accessToken);
     }
 
-    public String createSubscriptionPreference(String userEmail) throws Exception {
+    public String createSubscriptionPreference(String userEmail, Integer months) throws Exception {
         AppUsers user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         PreferenceClient client = new PreferenceClient();
 
+        // Calculamos precio base $4.990 por mes
+        BigDecimal unitPrice = new BigDecimal("4990").multiply(new BigDecimal(months));
+
         List<PreferenceItemRequest> items = new ArrayList<>();
         PreferenceItemRequest item = PreferenceItemRequest.builder()
-                .id("subs-premium-4990")
-                .title("Suscripción Pro SubastaShop")
-                .description("Acceso Premium mensual a SubastaShop")
+                .id("subs-premium-" + months)
+                .title("Suscripción Pro SubastaShop - " + months + (months == 1 ? " mes" : " meses"))
+                .description("Acceso Premium por " + months + (months == 1 ? " mes" : " meses") + " a SubastaShop")
                 .quantity(1)
-                .unitPrice(new BigDecimal("4990")) 
+                .unitPrice(unitPrice) 
                 .currencyId("CLP")
                 .build();
         items.add(item);
@@ -78,7 +85,7 @@ public class MercadoPagoService {
                 .autoReturn("approved")
                 .statementDescriptor("SUBASTASHOP")
                 .notificationUrl(notificationUrl)
-                .externalReference(user.getId().toString())
+                .externalReference(user.getId().toString() + ":" + months) // Guardamos ID y MESES
                 .build();
 
         Preference preference = client.create(request);
@@ -92,10 +99,14 @@ public class MercadoPagoService {
             Payment payment = client.get(Long.parseLong(paymentId));
             
             if ("approved".equalsIgnoreCase(payment.getStatus())) {
-                String userIdStr = payment.getExternalReference();
-                if (userIdStr != null) {
-                    Integer userId = Integer.parseInt(userIdStr);
-                    confirmSubscription(userId);
+                String externalRef = payment.getExternalReference();
+                if (externalRef != null) {
+                    // El formato es "userId:months"
+                    String[] parts = externalRef.split(":");
+                    Integer userId = Integer.parseInt(parts[0]);
+                    Integer months = parts.length > 1 ? Integer.parseInt(parts[1]) : 1;
+                    
+                    confirmSubscription(userId, months);
                 }
             } else {
                 log.info("⚠️ El pago {} no está aprobado (Status: {})", paymentId, payment.getStatus());
@@ -108,13 +119,52 @@ public class MercadoPagoService {
     /**
      * SIMULACIÓN: Activa manualmente la suscripción de un usuario.
      */
-    public void confirmSubscription(Integer userId) {
+    public void confirmSubscription(Integer userId, Integer months) {
         AppUsers user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado (ID: " + userId + ")"));
         
+        // Actualizar Fechas
+        LocalDateTime hoy = LocalDateTime.now();
+        LocalDateTime fechaBase = (user.getFechaVencimientoSuscripcion() != null && user.getFechaVencimientoSuscripcion().isAfter(hoy)) 
+                ? user.getFechaVencimientoSuscripcion() 
+                : hoy;
+        
+        user.setFechaVencimientoSuscripcion(fechaBase.plusMonths(months));
         user.setSuscripcionActiva(true);
         user.setRol(Role.ROLE_ADMIN); // 🛠️ OTORGAMOS PERMISOS DE ADMINISTRADOR (PRO)
         userRepository.save(user);
-        log.info("✅ Suscripción y rol ADMIN activados para el usuario: {}", user.getEmail());
+
+        log.info("✅ Suscripción y rol ADMIN activados por {} meses para el usuario: {}", months, user.getEmail());
+
+        // --- ENVIAR EMAIL DE BIENVENIDA ---
+        enviarEmailBienvenidaPro(user, months);
+    }
+
+    private void enviarEmailBienvenidaPro(AppUsers user, Integer months) {
+        String asunto = "🚀 ¡Bienvenido al Nivel PRO de SubastaShop!";
+        String durationText = months + (months == 1 ? " mes" : " meses");
+        
+        String html = "<div style='font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;'>" +
+                "<h1 style='color: #6366f1; text-align: center;'>¡Felicidades, " + user.getNombreCompleto() + "!</h1>" +
+                "<p style='font-size: 1.1em;'>Estamos muy felices de confirmarte que tu cuenta ha sido actualizada al nivel <b>PRO</b> exitosamente.</p>" +
+                "<div style='background: #f8fafc; padding: 15px; border-radius: 5px; margin: 20px 0;'>" +
+                "<p style='margin: 5px 0;'>💎 <b>Nivel:</b> PRO Administrator</p>" +
+                "<p style='margin: 5px 0;'>⏳ <b>Duración añadida:</b> " + durationText + "</p>" +
+                "<p style='margin: 5px 0;'>📅 <b>Vencimiento:</b> " + user.getFechaVencimientoSuscripcion().toLocalDate() + "</p>" +
+                "</div>" +
+                "<h3>¿Qué sigue ahora?</h3>" +
+                "<ul>" +
+                "<li><b>Crea tu tienda:</b> Ya tienes acceso al panel de configuración para subir tu logo y elegir tus colores.</li>" +
+                "<li><b>Publica sin límites:</b> Tus subastas y rifas ya pueden ser publicadas globalmente.</li>" +
+                "<li><b>Ventas directas:</b> Configura tus datos bancarios para recibir transferencias de tus ganadores.</li>" +
+                "</ul>" +
+                "<p style='text-align: center; margin-top: 30px;'>" +
+                "<a href='" + frontendUrl + "/admin/configuracion' style='background: #6366f1; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;'>IR A MI PANEL DE TIENDA</a>" +
+                "</p>" +
+                "<br><p style='color: #64748b; font-size: 0.9em;'>Si tienes alguna duda, responde a este correo. ¡Mucho éxito con tus ventas!</p>" +
+                "<p style='font-size: 0.8em; color: #cbd5e1;'>Atentamente,<br>El equipo de SubastaShop</p>" +
+                "</div>";
+
+        emailService.enviarCorreo(user.getEmail(), asunto, html);
     }
 }
