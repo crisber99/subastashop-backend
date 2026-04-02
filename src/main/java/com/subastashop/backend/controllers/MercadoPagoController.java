@@ -42,7 +42,7 @@ public class MercadoPagoController {
     /**
      * Crea una suscripción automática (Pre-approval).
      */
-    @PostMapping("/create-subscription")
+    @PostMapping({"/create-subscription", "/create_subscription"})
     public ResponseEntity<Map<String, String>> createSubscription(Authentication authentication) {
         try {
             String initPoint = mpService.createRecurringSubscription(authentication.getName());
