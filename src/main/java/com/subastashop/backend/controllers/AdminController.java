@@ -140,9 +140,9 @@ public class AdminController {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Inventario y Ventas");
 
-            // Cabecera extendida
+            // Cabecera extendida 📊
             Row headerRow = sheet.createRow(0);
-            String[] columns = {"ID", "Producto", "Tipo", "Categoría", "Estado", "Cliente", "Valor Inicial", "Valor Final", "Fecha"};
+            String[] columns = {"ID", "Producto", "Tipo", "Categoría", "Estado", "Cliente (Email)", "Nombre Completo", "Dirección", "Valor Inicial", "Valor Final", "Estado Pago", "Fecha"};
             for (int i = 0; i < columns.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(columns[i]);
@@ -166,15 +166,22 @@ public class AdminController {
                 var detalle = detalleOrdenRepository.findFirstByProductoIdOrderByOrdenFechaCreacionDesc(p.getId()).orElse(null);
                 
                 if (detalle != null && detalle.getOrden() != null) {
-                    row.createCell(5).setCellValue(detalle.getOrden().getUsuario().getEmail());
-                    row.createCell(6).setCellValue(p.getPrecioBase() != null ? p.getPrecioBase().doubleValue() : 0.0);
-                    row.createCell(7).setCellValue(detalle.getPrecioUnitario() != null ? detalle.getPrecioUnitario().doubleValue() : 0.0);
-                    row.createCell(8).setCellValue(detalle.getOrden().getFechaCreacion() != null ? detalle.getOrden().getFechaCreacion().toString() : "-");
+                    AppUsers cliente = detalle.getOrden().getUsuario();
+                    row.createCell(5).setCellValue(cliente.getEmail());
+                    row.createCell(6).setCellValue(cliente.getNombreCompleto() != null ? cliente.getNombreCompleto() : "-");
+                    row.createCell(7).setCellValue(cliente.getDireccion() != null ? cliente.getDireccion() : "-");
+                    row.createCell(8).setCellValue(p.getPrecioBase() != null ? p.getPrecioBase().doubleValue() : 0.0);
+                    row.createCell(9).setCellValue(detalle.getPrecioUnitario() != null ? detalle.getPrecioUnitario().doubleValue() : 0.0);
+                    row.createCell(10).setCellValue(detalle.getOrden().getEstado() != null ? detalle.getOrden().getEstado() : "PENDIENTE");
+                    row.createCell(11).setCellValue(detalle.getOrden().getFechaCreacion() != null ? detalle.getOrden().getFechaCreacion().toString() : "-");
                 } else {
                     row.createCell(5).setCellValue("-");
-                    row.createCell(6).setCellValue(p.getPrecioBase() != null ? p.getPrecioBase().doubleValue() : 0.0);
-                    row.createCell(7).setCellValue(0.0);
-                    row.createCell(8).setCellValue("-");
+                    row.createCell(6).setCellValue("-");
+                    row.createCell(7).setCellValue("-");
+                    row.createCell(8).setCellValue(p.getPrecioBase() != null ? p.getPrecioBase().doubleValue() : 0.0);
+                    row.createCell(9).setCellValue(0.0);
+                    row.createCell(10).setCellValue("SIN VENTA");
+                    row.createCell(11).setCellValue("-");
                 }
             }
 
