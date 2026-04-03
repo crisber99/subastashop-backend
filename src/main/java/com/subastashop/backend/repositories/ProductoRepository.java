@@ -56,5 +56,10 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     // Listar solo los disponibles (ignorando SUSPENDIDO, OCULTO, etc.)
     @Query("SELECT p FROM Producto p WHERE p.tienda.id = :tiendaId AND p.estado NOT IN ('SUSPENDIDO', 'ELIMINADO')")
     List<Producto> findPublicosByTienda(Long tiendaId);
+    
+    long countByTiendaIdAndTipoVenta(Long tiendaId, String tipoVenta);
+    
+    long countByTiendaIdAndTipoVentaAndEstadoIn(Long tiendaId, String tipoVenta, List<String> estados);
 
+    long countByTipoVenta(String tipoVenta);
 }

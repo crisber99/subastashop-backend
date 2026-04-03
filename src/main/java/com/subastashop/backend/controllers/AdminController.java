@@ -28,6 +28,8 @@ public class AdminController {
     private AppUserRepository usuarioRepository;
     @Autowired
     private OrdenRepository ordenRepository;
+    @Autowired
+    private com.subastashop.backend.repositories.DetalleOrdenRepository detalleOrdenRepository;
 
     @GetMapping("/stats")
     public ResponseEntity<?> obtenerEstadisticas() {
@@ -52,19 +54,27 @@ public class AdminController {
         if (isGlobalAdmin) {
             // Lógica Super Admin 👑
             stats.put("totalUsuarios", usuarioRepository.count());
-            stats.put("subastasActivas", productoRepository.countByEstadoIn(java.util.List.of("SUBASTA", "EN_SUBASTA")));
-            stats.put("ventasCerradas", productoRepository.countByEstado("VENDIDO"));
+            stats.put("totalProductos", productoRepository.count());
+            stats.put("totalSubastas", productoRepository.countByTipoVenta("SUBASTA"));
+            stats.put("totalVentaDirecta", productoRepository.countByTipoVenta("DIRECTA"));
+            stats.put("totalRifas", productoRepository.countByTipoVenta("RIFA"));
             
             Double total = ordenRepository.sumTotalPagado();
             stats.put("gananciasTotales", total != null ? total : 0.0);
             stats.put("nombreTienda", "Panel Global");
         } else {
-            // Lógica Admin de Tienda (Incluye ROLE_ADMIN ahora) 🏪
+            // Lógica Admin de Tienda 🏪
             Long tiendaId = admin.getTienda().getId();
             stats.put("totalUsuarios", 0); 
-            stats.put("subastasActivas", productoRepository.countByTiendaIdAndEstadoIn(tiendaId, java.util.List.of("SUBASTA", "EN_SUBASTA")));
-            stats.put("ventasCerradas", productoRepository.countByTiendaIdAndEstado(tiendaId, "VENDIDO"));
             
+            stats.put("subastasActivas", productoRepository.countByTiendaIdAndTipoVentaAndEstadoIn(tiendaId, "SUBASTA", java.util.List.of("SUBASTA", "EN_SUBASTA")));
+            stats.put("ventaDirectaDisponibles", productoRepository.countByTiendaIdAndTipoVentaAndEstadoIn(tiendaId, "DIRECTA", java.util.List.of("DISPONIBLE")));
+            stats.put("rifasDisponibles", productoRepository.countByTiendaIdAndTipoVentaAndEstadoIn(tiendaId, "RIFA", java.util.List.of("DISPONIBLE", "SUBASTA"))); // Las rifas a veces usan SUBASTA como estado activo internamente
+            
+            stats.put("totalSubastas", productoRepository.countByTiendaIdAndTipoVenta(tiendaId, "SUBASTA"));
+            stats.put("totalVentaDirecta", productoRepository.countByTiendaIdAndTipoVenta(tiendaId, "DIRECTA"));
+            stats.put("totalRifas", productoRepository.countByTiendaIdAndTipoVenta(tiendaId, "RIFA"));
+
             Double totalTienda = ordenRepository.sumTotalPagadoByTiendaId(tiendaId);
             stats.put("gananciasTotales", totalTienda != null ? totalTienda : 0.0);
             stats.put("nombreTienda", admin.getTienda().getNombre());
@@ -119,20 +129,20 @@ public class AdminController {
 
         String nombreTienda = admin.getTienda() != null ? admin.getTienda().getNombre() : "Global";
         
-        // Obtener órdenes reales con tipado explícito 💰
-        java.util.List<com.subastashop.backend.models.Orden> ventas;
+        // Obtener todos los productos para reporte de inventario completo 📦
+        java.util.List<Producto> productos;
         if (admin.getTienda() != null) {
-            ventas = ordenRepository.findByTiendaId(admin.getTienda().getId());
+            productos = productoRepository.findByTiendaId(admin.getTienda().getId());
         } else {
-            ventas = ordenRepository.findAll();
+            productos = productoRepository.findAll();
         }
 
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("Ventas");
+            Sheet sheet = workbook.createSheet("Inventario y Ventas");
 
-            // Cabecera
+            // Cabecera extendida
             Row headerRow = sheet.createRow(0);
-            String[] columns = {"ID Orden", "Cliente", "Total", "Estado", "Fecha", "Productos"};
+            String[] columns = {"ID", "Producto", "Tipo", "Categoría", "Estado", "Cliente", "Valor Inicial", "Valor Final", "Fecha"};
             for (int i = 0; i < columns.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(columns[i]);
@@ -143,21 +153,29 @@ public class AdminController {
                 cell.setCellStyle(headerStyle);
             }
 
-            // Datos Reales 📝
             int rowIdx = 1;
-            for (com.subastashop.backend.models.Orden orden : ventas) {
+            for (Producto p : productos) {
                 Row row = sheet.createRow(rowIdx++);
-                row.createCell(0).setCellValue(orden.getId());
-                row.createCell(1).setCellValue(orden.getUsuario().getEmail());
-                row.createCell(2).setCellValue(orden.getTotal() != null ? orden.getTotal().doubleValue() : 0.0);
-                row.createCell(3).setCellValue(orden.getEstado());
-                row.createCell(4).setCellValue(orden.getFechaCreacion() != null ? orden.getFechaCreacion().toString() : "");
+                row.createCell(0).setCellValue(p.getId());
+                row.createCell(1).setCellValue(p.getNombre());
+                row.createCell(2).setCellValue(p.getTipoVenta() != null ? p.getTipoVenta() : "N/A");
+                row.createCell(3).setCellValue(p.getCategoria() != null ? p.getCategoria().getNombre() : "Sin Categoría");
+                row.createCell(4).setCellValue(p.getEstado());
+
+                // Buscar información de venta 💰
+                var detalle = detalleOrdenRepository.findFirstByProductoIdOrderByOrdenFechaCreacionDesc(p.getId()).orElse(null);
                 
-                // Concatenar nombres de productos del detalle
-                String nombresProductosArr = orden.getDetalles().stream()
-                    .map(d -> d.getProducto().getNombre())
-                    .reduce((a, b) -> a + ", " + b).orElse("");
-                row.createCell(5).setCellValue(nombresProductosArr);
+                if (detalle != null && detalle.getOrden() != null) {
+                    row.createCell(5).setCellValue(detalle.getOrden().getUsuario().getEmail());
+                    row.createCell(6).setCellValue(p.getPrecioBase() != null ? p.getPrecioBase().doubleValue() : 0.0);
+                    row.createCell(7).setCellValue(detalle.getPrecioUnitario() != null ? detalle.getPrecioUnitario().doubleValue() : 0.0);
+                    row.createCell(8).setCellValue(detalle.getOrden().getFechaCreacion() != null ? detalle.getOrden().getFechaCreacion().toString() : "-");
+                } else {
+                    row.createCell(5).setCellValue("-");
+                    row.createCell(6).setCellValue(p.getPrecioBase() != null ? p.getPrecioBase().doubleValue() : 0.0);
+                    row.createCell(7).setCellValue(0.0);
+                    row.createCell(8).setCellValue("-");
+                }
             }
 
             for (int i = 0; i < columns.length; i++) {

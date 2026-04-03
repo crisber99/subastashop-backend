@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DetalleOrdenRepository extends JpaRepository<DetalleOrden, Long> {
-    // No necesitamos métodos extra por ahora
+    java.util.Optional<DetalleOrden> findFirstByProductoIdOrderByOrdenFechaCreacionDesc(Integer productoId);
 }
