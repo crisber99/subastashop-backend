@@ -8,6 +8,7 @@ import com.mercadopago.client.preference.PreferenceRequest;
 import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.resources.payment.Payment;
 import com.mercadopago.resources.preference.Preference;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.Role;
 import com.subastashop.backend.repositories.AppUserRepository;
@@ -128,6 +129,50 @@ public class MercadoPagoService {
 
         Preference preference = client.create(request);
         return preference.getInitPoint(); 
+    }
+
+    /**
+     * Sincroniza el estado de la suscripción de un usuario consultando directamente a Mercado Pago.
+     */
+    public boolean syncSubscriptionStatus(String userEmail) {
+        AppUsers user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        String subId = user.getSubscriptionId();
+        if (subId == null || subId.isEmpty()) {
+            // Si no hay ID, verificamos si debería tenerla o simplemente marcamos como inactiva la auto
+            user.setPagoAutomatico(false);
+            userRepository.save(user);
+            return false;
+        }
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.mercadopago.com/preapproval/" + subId))
+                    .header("Authorization", "Bearer " + accessToken)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                Map<String, Object> mpResponse = objectMapper.readValue(response.body(), new TypeReference<>() {});
+                String status = (String) mpResponse.get("status");
+
+                if ("authorized".equals(status) || "active".equals(status)) {
+                    user.setSuscripcionActiva(true);
+                    user.setPagoAutomatico(true);
+                    user.setRol(Role.ROLE_ADMIN);
+                } else {
+                    user.setPagoAutomatico(false);
+                    // No cambiamos suscripcionActiva aquí por si es un plan manual que aún vence
+                }
+                userRepository.save(user);
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("Error sincronizando suscripción para {}: {}", userEmail, e.getMessage());
+        }
+        return false;
     }
 
     /**

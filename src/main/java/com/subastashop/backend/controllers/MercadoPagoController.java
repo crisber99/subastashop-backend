@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.Map;
 
 @Slf4j
@@ -108,6 +109,13 @@ public class MercadoPagoController {
     /**
      * Cancela la suscripción del usuario autenticado.
      */
+    @PostMapping("/sync-status")
+    public ResponseEntity<?> syncStatus(Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        boolean updated = mpService.syncSubscriptionStatus(principal.getName());
+        return ResponseEntity.ok(Map.of("updated", updated));
+    }
+
     @PostMapping("/cancel-subscription")
     public ResponseEntity<?> cancelSubscription(Authentication authentication) {
         try {
