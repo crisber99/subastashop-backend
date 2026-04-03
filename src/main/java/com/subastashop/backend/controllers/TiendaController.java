@@ -41,6 +41,20 @@ public class TiendaController {
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
             Tienda tienda = admin.getTienda();
+            
+            // Si es ADMIN pero no tiene tienda, creamos una por defecto
+            if (tienda == null && admin.getRol().name().equals("ROLE_ADMIN")) {
+                tienda = new Tienda();
+                tienda.setNombre("Mi Tienda SubastaShop");
+                tienda.setSlug("tienda-" + admin.getId());
+                tienda.setActiva(true);
+                tienda.setColorPrimario("#0d6efd"); // Azul por defecto
+                tienda = tiendaRepository.save(tienda);
+                
+                admin.setTienda(tienda);
+                usuarioRepository.save(admin);
+            }
+
             if (tienda == null) {
                 return ResponseEntity.badRequest().body("No tienes una tienda asignada.");
             }
@@ -72,6 +86,20 @@ public class TiendaController {
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
             Tienda tienda = admin.getTienda();
+
+            // Si es ADMIN pero no tiene tienda, creamos una por defecto "on the fly"
+            if (tienda == null && admin.getRol().name().equals("ROLE_ADMIN")) {
+                tienda = new Tienda();
+                tienda.setNombre("Mi Tienda SubastaShop");
+                tienda.setSlug("tienda-" + admin.getId());
+                tienda.setActiva(true);
+                tienda.setColorPrimario("#0d6efd");
+                tienda = tiendaRepository.save(tienda);
+                
+                admin.setTienda(tienda);
+                usuarioRepository.save(admin);
+            }
+
             if (tienda == null) {
                 return ResponseEntity.badRequest().body("❌ Error: No tienes tienda asignada.");
             }

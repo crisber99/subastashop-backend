@@ -60,6 +60,31 @@ public class SuperAdminController {
         return ResponseEntity.ok(Map.of("mensaje", "Rol actualizado a: " + nuevoRolTexto));
     }
 
+    @PostMapping("/{id}/regalar-suscripcion")
+    public ResponseEntity<?> regalarSuscripcion(@PathVariable Integer id) {
+        AppUsers usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        usuario.setRol(Role.ROLE_ADMIN);
+        usuario.setSuscripcionActiva(true);
+        usuario.setPagoAutomatico(false); // Es un regalo, no hay suscripción recurrente real
+        
+        // Inicializar tienda si no tiene
+        if (usuario.getTienda() == null) {
+            Tienda tienda = new Tienda();
+            tienda.setNombre("Mi Tienda SubastaShop");
+            tienda.setSlug("tienda-" + usuario.getId());
+            tienda.setActiva(true);
+            tienda.setColorPrimario("#0d6efd");
+            tienda = tiendaRepository.save(tienda);
+            usuario.setTienda(tienda);
+        }
+        
+        usuarioRepository.save(usuario);
+
+        return ResponseEntity.ok(Map.of("mensaje", "Suscripción PRO regalada con éxito a " + usuario.getEmail()));
+    }
+
     // 3. ELIMINAR/BLOQUEAR USUARIO
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarUsuario(@PathVariable Integer id) {
