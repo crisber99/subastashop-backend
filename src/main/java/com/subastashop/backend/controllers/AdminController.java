@@ -29,6 +29,8 @@ public class AdminController {
     @Autowired
     private OrdenRepository ordenRepository;
     @Autowired
+    private com.subastashop.backend.services.OrdenService ordenService;
+    @Autowired
     private com.subastashop.backend.repositories.DetalleOrdenRepository detalleOrdenRepository;
 
     @GetMapping("/stats")
@@ -253,5 +255,37 @@ public class AdminController {
         usuario.setRol(Role.valueOf(nuevoRol)); // Usar el valor enviado
         usuarioRepository.save(usuario);
         return ResponseEntity.ok("Rol actualizado");
+    }
+
+    // --- 🏦 VALIDACIÓN DE PAGOS ---
+
+    @GetMapping("/ordenes/pendientes-validacion")
+    public ResponseEntity<?> listarPendientesValidacion() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
+        
+        if (admin.getTienda() == null && !"ROLE_SUPER_ADMIN".equals(admin.getRol().name())) {
+            throw new ApiException("No tienes una tienda asignada.");
+        }
+
+        if ("ROLE_SUPER_ADMIN".equals(admin.getRol().name())) {
+            return ResponseEntity.ok(ordenRepository.findAll().stream()
+                .filter(o -> "ESPERANDO_APROBACION".equals(o.getEstado()))
+                .toList());
+        }
+
+        return ResponseEntity.ok(ordenService.obtenerPendientesValidacion(admin.getTienda().getId()));
+    }
+
+    @PostMapping("/ordenes/{id}/aprobar")
+    public ResponseEntity<?> aprobarPago(@PathVariable Integer id) {
+        ordenService.aprobarPago(id);
+        return ResponseEntity.ok(java.util.Map.of("message", "Pago aprobado correctamente."));
+    }
+
+    @PostMapping("/ordenes/{id}/rechazar")
+    public ResponseEntity<?> rechazarPago(@PathVariable Integer id) {
+        ordenService.rechazarPago(id);
+        return ResponseEntity.ok(java.util.Map.of("message", "Pago rechazado. El cliente puede subir otro comprobante."));
     }
 }

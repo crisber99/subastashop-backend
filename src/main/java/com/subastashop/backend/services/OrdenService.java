@@ -39,6 +39,9 @@ public class OrdenService {
     @Autowired
     private com.subastashop.backend.services.EmailService emailService;
 
+    @Autowired
+    private com.subastashop.backend.services.StorageService storageService;
+
     @Transactional
     public String pagarOrden(Integer id) {
         Orden orden = ordenRepository.findByIdConDetalles(id)
@@ -166,5 +169,35 @@ public class OrdenService {
         }
 
         return orden;
+    }
+
+    @Transactional
+    public void informarPago(Integer id, org.springframework.web.multipart.MultipartFile archivo) throws java.io.IOException {
+        Orden orden = ordenRepository.findById(id).orElseThrow();
+        
+        // Subir comprobante a Azure ☁️
+        String url = storageService.subirImagen(archivo);
+        
+        orden.setComprobanteUrl(url);
+        orden.setEstado("ESPERANDO_APROBACION");
+        ordenRepository.save(orden);
+    }
+
+    @Transactional
+    public void aprobarPago(Integer id) {
+        pagarOrden(id); // Reutilizamos lógica existente de marcado y correo
+    }
+
+    @Transactional
+    public void rechazarPago(Integer id) {
+        Orden orden = ordenRepository.findById(id).orElseThrow();
+        orden.setEstado("PENDIENTE_PAGO");
+        // No borramos el comprobanteUrl anterior para auditoría si se desea, 
+        // pero el cliente podrá subir uno nuevo.
+        ordenRepository.save(orden);
+    }
+
+    public List<Orden> obtenerPendientesValidacion(Long tiendaId) {
+        return ordenRepository.findByTiendaIdAndEstado(tiendaId, "ESPERANDO_APROBACION");
     }
 }

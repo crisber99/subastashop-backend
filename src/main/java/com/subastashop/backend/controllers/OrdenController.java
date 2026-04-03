@@ -65,4 +65,14 @@ public class OrdenController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @PostMapping("/{id}/informar-pago")
+    public ResponseEntity<?> informarPago(@PathVariable Integer id, @RequestParam("archivo") org.springframework.web.multipart.MultipartFile archivo) {
+        try {
+            ordenService.informarPago(id, archivo);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
