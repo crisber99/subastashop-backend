@@ -164,12 +164,14 @@ public class MercadoPagoService {
             throw new RuntimeException("Mercado Pago no pudo cancelar la suscripción: " + response.body());
         }
 
-        // Actualización local
+        // Actualización local: Bajar categoría y desactivar suscripción
         user.setSubscriptionId(null);
         user.setPagoAutomatico(false);
+        user.setSuscripcionActiva(false);
+        user.setRol(Role.ROLE_COMPRADOR); 
         userRepository.save(user);
 
-        log.info("✅ Suscripción {} cancelada exitosamente para {}", subId, userEmail);
+        log.info("✅ Suscripción {} cancelada. Usuario {} degradado a ROLE_COMPRADOR", subId, userEmail);
         return true;
     }
 
