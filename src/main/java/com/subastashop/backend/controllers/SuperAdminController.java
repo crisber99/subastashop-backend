@@ -193,6 +193,7 @@ public class SuperAdminController {
 
     @DeleteMapping("/tiendas/{id}")
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "tiendasActivas", allEntries = true)
     public ResponseEntity<?> eliminarTienda(@PathVariable Long id) {
         Tienda tienda = tiendaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Tienda no encontrada"));

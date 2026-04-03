@@ -72,7 +72,7 @@ public class SecurityConfig {
                 
                 // Admin de Tienda / Rifa
                 .requestMatchers("/api/rifas/*/admin/**").hasAuthority("ROLE_ADMIN")
-                .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+                .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
 
                 // Vendedor
                 .requestMatchers("/api/vendedor/**").hasAnyAuthority("ROLE_VENDEDOR", "ROLE_ADMIN")

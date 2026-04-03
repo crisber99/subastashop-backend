@@ -52,7 +52,7 @@ public class AdminController {
         if (isGlobalAdmin) {
             // Lógica Super Admin 👑
             stats.put("totalUsuarios", usuarioRepository.count());
-            stats.put("subastasActivas", productoRepository.countByEstado("EN_SUBASTA"));
+            stats.put("subastasActivas", productoRepository.countByEstadoIn(java.util.List.of("SUBASTA", "EN_SUBASTA")));
             stats.put("ventasCerradas", productoRepository.countByEstado("VENDIDO"));
             
             Double total = ordenRepository.sumTotalPagado();
@@ -62,9 +62,11 @@ public class AdminController {
             // Lógica Admin de Tienda (Incluye ROLE_ADMIN ahora) 🏪
             Long tiendaId = admin.getTienda().getId();
             stats.put("totalUsuarios", 0); 
-            stats.put("subastasActivas", productoRepository.countByTiendaIdAndEstado(tiendaId, "EN_SUBASTA"));
+            stats.put("subastasActivas", productoRepository.countByTiendaIdAndEstadoIn(tiendaId, java.util.List.of("SUBASTA", "EN_SUBASTA")));
             stats.put("ventasCerradas", productoRepository.countByTiendaIdAndEstado(tiendaId, "VENDIDO"));
-            stats.put("gananciasTotales", 0);
+            
+            Double totalTienda = ordenRepository.sumTotalPagadoByTiendaId(tiendaId);
+            stats.put("gananciasTotales", totalTienda != null ? totalTienda : 0.0);
             stats.put("nombreTienda", admin.getTienda().getNombre());
         }
 
@@ -96,9 +98,7 @@ public class AdminController {
         }
 
         Long tiendaId = admin.getTienda().getId();
-        var subastas = productoRepository.findByTiendaId(tiendaId).stream()
-            .filter(p -> "SUBASTA".equals(p.getEstado()) || "EN_SUBASTA".equals(p.getEstado()))
-            .toList();
+        var subastas = productoRepository.findByTiendaIdAndEstadoIn(tiendaId, java.util.List.of("SUBASTA", "EN_SUBASTA"));
         for (Producto p : subastas) {
             p.setEstado("FINALIZADA");
         }
