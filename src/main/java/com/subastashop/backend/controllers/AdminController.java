@@ -180,6 +180,7 @@ public class AdminController {
     // 🗑️ ACCIÓN: ELIMINAR PRODUCTO (BORRADO LÓGICO)
     @DeleteMapping("/productos/{id}")
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "productosPublicos", allEntries = true)
     public ResponseEntity<?> eliminarProducto(@PathVariable Integer id) {
         Producto p = productoRepository.findById(id)
             .orElseThrow(() -> new ApiException("Producto no encontrado"));
