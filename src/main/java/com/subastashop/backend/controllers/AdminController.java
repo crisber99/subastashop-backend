@@ -90,7 +90,7 @@ public class AdminController {
                 .toList();
             subastas.forEach(p -> p.setEstado("FINALIZADA"));
             productoRepository.saveAll(subastas);
-            return ResponseEntity.ok("Se han detenido " + subastas.size() + " subastas globales.");
+            return ResponseEntity.ok(java.util.Map.of("message", "Se han detenido " + subastas.size() + " subastas globales."));
         }
 
         if (admin.getTienda() == null) {
@@ -104,7 +104,7 @@ public class AdminController {
         }
         productoRepository.saveAll(subastas);
 
-        return ResponseEntity.ok("Se han detenido " + subastas.size() + " subastas.");
+        return ResponseEntity.ok(java.util.Map.of("message", "Se han detenido " + subastas.size() + " subastas."));
     }
 
     // 🚀 ACCIÓN: EXPORTAR VENTAS A EXCEL (.XLSX) 📊 - REAL!
@@ -195,7 +195,7 @@ public class AdminController {
         }
 
         productoRepository.delete(p); // El SQLDelete en el modelo hará el trabajo lógico
-        return ResponseEntity.ok("Producto eliminado correctamente");
+        return ResponseEntity.ok(java.util.Map.of("message", "Producto '" + p.getNombre() + "' eliminado correctamente"));
     }
 
     // 📦 LISTAR PRODUCTOS PARA ADMIN

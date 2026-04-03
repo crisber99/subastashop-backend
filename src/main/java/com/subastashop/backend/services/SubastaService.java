@@ -37,6 +37,11 @@ public class SubastaService {
              throw new RuntimeException("Este producto no es de tipo subasta");
         }
 
+        String estado = producto.getEstado();
+        if (!"EN_SUBASTA".equalsIgnoreCase(estado) && !"SUBASTA".equalsIgnoreCase(estado)) {
+            throw new RuntimeException("No se puede pujar: La subasta no está activa (Estado: " + estado + ")");
+        }
+
         // --- NUEVA VALIDACIÓN: Verificar si la fecha es nula antes de comparar ---
         if (producto.getFechaFinSubasta() == null) {
             throw new RuntimeException("Error crítico: Este producto no tiene fecha de término configurada.");
