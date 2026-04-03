@@ -21,6 +21,8 @@ public interface AppUserRepository extends JpaRepository<AppUsers, Integer> {
     // Contar registrados por rol (ej: cuántos PRO tenemos)
     long countByRol(com.subastashop.backend.models.Role rol);
 
+    Optional<AppUsers> findByTiendaId(Long tiendaId);
+
     // Encontrar el primer admin de una tienda específica
     @Query("SELECT u.id FROM AppUsers u WHERE u.tienda.id = :tiendaId AND u.rol = 'ROLE_ADMIN'")
     Integer findOwnerIdByTiendaId(@Param("tiendaId") Long tiendaId);

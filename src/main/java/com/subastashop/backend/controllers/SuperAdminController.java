@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -188,5 +189,24 @@ public class SuperAdminController {
     @GetMapping("/global-productos")
     public ResponseEntity<List<Producto>> listarTodosLosProductos() {
         return ResponseEntity.ok(productoRepository.findAll());
+    }
+
+    @DeleteMapping("/tiendas/{id}")
+    @Transactional
+    public ResponseEntity<?> eliminarTienda(@PathVariable Long id) {
+        Tienda tienda = tiendaRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Tienda no encontrada"));
+        
+        // Antes de borrar la tienda, desvinculamos al usuario para que no quede huérfano 
+        // o cause errores de integridad referencial.
+        AppUsers dueño = usuarioRepository.findByTiendaId(tienda.getId()).orElse(null);
+        if (dueño != null) {
+            dueño.setTienda(null);
+            dueño.setRol(Role.ROLE_COMPRADOR); // Lo bajamos a comprador si su tienda se cierra
+            usuarioRepository.save(dueño);
+        }
+
+        tiendaRepository.delete(tienda);
+        return ResponseEntity.ok("Tienda '" + tienda.getNombre() + "' eliminada correctamente.");
     }
 }
