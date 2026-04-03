@@ -64,6 +64,11 @@ public class AdminController {
             Double total = ordenRepository.sumTotalPagado();
             stats.put("gananciasTotales", total != null ? total : 0.0);
             stats.put("nombreTienda", "Panel Global");
+
+            long pendientes = ordenRepository.findAll().stream()
+                .filter(o -> "ESPERANDO_APROBACION".equals(o.getEstado()))
+                .count();
+            stats.put("pagosPendientesCount", pendientes);
         } else {
             // Lógica Admin de Tienda 🏪
             Long tiendaId = admin.getTienda().getId();
@@ -80,6 +85,9 @@ public class AdminController {
             Double totalTienda = ordenRepository.sumTotalPagadoByTiendaId(tiendaId);
             stats.put("gananciasTotales", totalTienda != null ? totalTienda : 0.0);
             stats.put("nombreTienda", admin.getTienda().getNombre());
+
+            long pendientes = ordenRepository.findByTiendaIdAndEstado(tiendaId, "ESPERANDO_APROBACION").size();
+            stats.put("pagosPendientesCount", pendientes);
         }
 
         return ResponseEntity.ok(stats);
