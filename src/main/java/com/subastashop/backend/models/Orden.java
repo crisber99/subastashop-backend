@@ -44,6 +44,7 @@ public class Orden extends BaseEntity {
 
     private String comprobanteUrl;
     private LocalDateTime fechaExpiracionReserva;
+    private String preferenciaEnvio; // Ej: "Blue Express"
 
     // Relación Bidireccional
     @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)

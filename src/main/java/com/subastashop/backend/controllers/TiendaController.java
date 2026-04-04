@@ -78,6 +78,7 @@ public class TiendaController {
             @RequestParam(value = "fotoLogo", required = false) MultipartFile fotoLogo,
             @RequestParam(value = "fotoAnverso", required = false) MultipartFile fotoAnverso,
             @RequestParam(value = "fotoReverso", required = false) MultipartFile fotoReverso,
+            @RequestParam(value = "opcionesEnvio", required = false) String opcionesEnvio,
             @RequestParam(value = "aceptaTerminos", required = false) Boolean aceptaTerminos) {
         try {
             // A. Identificar al usuario logueado
@@ -113,6 +114,8 @@ public class TiendaController {
                 tienda.setDatosBancarios(datosBancarios);
             if (colorPrimario != null && !colorPrimario.isEmpty())
                 tienda.setColorPrimario(colorPrimario);
+            if (opcionesEnvio != null)
+                tienda.setOpcionesEnvio(opcionesEnvio);
 
             // C. Subir Logo a Azure (si el usuario seleccionó un logo)
             if (fotoLogo != null && !fotoLogo.isEmpty()) {

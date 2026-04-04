@@ -39,6 +39,8 @@ public class Tienda {
     @Column(length = 1000) // Texto largo
     private String datosBancarios;
 
+    private String opcionesEnvio; // Ej: "Blue Express, Paket, Starken"
+
     @Column(name = "fecha_aceptacion_terminos")
     private LocalDateTime fechaAceptacionTerminos;
 

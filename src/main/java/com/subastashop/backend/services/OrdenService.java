@@ -88,6 +88,15 @@ public class OrdenService {
             throw new RuntimeException("El carrito no puede estar vacío");
         }
 
+        // BUSCAR SI YA EXISTE UNA ORDEN PENDIENTE PARA EL MISMO PRODUCTO (Solo si es 1 detalle, para evitar duplicados en compra directa)
+        if (request.getDetalles().size() == 1) {
+            Integer productoId = request.getDetalles().get(0).getProductoId().intValue();
+            var existete = ordenRepository.findPendingOrderByUserAndProduct(email, productoId);
+            if (existete.isPresent()) {
+                return existete.get(); // Devolver la existente en lugar de crear otra
+            }
+        }
+
         Long primerProductoId = request.getDetalles().get(0).getProductoId();
         Producto primerProducto = productoRepo.findById(primerProductoId.intValue())
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
@@ -101,6 +110,7 @@ public class OrdenService {
         orden.setFechaExpiracionReserva(LocalDateTime.now().plusHours(24));
         orden.setEstado("PENDIENTE_PAGO");
         orden.setTotal(BigDecimal.ZERO);
+        orden.setPreferenciaEnvio(request.getPreferenciaEnvio());
 
         orden = ordenRepository.save(orden);
 
