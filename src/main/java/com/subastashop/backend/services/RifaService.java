@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import org.springframework.context.ApplicationContext;
+
 @Slf4j
 @Service
 public class RifaService {
@@ -35,6 +37,9 @@ public class RifaService {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
+    @Autowired
+    private ApplicationContext applicationContext;
+
     /**
      * Inicia el proceso de sorteo. Valida el estado y delega el "show" a un proceso asíncrono.
      */
@@ -51,8 +56,9 @@ public class RifaService {
             throw new RuntimeException("Aún faltan números por vender.");
         }
 
-        // Iniciamos el proceso asíncrono para no bloquear al Admin
-        this.procesarSorteoAsync(productoId);
+        // Iniciamos el proceso asíncrono obteniendo el proxy para que funcione el @Async
+        RifaService proxy = applicationContext.getBean(RifaService.class);
+        proxy.procesarSorteoAsync(productoId);
     }
 
     @Async
