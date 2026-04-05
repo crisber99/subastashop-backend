@@ -13,7 +13,6 @@ import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.Role;
 import com.subastashop.backend.repositories.AppUserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -521,59 +520,5 @@ public class MercadoPagoService {
         emailService.enviarCorreo(user.getEmail(), asunto, html);
     }
 
-    /**
-     * Crea el plan siguiendo la estructura EXACTA que te funcionó en el CURL.
-     * Versión V6 para asegurar un inicio limpio.
-     */
-    private String getOrCreatePlanInitPoint(String reason, BigDecimal amount) throws Exception {
-        Map<String, Object> planBody = new HashMap<>();
-        planBody.put("reason", reason);
-        planBody.put("back_url", "https://www.subastashop.cl/admin/configuracion");
-        
-        Map<String, Object> autoRecurring = new HashMap<>();
-        autoRecurring.put("frequency", 1);
-        autoRecurring.put("frequency_type", "months");
-        autoRecurring.put("repetitions", 12);
-        autoRecurring.put("billing_day", 1);
-        autoRecurring.put("billing_day_proportional", false);
-        autoRecurring.put("transaction_amount", amount.intValue());
-        autoRecurring.put("currency_id", "CLP");
-        planBody.put("auto_recurring", autoRecurring);
 
-        // Mirror exacto de los métodos de pago de tu curl funcional
-        Map<String, Object> paymentMethods = new HashMap<>();
-        List<Map<String, String>> typeList = new ArrayList<>();
-        Map<String, String> visaType = new HashMap<>();
-        visaType.put("id", "visa");
-        typeList.add(visaType);
-        paymentMethods.put("payment_types", typeList);
-        
-        List<Map<String, String>> methodList = new ArrayList<>();
-        Map<String, String> visaMethod = new HashMap<>();
-        visaMethod.put("id", "visa");
-        methodList.add(visaMethod);
-        paymentMethods.put("payment_methods", methodList);
-        
-        planBody.put("payment_methods_allowed", paymentMethods);
-
-        String jsonPlan = objectMapper.writeValueAsString(planBody);
-        log.info("Creando Plan V6 (IDÉNTICO AL CURL): {}", jsonPlan);
-
-        HttpRequest createReq = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.mercadopago.com/preapproval_plan"))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + accessToken.trim())
-                .POST(HttpRequest.BodyPublishers.ofString(jsonPlan))
-                .build();
-
-        HttpResponse<String> createRes = httpClient.send(createReq, HttpResponse.BodyHandlers.ofString());
-
-        if (createRes.statusCode() >= 300) {
-            log.error("Error creando Plan V6 en MP: {} - {}", createRes.statusCode(), createRes.body());
-            throw new RuntimeException("Error MP al crear Plan V6: " + createRes.body());
-        }
-
-        Map<String, Object> createdPlan = objectMapper.readValue(createRes.body(), Map.class);
-        return (String) createdPlan.get("init_point");
-    }
 }

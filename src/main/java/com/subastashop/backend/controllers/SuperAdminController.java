@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/super-admin")
@@ -38,7 +39,7 @@ public class SuperAdminController {
     public ResponseEntity<?> cambiarRol(@PathVariable Integer id, @RequestBody Map<String, String> body) {
         String nuevoRolTexto = body.get("rol"); // Esperamos json: { "rol": "ROLE_ADMIN" }
 
-        AppUsers usuario = usuarioRepository.findById(id)
+        AppUsers usuario = usuarioRepository.findById(Objects.requireNonNull(id, "ID no puede ser nulo"))
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         // Evitar que el Super Admin se bloquee a sí mismo o se quite el rol
@@ -63,7 +64,7 @@ public class SuperAdminController {
 
     @PostMapping("/{id}/regalar-suscripcion")
     public ResponseEntity<?> regalarSuscripcion(@PathVariable Integer id) {
-        AppUsers usuario = usuarioRepository.findById(id)
+        AppUsers usuario = usuarioRepository.findById(Objects.requireNonNull(id, "ID no puede ser nulo"))
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         usuario.setRol(Role.ROLE_ADMIN);
@@ -90,14 +91,14 @@ public class SuperAdminController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarUsuario(@PathVariable Integer id) {
         // Lógica para borrar o desactivar (soft delete recomendado)
-        usuarioRepository.deleteById(id);
+        usuarioRepository.deleteById(Objects.requireNonNull(id, "ID no puede ser nulo"));
         return ResponseEntity.ok(Map.of("mensaje", "Usuario eliminado"));
     }
 
     // 4. ACTUALIZAR DATOS DE USUARIO (Nombre, teléfono, etc.)
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizarUsuario(@PathVariable Integer id, @RequestBody AppUsers datos) {
-        AppUsers usuario = usuarioRepository.findById(id).orElseThrow();
+        AppUsers usuario = usuarioRepository.findById(Objects.requireNonNull(id, "ID no puede ser nulo")).orElseThrow();
         
         if (datos.getNombreCompleto() != null) usuario.setNombreCompleto(datos.getNombreCompleto());
         if (datos.getTelefono() != null) usuario.setTelefono(datos.getTelefono());

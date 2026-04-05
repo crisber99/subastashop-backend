@@ -31,4 +31,15 @@ public interface OrdenRepository extends JpaRepository<Orden, Integer> {
     java.util.Optional<Orden> findPendingOrderByUserAndProduct(@org.springframework.data.repository.query.Param("email") String email, @org.springframework.data.repository.query.Param("productoId") Integer productoId);
 
     List<Orden> findByTiendaIdAndEstado(Long tiendaId, String estado);
+
+    @org.springframework.data.jpa.repository.Query("SELECT CAST(o.fechaCreacion AS date) as fecha, SUM(o.total) as total " +
+            "FROM Orden o WHERE o.tienda.id = :tiendaId AND (o.estado = 'PAGADO' OR o.estado = 'COMPLETADA') " +
+            "AND o.fechaCreacion >= :desde GROUP BY CAST(o.fechaCreacion AS date) ORDER BY CAST(o.fechaCreacion AS date) ASC")
+    List<Object[]> getVentasPorDia(@org.springframework.data.repository.query.Param("tiendaId") Long tiendaId, 
+                                   @org.springframework.data.repository.query.Param("desde") java.time.LocalDateTime desde);
+
+    @org.springframework.data.jpa.repository.Query("SELECT d.producto.tipoVenta, COUNT(o) FROM Orden o JOIN o.detalles d " +
+            "WHERE o.tienda.id = :tiendaId AND (o.estado = 'PAGADO' OR o.estado = 'COMPLETADA') " +
+            "GROUP BY d.producto.tipoVenta")
+    List<Object[]> getDistribucionVentasPorTipo(@org.springframework.data.repository.query.Param("tiendaId") Long tiendaId);
 }

@@ -171,7 +171,7 @@ public class OrdenService {
 
     @Transactional
     public Orden obtenerOrdenPorId(Integer id, String email) {
-        Orden orden = ordenRepository.findByIdConDetalles(id)
+        Orden orden = ordenRepository.findByIdConDetalles(java.util.Objects.requireNonNull(id, "ID de orden no puede ser nulo"))
                 .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
 
         if (!orden.getUsuario().getEmail().equals(email)) {
@@ -213,7 +213,7 @@ public class OrdenService {
 
     @Transactional
     public String abrirCajaMisteriosa(Long detalleId, String email) {
-        DetalleOrden detalle = detalleOrdenRepository.findById(detalleId)
+        DetalleOrden detalle = detalleOrdenRepository.findById(java.util.Objects.requireNonNull(detalleId, "ID de detalle no puede ser nulo"))
                 .orElseThrow(() -> new RuntimeException("Detalle no encontrado"));
 
         Orden orden = detalle.getOrden();

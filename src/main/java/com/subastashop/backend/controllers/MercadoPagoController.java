@@ -81,22 +81,28 @@ public class MercadoPagoController {
         
         try {
             String type = String.valueOf(payload.get("type"));
-            String action = String.valueOf(payload.get("action"));
-            
             // Caso 1: Notificación de Pago (Manual o Automática)
             if ("payment".equals(type) || payload.containsKey("data")) {
-                Map<String, Object> data = (Map<String, Object>) payload.get("data");
-                if (data != null && data.containsKey("id")) {
-                    String paymentId = String.valueOf(data.get("id"));
-                    mpService.processPaymentNotification(paymentId);
+                Object dataObj = payload.get("data");
+                if (dataObj instanceof Map) {
+                    Map<?, ?> dataMap = (Map<?, ?>) dataObj;
+                    Object idObj = dataMap.get("id");
+                    if (idObj != null) {
+                        String paymentId = String.valueOf(idObj);
+                        mpService.processPaymentNotification(paymentId);
+                    }
                 }
             } 
             // Caso 2: Notificación de Suscripción (Pre-approval)
             else if ("subscription_preapproval".equals(type) || "preapproval".equals(type)) {
-                Map<String, Object> data = (Map<String, Object>) payload.get("data");
-                if (data != null && data.containsKey("id")) {
-                    String preapprovalId = String.valueOf(data.get("id"));
-                    mpService.processSubscriptionNotification(preapprovalId);
+                Object dataObj = payload.get("data");
+                if (dataObj instanceof Map) {
+                    Map<?, ?> dataMap = (Map<?, ?>) dataObj;
+                    Object idObj = dataMap.get("id");
+                    if (idObj != null) {
+                        String preapprovalId = String.valueOf(idObj);
+                        mpService.processSubscriptionNotification(preapprovalId);
+                    }
                 }
             }
         } catch (Exception e) {

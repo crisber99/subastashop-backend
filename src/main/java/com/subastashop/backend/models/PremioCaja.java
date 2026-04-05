@@ -2,33 +2,28 @@ package com.subastashop.backend.models;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.math.BigDecimal;
+import java.io.Serializable;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
 @Entity
-@Table(name = "PremiosCaja")
-public class PremioCaja extends BaseEntity {
-
+@Table(name = "premios_caja")
+public class PremioCaja implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false)
     private String nombre;
-
+    private String descripcion;
     private String imagenUrl;
-
-    @Column(nullable = false)
-    private Double probabilidad; 
-
+    
+    // Stock disponible de este premio
     private Integer stock;
+    
+    // Probabilidad de 0 a 100
+    private Integer probabilidad;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "producto_id", nullable = false)
-    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "producto_id")
     private Producto producto;
 }

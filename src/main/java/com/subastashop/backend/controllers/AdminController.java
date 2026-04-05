@@ -52,6 +52,7 @@ public class AdminController {
         }
 
         Map<String, Object> stats = new HashMap<>();
+        java.time.LocalDateTime hace30Dias = java.time.LocalDateTime.now().minusDays(30);
 
         if (isGlobalAdmin) {
             // Lógica Super Admin 👑
@@ -76,7 +77,7 @@ public class AdminController {
             
             stats.put("subastasActivas", productoRepository.countByTiendaIdAndTipoVentaAndEstadoIn(tiendaId, "SUBASTA", java.util.List.of("SUBASTA", "EN_SUBASTA")));
             stats.put("ventaDirectaDisponibles", productoRepository.countByTiendaIdAndTipoVentaAndEstadoIn(tiendaId, "DIRECTA", java.util.List.of("DISPONIBLE")));
-            stats.put("rifasDisponibles", productoRepository.countByTiendaIdAndTipoVentaAndEstadoIn(tiendaId, "RIFA", java.util.List.of("DISPONIBLE", "SUBASTA"))); // Las rifas a veces usan SUBASTA como estado activo internamente
+            stats.put("rifasDisponibles", productoRepository.countByTiendaIdAndTipoVentaAndEstadoIn(tiendaId, "RIFA", java.util.List.of("DISPONIBLE", "SUBASTA"))); 
             
             stats.put("totalSubastas", productoRepository.countByTiendaIdAndTipoVenta(tiendaId, "SUBASTA"));
             stats.put("totalVentaDirecta", productoRepository.countByTiendaIdAndTipoVenta(tiendaId, "DIRECTA"));
@@ -88,6 +89,11 @@ public class AdminController {
 
             long pendientes = ordenRepository.findByTiendaIdAndEstado(tiendaId, "ESPERANDO_APROBACION").size();
             stats.put("pagosPendientesCount", pendientes);
+
+            // --- 📊 DATOS PARA GRÁFICOS (Últimos 30 días) ---
+            stats.put("ventasPorDia", ordenRepository.getVentasPorDia(tiendaId, hace30Dias));
+            stats.put("distribucionVentasPorTipo", ordenRepository.getDistribucionVentasPorTipo(tiendaId));
+            stats.put("topSellingProducts", detalleOrdenRepository.getTopSellingProducts(tiendaId, org.springframework.data.domain.PageRequest.of(0, 5)));
         }
 
         return ResponseEntity.ok(stats);
@@ -116,11 +122,11 @@ public class AdminController {
         if (admin.getTienda() == null) {
             throw new ApiException("No tienes una tienda asignada.");
         }
-
-        Long tiendaId = admin.getTienda().getId();
+        Long tiendaId = java.util.Objects.requireNonNull(admin.getTienda(), "Tienda no puede ser nula").getId();
+        if (tiendaId == null) throw new ApiException("ID de tienda no encontrado.");
         var subastas = productoRepository.findByTiendaIdAndEstadoIn(tiendaId, java.util.List.of("SUBASTA", "EN_SUBASTA"));
         for (Producto p : subastas) {
-            p.setEstado("FINALIZADA");
+            if (p != null) p.setEstado("FINALIZADA");
         }
         productoRepository.saveAll(subastas);
 
@@ -220,12 +226,13 @@ public class AdminController {
         Producto p = productoRepository.findById(id)
             .orElseThrow(() -> new ApiException("Producto no encontrado"));
         
-        // Verificación de propiedad (Opcional, pero segura)
+        // Verificación de propiedad (Opcional, pero segura) 🏪
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
+        AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Admin no encontrado"));
         
         if (!"ROLE_SUPER_ADMIN".equals(admin.getRol().name())) {
-            if (p.getTienda() == null || !p.getTienda().getId().equals(admin.getTienda().getId())) {
+            Long tiendaId = admin.getTienda() != null ? admin.getTienda().getId() : null;
+            if (p.getTienda() == null || tiendaId == null || !p.getTienda().getId().equals(tiendaId)) {
                 return ResponseEntity.status(403).body("No tienes permiso para eliminar este producto.");
             }
         }
@@ -254,7 +261,8 @@ public class AdminController {
         if (admin.getTienda() == null) {
             throw new ApiException("No tienes una tienda asignada.");
         }
-        return ResponseEntity.ok(productoRepository.findByTiendaId(admin.getTienda().getId()));
+        Long tiendaId = java.util.Objects.requireNonNull(admin.getTienda(), "Tienda no encontrada").getId();
+        return ResponseEntity.ok(productoRepository.findByTiendaId(tiendaId));
     }
 
     @PutMapping("/usuarios/{id}/rol")
