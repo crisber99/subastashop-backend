@@ -24,6 +24,7 @@ public class ProductoDTO {
     private BigDecimal precioTicket;
     private String nombreTienda;
     private String slugTienda;
+    private Long tiendaId;
     private Integer tiendaUsuarioId;
     private Integer categoriaId;
     private String categoriaNombre;

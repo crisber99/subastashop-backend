@@ -199,6 +199,7 @@ public class ProductoService {
         dto.setPrecioTicket(p.getPrecioTicket());
         
         if (p.getTienda() != null) {
+            dto.setTiendaId(p.getTienda().getId());
             dto.setNombreTienda(p.getTienda().getNombre());
             dto.setSlugTienda(p.getTienda().getSlug());
             // Obtener el ID del dueño (admin) de la tienda

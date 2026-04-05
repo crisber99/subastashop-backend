@@ -101,7 +101,7 @@ public class MercadoPagoService {
                 .title(title)
                 .description("Acceso Premium a SubastaShop por " + months + (months == 1 ? " mes" : " meses"))
                 .quantity(1)
-                .unitPrice(unitPrice) 
+                .unitPrice(unitPrice)
                 .currencyId("CLP")
                 .build();
         items.add(item);
@@ -127,11 +127,12 @@ public class MercadoPagoService {
                 .build();
 
         Preference preference = client.create(request);
-        return preference.getInitPoint(); 
+        return preference.getInitPoint();
     }
 
     /**
-     * Sincroniza el estado de la suscripción de un usuario consultando directamente a Mercado Pago.
+     * Sincroniza el estado de la suscripción de un usuario consultando directamente
+     * a Mercado Pago.
      */
     public boolean syncSubscriptionStatus(String userEmail) {
         AppUsers user = userRepository.findByEmail(userEmail)
@@ -139,7 +140,8 @@ public class MercadoPagoService {
 
         String subId = user.getSubscriptionId();
         if (subId == null || subId.isEmpty()) {
-            // Si no hay ID, verificamos si debería tenerla o simplemente marcamos como inactiva la auto
+            // Si no hay ID, verificamos si debería tenerla o simplemente marcamos como
+            // inactiva la auto
             user.setPagoAutomatico(false);
             userRepository.save(user);
             return false;
@@ -154,7 +156,8 @@ public class MercadoPagoService {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
-                Map<String, Object> mpResponse = objectMapper.readValue(response.body(), new TypeReference<>() {});
+                Map<String, Object> mpResponse = objectMapper.readValue(response.body(), new TypeReference<>() {
+                });
                 String status = (String) mpResponse.get("status");
 
                 if ("authorized".equals(status) || "active".equals(status)) {
@@ -212,7 +215,7 @@ public class MercadoPagoService {
         user.setSubscriptionId(null);
         user.setPagoAutomatico(false);
         user.setSuscripcionActiva(false);
-        user.setRol(Role.ROLE_COMPRADOR); 
+        user.setRol(Role.ROLE_COMPRADOR);
         userRepository.save(user);
 
         log.info("✅ Suscripción {} cancelada. Usuario {} degradado a ROLE_COMPRADOR", subId, userEmail);
@@ -228,11 +231,11 @@ public class MercadoPagoService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         // 1. Asegurar Plan V6
-        String planName = "SubastaShop PRO V6";
+        String planName = "SubastaShop PRO";
         BigDecimal amount = new BigDecimal("9990");
         long totalProUsers = userRepository.countByRol(Role.ROLE_ADMIN);
         if (totalProUsers < 100) {
-            planName = "SubastaShop PRO Promo V6";
+            planName = "SubastaShop PRO Promo";
             amount = new BigDecimal("4990");
         }
         String planId = getOrCreatePlanId(planName, amount);
@@ -276,8 +279,10 @@ public class MercadoPagoService {
     }
 
     /**
-     * Crea una suscripción recurrente mensual (Pre-approval) usando el enlace directo del PLAN.
-     * Descubrimos en la documentación de Chile que el Plan mismo tiene un init_point
+     * Crea una suscripción recurrente mensual (Pre-approval) usando el enlace
+     * directo del PLAN.
+     * Descubrimos en la documentación de Chile que el Plan mismo tiene un
+     * init_point
      * que evita el error de card_token_id.
      */
     public String createRecurringSubscription(String userEmail) throws Exception {
@@ -292,12 +297,14 @@ public class MercadoPagoService {
             planName = "SubastaShop PRO Promo V6";
             amount = new BigDecimal("4990");
         }
-        
+
         // Obtenemos el ID del plan (debería ser el que te funcionó)
         String planId = getOrCreatePlanId(planName, amount);
 
-        // 2. Creamos una suscripción (preapproval) específica para ESTE usuario y ESTE email
-        // Esto es lo que permite que MP intente el flujo de "Invitado" o pre-llene los datos
+        // 2. Creamos una suscripción (preapproval) específica para ESTE usuario y ESTE
+        // email
+        // Esto es lo que permite que MP intente el flujo de "Invitado" o pre-llene los
+        // datos
         Map<String, Object> subBody = new HashMap<>();
         subBody.put("preapproval_plan_id", planId);
         subBody.put("payer_email", userEmail);
@@ -346,7 +353,7 @@ public class MercadoPagoService {
                 .GET()
                 .build();
         HttpResponse<String> searchRes = httpClient.send(searchReq, HttpResponse.BodyHandlers.ofString());
-        
+
         if (searchRes.statusCode() == 200) {
             Map<String, Object> results = objectMapper.readValue(searchRes.body(), Map.class);
             List<Map<String, Object>> resultsList = (List<Map<String, Object>>) results.get("results");
@@ -363,7 +370,7 @@ public class MercadoPagoService {
         Map<String, Object> planBody = new HashMap<>();
         planBody.put("reason", reason);
         planBody.put("back_url", "https://www.subastashop.cl/admin/configuracion");
-        
+
         Map<String, Object> autoRecurring = new HashMap<>();
         autoRecurring.put("frequency", 1);
         autoRecurring.put("frequency_type", "months");
@@ -380,7 +387,7 @@ public class MercadoPagoService {
         visaType.put("id", "visa");
         typeList.add(visaType);
         paymentMethods.put("payment_types", typeList);
-        
+
         List<Map<String, String>> methodList = new ArrayList<>();
         Map<String, String> visaMethod = new HashMap<>();
         visaMethod.put("id", "visa");
@@ -405,11 +412,12 @@ public class MercadoPagoService {
         try {
             PaymentClient client = new PaymentClient();
             Payment payment = client.get(Long.parseLong(paymentId));
-            
+
             if ("approved".equalsIgnoreCase(payment.getStatus())) {
                 String externalRef = payment.getExternalReference();
-                
-                // Si el pago viene de una suscripción recurrente, el externalRef suele ser solo el ID del usuario
+
+                // Si el pago viene de una suscripción recurrente, el externalRef suele ser solo
+                // el ID del usuario
                 // Si viene de una preferencia manual, es "userId:months"
                 if (externalRef != null) {
                     if (externalRef.contains(":")) {
@@ -445,7 +453,7 @@ public class MercadoPagoService {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
                 Map<String, Object> preApproval = objectMapper.readValue(response.body(), Map.class);
-                
+
                 if ("authorized".equalsIgnoreCase(String.valueOf(preApproval.get("status")))) {
                     Integer userId = Integer.parseInt(String.valueOf(preApproval.get("external_reference")));
                     AppUsers user = userRepository.findById(userId).orElse(null);
@@ -468,57 +476,68 @@ public class MercadoPagoService {
     public void confirmSubscription(Integer userId, Integer months, boolean esAutomatico) {
         AppUsers user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado (ID: " + userId + ")"));
-        
+
         // Actualizar Fechas
         LocalDateTime hoy = LocalDateTime.now();
-        LocalDateTime fechaBase = (user.getFechaVencimientoSuscripcion() != null && user.getFechaVencimientoSuscripcion().isAfter(hoy)) 
-                ? user.getFechaVencimientoSuscripcion() 
-                : hoy;
-        
+        LocalDateTime fechaBase = (user.getFechaVencimientoSuscripcion() != null
+                && user.getFechaVencimientoSuscripcion().isAfter(hoy))
+                        ? user.getFechaVencimientoSuscripcion()
+                        : hoy;
+
         user.setFechaVencimientoSuscripcion(fechaBase.plusMonths(months));
         user.setSuscripcionActiva(true);
-        user.setRol(Role.ROLE_ADMIN); 
+        user.setRol(Role.ROLE_ADMIN);
         user.setPagoAutomatico(esAutomatico); // Guardamos la preferencia actual del usuario
         userRepository.save(user);
 
-        log.info("✅ [{} PLAN] Suscripción activada por {} meses para: {}", 
-                 esAutomatico ? "AUTO" : "MANUAL", months, user.getEmail());
+        log.info("✅ [{} PLAN] Suscripción activada por {} meses para: {}",
+                esAutomatico ? "AUTO" : "MANUAL", months, user.getEmail());
 
         // --- ENVIAR EMAIL DE BIENVENIDA O RENOVACIÓN ---
         enviarEmailConfirmacion(user, months, esAutomatico);
     }
 
     private void enviarEmailConfirmacion(AppUsers user, Integer months, boolean esAutomatico) {
-        String asunto = esAutomatico ? "✅ Pago Automático Exitoso - SubastaShop" : "🚀 ¡Bienvenido al Nivel PRO de SubastaShop!";
+        String asunto = esAutomatico ? "✅ Pago Automático Exitoso - SubastaShop"
+                : "🚀 ¡Bienvenido al Nivel PRO de SubastaShop!";
         String durationText = months + (months == 1 ? " mes" : " meses");
-        
-        String html = "<div style='font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; border-top: 5px solid #6366f1;'>" +
-                "<h1 style='color: #1e293b; text-align: center;'>" + (esAutomatico ? "Cobro Recurrente Confirmado" : "¡Suscripción Activada!") + "</h1>" +
+
+        String html = "<div style='font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; border-top: 5px solid #6366f1;'>"
+                +
+                "<h1 style='color: #1e293b; text-align: center;'>"
+                + (esAutomatico ? "Cobro Recurrente Confirmado" : "¡Suscripción Activada!") + "</h1>" +
                 "<p style='font-size: 1.1em; color: #475569;'>Hola <b>" + user.getNombreCompleto() + "</b>,</p>" +
-                "<p style='font-size: 1.1em; color: #475569;'>" + 
-                (esAutomatico ? "Tu suscripción mensual se ha renovado automáticamente con éxito." : "Gracias por confiar en SubastaShop. Tu cuenta ha sido actualizada al nivel PRO.") + 
+                "<p style='font-size: 1.1em; color: #475569;'>" +
+                (esAutomatico ? "Tu suscripción mensual se ha renovado automáticamente con éxito."
+                        : "Gracias por confiar en SubastaShop. Tu cuenta ha sido actualizada al nivel PRO.")
+                +
                 "</p>" +
                 "<div style='background: #f8fafc; padding: 15px; border-radius: 5px; margin: 20px 0;'>" +
                 "<p style='margin: 5px 0;'>💎 <b>Nivel:</b> PRO Administrator</p>" +
                 "<p style='margin: 5px 0;'>⏳ <b>Periodo Añadido:</b> " + durationText + "</p>" +
-                "<p style='margin: 5px 0;'>📅 <b>Nueva Fecha de Vencimiento:</b> " + user.getFechaVencimientoSuscripcion().toLocalDate() + "</p>" +
-                "<p style='margin: 5px 0;'>⚙️ <b>Tipo de Renovación:</b> " + (esAutomatico ? "Automática 🔄" : "Manual 👆") + "</p>" +
+                "<p style='margin: 5px 0;'>📅 <b>Nueva Fecha de Vencimiento:</b> "
+                + user.getFechaVencimientoSuscripcion().toLocalDate() + "</p>" +
+                "<p style='margin: 5px 0;'>⚙️ <b>Tipo de Renovación:</b> "
+                + (esAutomatico ? "Automática 🔄" : "Manual 👆") + "</p>" +
                 "</div>" +
-                (esAutomatico ? "" : 
-                "<h3>¿Qué puedes hacer ahora?</h3>" +
-                "<ul>" +
-                "<li>Configurar tu tienda y logo.</li>" +
-                "<li>Publicar subastas y ventas directas sin límites.</li>" +
-                "<li>Recibir pagos directos de tus clientes.</li>" +
-                "</ul>") +
+                (esAutomatico ? ""
+                        : "<h3>¿Qué puedes hacer ahora?</h3>" +
+                                "<ul>" +
+                                "<li>Configurar tu tienda y logo.</li>" +
+                                "<li>Publicar subastas y ventas directas sin límites.</li>" +
+                                "<li>Recibir pagos directos de tus clientes.</li>" +
+                                "</ul>")
+                +
                 "<p style='text-align: center; margin-top: 30px;'>" +
-                "<a href='" + frontendUrl + "/admin/configuracion' style='background: #6366f1; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;'>IR A MI DASHBOARD</a>" +
+                "<a href='" + frontendUrl
+                + "/admin/configuracion' style='background: #6366f1; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;'>IR A MI DASHBOARD</a>"
+                +
                 "</p>" +
-                "<br><p style='color: #94a3b8; font-size: 0.9em;'>Puedes cambiar tu método de pago o cancelar en cualquier momento desde tu panel.</p>" +
+                "<br><p style='color: #94a3b8; font-size: 0.9em;'>Puedes cambiar tu método de pago o cancelar en cualquier momento desde tu panel.</p>"
+                +
                 "</div>";
 
         emailService.enviarCorreo(user.getEmail(), asunto, html);
     }
-
 
 }
