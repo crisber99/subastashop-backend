@@ -8,10 +8,13 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MensajeChatDTO {
-    private String id; // Opcional, generado por el servidor o db
+    private String id; 
     private String contenido;
     private String remitenteNombre;
     private Long tiendaId;
-    private String timestamp; // Formateado para el frontend
+    private String timestamp; 
     private String userEmail; 
+    // Añadimos campos para compatibilidad con el frontend anterior por si acaso
+    private boolean esVendedor;
+    private boolean admin;
 }
