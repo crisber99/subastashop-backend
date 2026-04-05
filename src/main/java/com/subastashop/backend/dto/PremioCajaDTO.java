@@ -7,6 +7,6 @@ public class PremioCajaDTO {
     private Integer id;
     private String nombre;
     private String imagenUrl;
-    private Double probabilidad;
+    private Integer probabilidad;
     private Integer stock;
 }
