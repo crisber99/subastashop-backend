@@ -1,37 +1,35 @@
 package com.subastashop.backend.models;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "mensaje_chat")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class MensajeChat {
+@EqualsAndHashCode(callSuper = true)
+@Entity
+@Table(name = "mensajes_chat")
+public class MensajeChat extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "producto_id", nullable = false)
-    private Producto producto;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", nullable = false)
-    private AppUsers usuario;
-
-    @Column(nullable = false, length = 1000)
-    private String mensaje;
+    @Column(nullable = false)
+    private Long tiendaId;
 
     @Column(nullable = false)
-    private LocalDateTime fechaEnvio;
+    private String remitenteNombre;
 
-    @PrePersist
-    protected void onCreate() {
-        this.fechaEnvio = LocalDateTime.now();
-    }
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String contenido;
+
+    private String userEmail;
+
+    private String timestampStr; // HH:mm para el frontend
+
+    private LocalDateTime fechaEnvio = LocalDateTime.now();
+
+    private boolean esVendedor = false;
+    private boolean admin = false;
 }
