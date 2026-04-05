@@ -79,6 +79,7 @@ public class TiendaController {
             @RequestParam(value = "fotoAnverso", required = false) MultipartFile fotoAnverso,
             @RequestParam(value = "fotoReverso", required = false) MultipartFile fotoReverso,
             @RequestParam(value = "opcionesEnvio", required = false) String opcionesEnvio,
+            @RequestParam(value = "whatsapp", required = false) String whatsapp,
             @RequestParam(value = "aceptaTerminos", required = false) Boolean aceptaTerminos) {
         try {
             // A. Identificar al usuario logueado
@@ -116,6 +117,8 @@ public class TiendaController {
                 tienda.setColorPrimario(colorPrimario);
             if (opcionesEnvio != null)
                 tienda.setOpcionesEnvio(opcionesEnvio);
+            if (whatsapp != null)
+                tienda.setWhatsapp(whatsapp);
 
             // C. Subir Logo a Azure (si el usuario seleccionó un logo)
             if (fotoLogo != null && !fotoLogo.isEmpty()) {

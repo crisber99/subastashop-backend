@@ -38,7 +38,8 @@ public class PublicController {
                 t.getColorPrimario(),
                 t.getActiva(),
                 t.isIdentidadVerificada(),
-                t.getFechaCreacion());
+                t.getFechaCreacion(),
+                t.getWhatsapp());
     }
 
     // Endpoint para la Landing Page (Listar Tiendas)

@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.multipart.MultipartFile;
+import com.subastashop.backend.services.StorageService;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -44,6 +46,9 @@ public class RifaController {
 
     @Autowired
     private EmailService rifaEmailService;
+
+    @Autowired
+    private StorageService storageService;
 
     // 👇 MÉTODO ACTUALIZADO: AHORA DELEGA AL SERVICIO ASÍNCRONO
     @PostMapping("/{productoId}/lanzar")
@@ -144,6 +149,35 @@ public class RifaController {
         }).collect(java.util.stream.Collectors.toList());
 
         return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/{productoId}/informar-pago")
+    public ResponseEntity<?> informarPagoRifa(@PathVariable Integer productoId, @RequestParam("archivo") MultipartFile archivo) {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            AppUsers usuario = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            List<TicketRifa> tickets = ticketRepository.findByRifaIdAndCompradorId(productoId, usuario.getId());
+            if (tickets.isEmpty()) {
+                return ResponseEntity.badRequest().body("No tienes tickets para esta rifa.");
+            }
+
+            // Subir imagen a Azure
+            String url = storageService.subirImagen(archivo);
+
+            // Asignar el comprobante a todos sus tickets no pagados de esta rifa
+            for (TicketRifa t : tickets) {
+                if (Boolean.FALSE.equals(t.getPagado())) {
+                    t.setComprobanteUrl(url);
+                }
+            }
+            ticketRepository.saveAll(tickets);
+
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     private void enviarComprobanteEmail(AppUsers usuario, Producto rifa, List<Integer> numerosTickets) {

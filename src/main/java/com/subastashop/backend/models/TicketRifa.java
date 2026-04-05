@@ -24,5 +24,7 @@ public class TicketRifa {
 
     private LocalDateTime fechaCompra = LocalDateTime.now();
 
-    private Boolean pagado = true;
+    private Boolean pagado = false; // <-- CRITICO: Por defecto en false para que requiera validación
+
+    private String comprobanteUrl; // <-- Para guardar la foto de pago
 }

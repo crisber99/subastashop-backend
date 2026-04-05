@@ -35,11 +35,12 @@ public class Tienda {
 
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
-    // Datos Bancarios para Transferencia (Ya que el pago es directo)
-    @Column(length = 1000) // Texto largo
     private String datosBancarios;
 
     private String opcionesEnvio; // Ej: "Blue Express, Paket, Starken"
+
+    private String whatsapp; // <-- Número de WhatsApp para recibir comprobantes
+
 
     @Column(name = "fecha_aceptacion_terminos")
     private LocalDateTime fechaAceptacionTerminos;
