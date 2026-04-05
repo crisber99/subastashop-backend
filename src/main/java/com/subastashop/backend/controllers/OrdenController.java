@@ -75,4 +75,15 @@ public class OrdenController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @PostMapping("/detalle/{detalleId}/abrir-caja")
+    public ResponseEntity<?> abrirCajaMisteriosa(@PathVariable Long detalleId) {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            String premioObtenido = ordenService.abrirCajaMisteriosa(detalleId, email);
+            return ResponseEntity.ok(java.util.Collections.singletonMap("premio", premioObtenido));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

@@ -27,4 +27,5 @@ public class ProductoDTO {
     private Integer tiendaUsuarioId;
     private Integer categoriaId;
     private String categoriaNombre;
+    private List<PremioCajaDTO> premios;
 }

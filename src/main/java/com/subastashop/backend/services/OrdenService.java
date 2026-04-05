@@ -210,4 +210,58 @@ public class OrdenService {
     public List<Orden> obtenerPendientesValidacion(Long tiendaId) {
         return ordenRepository.findByTiendaIdAndEstado(tiendaId, "ESPERANDO_APROBACION");
     }
+
+    @Transactional
+    public String abrirCajaMisteriosa(Long detalleId, String email) {
+        DetalleOrden detalle = detalleOrdenRepository.findById(detalleId)
+                .orElseThrow(() -> new RuntimeException("Detalle no encontrado"));
+
+        Orden orden = detalle.getOrden();
+        if (!orden.getUsuario().getEmail().equals(email)) {
+            throw new RuntimeException("No tienes permiso");
+        }
+        if (!"PAGADO".equals(orden.getEstado())) {
+            throw new RuntimeException("La orden debe estar PAGADA para abrir la caja.");
+        }
+        if (detalle.getDatosExtra() != null && detalle.getDatosExtra().startsWith("Premio:")) {
+            throw new RuntimeException("Esta caja ya ha sido abierta.");
+        }
+
+        Producto producto = detalle.getProducto();
+        if (!"CAJA_MISTERIOSA".equals(producto.getTipoVenta())) {
+            throw new RuntimeException("Este producto no es una Caja Misteriosa.");
+        }
+
+        List<com.subastashop.backend.models.PremioCaja> premios = producto.getPremios();
+        if (premios == null || premios.isEmpty()) {
+            throw new RuntimeException("La caja no tiene premios configurados.");
+        }
+
+        // Weighted Random Algorithm
+        double totalProb = premios.stream().mapToDouble(p -> p.getProbabilidad() != null ? p.getProbabilidad() : 0.0).sum();
+        double randomValue = Math.random() * totalProb;
+        double init = 0.0;
+        com.subastashop.backend.models.PremioCaja ganador = premios.get(0);
+
+        for (com.subastashop.backend.models.PremioCaja premio : premios) {
+            double prob = premio.getProbabilidad() != null ? premio.getProbabilidad() : 0.0;
+            init += prob;
+            if (randomValue <= init) {
+                ganador = premio;
+                break;
+            }
+        }
+
+        // Bajar stock del premio si es relevante
+        if (ganador.getStock() != null && ganador.getStock() > 0) {
+            ganador.setStock(ganador.getStock() - 1);
+            // JPA actualizará automáticamente por CASCADE o transacción directa
+        }
+
+        String resultado = "Premio: " + ganador.getNombre();
+        detalle.setDatosExtra(resultado);
+        detalleOrdenRepository.save(detalle);
+
+        return ganador.getNombre();
+    }
 }

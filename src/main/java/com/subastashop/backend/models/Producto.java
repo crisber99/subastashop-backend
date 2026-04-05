@@ -65,6 +65,9 @@ public class Producto extends BaseEntity {
     private Integer cantidadGanadores;
     private BigDecimal precioTicket;
 
+    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PremioCaja> premios = new ArrayList<>();
+
     @ManyToOne
     @JoinColumn(name = "tienda_id")
     @JsonIgnoreProperties({"productos", "usuario", "hibernateLazyInitializer", "handler", "rutEmpresa", "datosBancarios", "documentoAnversoUrl", "documentoReversoUrl", "fechaAceptacionTerminos"})

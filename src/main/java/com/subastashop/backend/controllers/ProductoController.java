@@ -67,6 +67,7 @@ public class ProductoController {
             @RequestParam(value = "precioTicket", required = false) BigDecimal precioTicket,
             @RequestParam(value = "cantidadNumeros", required = false) Integer cantidadNumeros,
             @RequestParam(value = "cantidadGanadores", required = false) Integer cantidadGanadores,
+            @RequestParam(value = "premiosCaja", required = false) String premiosCajaJson,
             @RequestParam(value = "categoriaId", required = false) Integer categoriaId) throws java.io.IOException {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -75,7 +76,7 @@ public class ProductoController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
         Producto nuevo = productoService.crearProducto(email, isSuperAdmin, archivos, nombre, descripcion,
-                tipoVenta, precioBase, stock, fechaFinIso, precioTicket, cantidadNumeros, cantidadGanadores, categoriaId);
+                tipoVenta, precioBase, stock, fechaFinIso, precioTicket, cantidadNumeros, cantidadGanadores, premiosCajaJson, categoriaId);
 
         // Enviar notificación Push Global
         try {

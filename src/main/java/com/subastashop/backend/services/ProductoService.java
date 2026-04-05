@@ -11,6 +11,10 @@ import com.subastashop.backend.repositories.ProductoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.subastashop.backend.models.PremioCaja;
+import com.subastashop.backend.dto.PremioCajaDTO;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -37,7 +41,7 @@ public class ProductoService {
     public Producto crearProducto(String email, boolean isSuperAdmin, List<MultipartFile> archivos, String nombre,
                                   String descripcion, String tipoVenta, BigDecimal precioBase, Integer stock,
                                   String fechaFinIso, BigDecimal precioTicket, Integer cantidadNumeros, Integer cantidadGanadores,
-                                  Integer categoriaId) throws java.io.IOException {
+                                  String premiosCajaJson, Integer categoriaId) throws java.io.IOException {
 
         if (securityService.tieneContenidoIlegal(nombre) || securityService.tieneContenidoIlegal(descripcion)) {
             throw new ApiException("CensoredContent: Tu publicación contiene palabras prohibidas por nuestras normas de comunidad.");
@@ -96,6 +100,19 @@ public class ProductoService {
                 if (fechaFinIso.length() == 16)
                     fechaFinIso += ":00";
                 p.setFechaFinSubasta(LocalDateTime.parse(fechaFinIso));
+            }
+        } else if ("CAJA_MISTERIOSA".equalsIgnoreCase(tipoVenta)) {
+            p.setStock(stock);
+            p.setEstado("DISPONIBLE");
+            p.setPrecioTicket(precioTicket != null ? precioTicket : precioBase);
+
+            if (premiosCajaJson != null && !premiosCajaJson.isEmpty() && !premiosCajaJson.equals("undefined")) {
+                ObjectMapper mapper = new ObjectMapper();
+                List<PremioCaja> premios = mapper.readValue(premiosCajaJson, new TypeReference<List<PremioCaja>>() {});
+                for (PremioCaja premio : premios) {
+                    premio.setProducto(p);
+                }
+                p.setPremios(premios);
             }
         } else {
             p.setStock(stock);
@@ -191,6 +208,20 @@ public class ProductoService {
         if (p.getCategoria() != null) {
             dto.setCategoriaId(p.getCategoria().getId());
             dto.setCategoriaNombre(p.getCategoria().getNombre());
+        }
+        
+        if (p.getPremios() != null && !p.getPremios().isEmpty()) {
+            List<PremioCajaDTO> premiosDTO = new java.util.ArrayList<>();
+            for (PremioCaja premio : p.getPremios()) {
+                PremioCajaDTO pdto = new PremioCajaDTO();
+                pdto.setId(premio.getId());
+                pdto.setNombre(premio.getNombre());
+                pdto.setImagenUrl(premio.getImagenUrl());
+                pdto.setProbabilidad(premio.getProbabilidad());
+                pdto.setStock(premio.getStock());
+                premiosDTO.add(pdto);
+            }
+            dto.setPremios(premiosDTO);
         }
         
         return dto;
