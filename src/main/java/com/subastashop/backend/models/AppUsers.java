@@ -34,6 +34,7 @@ public class AppUsers implements UserDetails {
     private String passwordHash;
 
     private String nombreCompleto;
+    private String alias;
     private String telefono;
     private String direccion;
 
@@ -49,20 +50,20 @@ public class AppUsers implements UserDetails {
     private Tienda tienda;
 
     // --- Campos de Suscripción y Trial ---
-    @Column(name = "fecha_fin_prueba")
+    @Column(name = "fecha_fin_prueba", nullable = true)
     private LocalDateTime fechaFinPrueba = LocalDateTime.now().plusDays(15);
 
-    @Column(name = "suscripcion_activa")
+    @Column(name = "suscripcion_activa", nullable = true)
     private Boolean suscripcionActiva = false;
 
-    @Column(name = "fecha_vencimiento_suscripcion")
+    @Column(name = "fecha_vencimiento_suscripcion", nullable = true)
     private LocalDateTime fechaVencimientoSuscripcion;
 
     // --- Campos para Suscripción Automática (Mercado Pago Pre-approvals) ---
-    @Column(name = "subscription_id")
+    @Column(name = "subscription_id", nullable = true)
     private String subscriptionId;
 
-    @Column(name = "pago_automatico")
+    @Column(name = "pago_automatico", nullable = true)
     private Boolean pagoAutomatico = false;
 
     @Column(name = "stripe_customer_id")

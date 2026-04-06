@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import org.springframework.context.annotation.Lazy;
+import com.subastashop.backend.services.SubastaSniperService;
 
 @Service
 public class SubastaService {
@@ -22,10 +24,22 @@ public class SubastaService {
     private PujaRepository pujaRepository;
 
     @Autowired
+    private com.subastashop.backend.repositories.AppUserRepository userRepository;
+
+    @Autowired
     private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    @Lazy
+    private SubastaSniperService sniperService;
 
     @Transactional // <--- ¡Vital! O todo o nada.
     public Puja realizarPuja(Integer productoId, Integer usuarioId, BigDecimal montoOferta) {
+        return realizarPuja(productoId, usuarioId, montoOferta, false);
+    }
+
+    @Transactional
+    public Puja realizarPuja(Integer productoId, Integer usuarioId, BigDecimal montoOferta, boolean isAutoBid) {
         String tenantId = TenantContext.getTenantId();
 
         // 1. Buscar el producto (Asegurando que sea del tenant actual)
@@ -42,11 +56,30 @@ public class SubastaService {
             throw new RuntimeException("No se puede pujar: La subasta no está activa (Estado: " + estado + ")");
         }
 
-        // --- NUEVA VALIDACIÓN: Verificar si la fecha es nula antes de comparar ---
-        if (producto.getFechaFinSubasta() == null) {
-            throw new RuntimeException("Error crítico: Este producto no tiene fecha de término configurada.");
+        // --- NUEVA VALIDACIÓN: Early Access (PRO) ---
+        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime inicioOficial = producto.getFechaInicioSubasta() != null ? 
+                                     producto.getFechaInicioSubasta() : producto.getFechaCreacion();
+        
+        if (ahora.isBefore(inicioOficial)) {
+            // Es periodo de acceso anticipado o aún no empieza
+            com.subastashop.backend.models.AppUsers usuario = userRepository.findById(usuarioId)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
+            boolean esPro = usuario.isSuscripcionActiva() || usuario.isPagoAutomatico();
+            int horasAnticipo = producto.getHorasVentaAnticipada() != null ? producto.getHorasVentaAnticipada() : 24;
+            LocalDateTime inicioPro = inicioOficial.minusHours(horasAnticipo);
+
+            if (ahora.isBefore(inicioPro)) {
+                throw new RuntimeException("La subasta aún no ha comenzado para nadie.");
+            }
+
+            if (!esPro && ahora.isBefore(inicioOficial)) {
+                throw new RuntimeException("Acceso Anticipado: Esta subasta solo está abierta para usuarios PRO en este momento. Abre para el público general el " + inicioOficial);
+            }
         }
-        if (LocalDateTime.now().isAfter(producto.getFechaFinSubasta())) {
+
+        if (producto.getFechaFinSubasta() != null && ahora.isAfter(producto.getFechaFinSubasta())) {
             throw new RuntimeException("La subasta ya finalizó");
         }
 
@@ -85,6 +118,11 @@ public class SubastaService {
             
             // Enviamos el mensaje al canal privado de ese usuario en particular
             messagingTemplate.convertAndSend("/topic/usuario/" + pujaAnteriorMax.getUsuarioId(), notificacionOutbid);
+        }
+
+        // 7. Si es una puja manual, disparar los Sniper Bots
+        if (!isAutoBid) {
+            sniperService.procesarSnipers(productoId, usuarioId);
         }
 
         return nuevaPuja;

@@ -1,0 +1,27 @@
+package com.subastashop.backend.models;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Data
+@Entity
+@Table(name = "GanadoresConcurso")
+public class ContestWinner {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @ManyToOne
+    @JoinColumn(name = "producto_id")
+    private Producto contest;
+
+    @ManyToOne
+    @JoinColumn(name = "participacion_id")
+    private Participation winningParticipation;
+
+    private Integer rank; // puesto -> rank
+
+    private LocalDateTime winningDate = LocalDateTime.now(); // fechaGanador -> winningDate
+}

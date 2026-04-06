@@ -64,12 +64,15 @@ public class ProductoController {
             @RequestParam(value = "precioBase", required = false) java.math.BigDecimal precioBase,
             @RequestParam(value = "stock", required = false, defaultValue = "1") Integer stock,
             @RequestParam(value = "chatHabilitado", required = false, defaultValue = "true") boolean chatHabilitado,
+            @RequestParam(value = "destacado", required = false, defaultValue = "false") boolean destacado,
             @RequestParam(value = "fechaFin", required = false) String fechaFinIso,
             @RequestParam(value = "precioTicket", required = false) BigDecimal precioTicket,
             @RequestParam(value = "cantidadNumeros", required = false) Integer cantidadNumeros,
             @RequestParam(value = "cantidadGanadores", required = false) Integer cantidadGanadores,
             @RequestParam(value = "premiosCaja", required = false) String premiosCajaJson,
-            @RequestParam(value = "categoriaId", required = false) Integer categoriaId) throws java.io.IOException {
+            @RequestParam(value = "categoriaId", required = false) Integer categoriaId,
+            @RequestParam(value = "fechaInicioSubasta", required = false) String fechaInicioSubasta,
+            @RequestParam(value = "horasVentaAnticipada", required = false, defaultValue = "24") Integer horasVentaAnticipada) throws java.io.IOException {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         boolean isSuperAdmin = SecurityContextHolder.getContext().getAuthentication()
@@ -77,7 +80,8 @@ public class ProductoController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
         Producto nuevo = productoService.crearProducto(email, isSuperAdmin, archivos, nombre, descripcion,
-                tipoVenta, precioBase, stock, chatHabilitado, fechaFinIso, precioTicket, cantidadNumeros, cantidadGanadores, premiosCajaJson, categoriaId);
+                tipoVenta, precioBase, stock, chatHabilitado, destacado, fechaFinIso, precioTicket, cantidadNumeros, cantidadGanadores, premiosCajaJson, categoriaId,
+                fechaInicioSubasta, horasVentaAnticipada);
 
         // Enviar notificación Push Global
         try {
@@ -129,17 +133,21 @@ public class ProductoController {
             @PathVariable Integer id,
             @RequestParam("nombre") String nombre,
             @RequestParam("descripcion") String descripcion,
-            @RequestParam("precioBase") BigDecimal precioBase,
+            @RequestParam(value = "precioBase", required = false) java.math.BigDecimal precioBase,
             @RequestParam(value = "fechaFin", required = false) String fechaFin,
             @RequestParam(value = "archivos", required = false) List<MultipartFile> archivos,
             @RequestParam(value = "categoriaId", required = false) Integer categoriaId,
-            @RequestParam(value = "chatHabilitado", required = false, defaultValue = "true") boolean chatHabilitado) throws java.io.IOException {
+            @RequestParam(value = "chatHabilitado", required = false, defaultValue = "true") boolean chatHabilitado,
+            @RequestParam(value = "destacado", required = false, defaultValue = "false") boolean destacado,
+            @RequestParam(value = "fechaInicioSubasta", required = false) String fechaInicioSubasta,
+            @RequestParam(value = "horasVentaAnticipada", required = false) Integer horasVentaAnticipada) throws java.io.IOException {
 
         boolean isSuperAdmin = SecurityContextHolder.getContext().getAuthentication()
                 .getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
-        Producto producto = productoService.editarProducto(id, isSuperAdmin, nombre, descripcion, precioBase, fechaFin, archivos, categoriaId, chatHabilitado);
-        return ResponseEntity.ok(productoService.toDTO(producto));
+        Producto modificado = productoService.editarProducto(id, isSuperAdmin, nombre, descripcion, precioBase, fechaFin, archivos, 
+                categoriaId, chatHabilitado, destacado, fechaInicioSubasta, horasVentaAnticipada);
+        return ResponseEntity.ok(productoService.toDTO(modificado));
     }
 }

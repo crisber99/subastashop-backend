@@ -50,7 +50,9 @@ public class Producto extends BaseEntity {
 
     // --- Campos de Subasta ---
     private BigDecimal precioActual;
+    private LocalDateTime fechaInicioSubasta;
     private LocalDateTime fechaFinSubasta;
+    private Integer horasVentaAnticipada = 24; // Por defecto 24 horas antes para PRO
 
     @Column(length = 20)
     private String estado = "DISPONIBLE";
@@ -64,9 +66,13 @@ public class Producto extends BaseEntity {
     private Integer cantidadNumeros;
     private Integer cantidadGanadores;
     private BigDecimal precioTicket;
+    private Integer numeroPares = 5; // Dificultad del Memorice
     
     @Column(nullable = false)
     private boolean chatHabilitado = true;
+
+    @Column(nullable = false)
+    private boolean destacado = false;
 
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PremioCaja> premios = new ArrayList<>();

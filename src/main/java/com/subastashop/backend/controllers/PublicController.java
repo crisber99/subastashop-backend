@@ -62,6 +62,15 @@ public class PublicController {
         return ResponseEntity.ok(productos);
     }
 
+    @GetMapping("/productos/destacados")
+    @Cacheable("productosDestacados")
+    public List<Producto> obtenerProductosDestacados() {
+        // Listamos los 12 más recientes que estén marcados como destacados 
+        // y que no estén terminados o eliminados.
+        List<String> estadosValidos = List.of("DISPONIBLE", "EN_SUBASTA");
+        return productoRepository.findTop12ByDestacadoTrueAndEstadoInOrderByFechaCreacionDesc(estadosValidos);
+    }
+
     @GetMapping("/tiendas/{slug}")
     public ResponseEntity<TiendaPublicDTO> obtenerTiendaPorSlug(@PathVariable("slug") String slug) {
         return tiendaRepository.findBySlug(slug.toLowerCase())

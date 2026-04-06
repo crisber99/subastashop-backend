@@ -23,6 +23,9 @@ public class ProductoDTO {
     private Integer cantidadGanadores;
     private BigDecimal precioTicket;
     private boolean chatHabilitado;
+    private boolean destacado;
+    private LocalDateTime fechaInicioSubasta;
+    private Integer horasVentaAnticipada;
     private String nombreTienda;
     private String slugTienda;
     private Long tiendaId;

@@ -6,7 +6,9 @@ import com.subastashop.backend.repositories.AppUserRepository;
 import com.subastashop.backend.services.JwtService;
 import com.subastashop.backend.dto.LoginRequest;
 import com.subastashop.backend.dto.RegisterRequest;
+import com.subastashop.backend.dto.ResetPasswordRequest;
 import com.subastashop.backend.exceptions.ApiException;
+import jakarta.validation.Valid;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -69,6 +71,7 @@ public class AuthController {
         usuarioMap.put("id", userCompleto.getId()); // ID del usuario para notificaciones y perfiles
         usuarioMap.put("nombre", userCompleto.getNombreCompleto());
         usuarioMap.put("email", userCompleto.getEmail());
+        usuarioMap.put("alias", userCompleto.getAlias());
         usuarioMap.put("role", userCompleto.getRol() != null ? userCompleto.getRol().name() : "ROLE_USER"); 
         usuarioMap.put("fechaFinPrueba", userCompleto.getFechaFinPrueba());
         usuarioMap.put("suscripcionActiva", userCompleto.isSuscripcionActiva());
@@ -80,22 +83,21 @@ public class AuthController {
 
     // REGISTRO
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request, @RequestHeader("X-Tenant-ID") String tenantId) {
-        // ... (existing code stays same)
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, @RequestHeader("X-Tenant-ID") String tenantId) {
+        
         if (userRepository.existsByEmailAndTenantId(request.getEmail(), tenantId)) {
             throw new ApiException("El email ya existe en esta tienda");
         }
 
-        // VALIDACIÓN DE CONTRASEÑA 🔐
-        String passwordPattern = "^(?=.*[0-9])(?=.*[a-zA-Z]).{8,}$";
-        if (request.getPassword() == null || !request.getPassword().matches(passwordPattern)) {
-            throw new ApiException("La contraseña debe tener al menos 8 caracteres e incluir letras y números.");
+        if (userRepository.existsByAliasAndTenantId(request.getAlias(), tenantId)) {
+            throw new ApiException("El alias ya está en uso");
         }
 
         AppUsers user = new AppUsers();
         user.setEmail(request.getEmail());
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setAlias(request.getAlias());
         user.setNombreCompleto(request.getNombre());
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setTelefono(request.getTelefono());
         user.setDireccion(request.getDireccion());
         user.setRol(Role.ROLE_COMPRADOR);
@@ -119,6 +121,7 @@ public class AuthController {
         usuarioMap.put("id", user.getId()); // Añadiendo ID para ws
         usuarioMap.put("nombre", user.getNombreCompleto());
         usuarioMap.put("email", user.getEmail());
+        usuarioMap.put("alias", user.getAlias());
         usuarioMap.put("role", user.getRol() != null ? user.getRol().name() : "ROLE_COMPRADOR");
         usuarioMap.put("fechaFinPrueba", user.getFechaFinPrueba());
         usuarioMap.put("suscripcionActiva", user.isSuscripcionActiva());
@@ -162,10 +165,10 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        String code = request.get("code");
-        String newPassword = request.get("newPassword");
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        String email = request.getEmail();
+        String code = request.getCode();
+        String newPassword = request.getNewPassword();
 
         com.subastashop.backend.models.PasswordResetToken token = tokenRepository.findByToken(code)
                 .filter(t -> t.getEmail().equals(email))
@@ -174,12 +177,6 @@ public class AuthController {
         if (token.isExpired()) {
             tokenRepository.delete(token);
             throw new ApiException("El código ha expirado. Por favor solicita uno nuevo.");
-        }
-
-        // Validar nueva contraseña
-        String passwordPattern = "^(?=.*[0-9])(?=.*[a-zA-Z]).{8,}$";
-        if (newPassword == null || !newPassword.matches(passwordPattern)) {
-            throw new ApiException("La nueva contraseña debe tener al menos 8 caracteres e incluir letras y números.");
         }
 
         AppUsers user = userRepository.findByEmail(email)
@@ -284,6 +281,7 @@ public class AuthController {
         usuarioMap.put("id", user.getId());
         usuarioMap.put("nombre", user.getNombreCompleto());
         usuarioMap.put("email", user.getEmail());
+        usuarioMap.put("alias", user.getAlias());
         usuarioMap.put("role", user.getRol() != null ? user.getRol().name() : "ROLE_USER");
         usuarioMap.put("fechaFinPrueba", user.getFechaFinPrueba());
         usuarioMap.put("suscripcionActiva", user.isSuscripcionActiva());

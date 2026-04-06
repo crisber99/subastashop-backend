@@ -40,8 +40,8 @@ public class ProductoService {
 
     public Producto crearProducto(String email, boolean isSuperAdmin, List<MultipartFile> archivos, String nombre,
                                   String descripcion, String tipoVenta, BigDecimal precioBase, Integer stock,
-                                  boolean chatHabilitado, String fechaFinIso, BigDecimal precioTicket, Integer cantidadNumeros, Integer cantidadGanadores,
-                                  String premiosCajaJson, Integer categoriaId) throws java.io.IOException {
+                                  boolean chatHabilitado, boolean destacado, String fechaFinIso, BigDecimal precioTicket, Integer cantidadNumeros, Integer cantidadGanadores,
+                                  String premiosCajaJson, Integer categoriaId, String fechaInicioSubasta, Integer horasVentaAnticipada) throws java.io.IOException {
 
         if (securityService.tieneContenidoIlegal(nombre) || securityService.tieneContenidoIlegal(descripcion)) {
             throw new ApiException("CensoredContent: Tu publicación contiene palabras prohibidas por nuestras normas de comunidad.");
@@ -85,7 +85,15 @@ public class ProductoService {
         p.setPrecioBase(precioBase != null ? precioBase : java.math.BigDecimal.ZERO);
         p.setImagenes(urlsSubidas);
         p.setTienda(admin.getTienda());
-        p.setChatHabilitado(chatHabilitado);
+        
+        // --- VALIDACIÓN PRO PARA CHAT ---
+        if (chatHabilitado && !admin.isSuscripcionActiva() && !admin.isPagoAutomatico()) {
+            p.setChatHabilitado(false); // Forzamos apagado si no es PRO
+        } else {
+            p.setChatHabilitado(chatHabilitado);
+        }
+        
+        p.setDestacado(destacado);
 
         if ("RIFA".equalsIgnoreCase(tipoVenta)) {
             p.setEstado("DISPONIBLE");
@@ -102,6 +110,13 @@ public class ProductoService {
                     fechaFinIso += ":00";
                 p.setFechaFinSubasta(LocalDateTime.parse(fechaFinIso));
             }
+            
+            if (fechaInicioSubasta != null && !fechaInicioSubasta.equals("undefined") && !fechaInicioSubasta.isEmpty()) {
+                if (fechaInicioSubasta.length() == 16)
+                    fechaInicioSubasta += ":00";
+                p.setFechaInicioSubasta(LocalDateTime.parse(fechaInicioSubasta));
+            }
+            p.setHorasVentaAnticipada(horasVentaAnticipada != null ? horasVentaAnticipada : 24);
         } else if ("CAJA_MISTERIOSA".equalsIgnoreCase(tipoVenta)) {
             p.setStock(stock);
             p.setEstado("DISPONIBLE");
@@ -128,7 +143,8 @@ public class ProductoService {
     }
 
     public Producto editarProducto(Integer id, boolean isSuperAdmin, String nombre, String descripcion, BigDecimal precioBase,
-                                   String fechaFin, List<MultipartFile> archivos, Integer categoriaId, boolean chatHabilitado) throws java.io.IOException {
+                                   String fechaFin, List<MultipartFile> archivos, Integer categoriaId, boolean chatHabilitado, boolean destacado,
+                                   String fechaInicioSubasta, Integer horasVentaAnticipada) throws java.io.IOException {
 
         if (securityService.tieneContenidoIlegal(nombre) || securityService.tieneContenidoIlegal(descripcion)) {
             throw new ApiException("CensoredContent: No puedes actualizar el producto con términos prohibidos.");
@@ -145,7 +161,18 @@ public class ProductoService {
         producto.setNombre(nombre);
         producto.setDescripcion(descripcion);
         producto.setPrecioBase(precioBase);
-        producto.setChatHabilitado(chatHabilitado);
+        
+        // --- VALIDACIÓN PRO PARA CHAT (EDIT) ---
+        Integer ownerId = usuarioRepository.findOwnerIdByTiendaId(producto.getTienda().getId());
+        AppUsers dueno = (ownerId != null) ? usuarioRepository.findById(ownerId).orElse(null) : null;
+        
+        if (chatHabilitado && dueno != null && !dueno.isSuscripcionActiva() && !dueno.isPagoAutomatico()) {
+            producto.setChatHabilitado(false);
+        } else {
+            producto.setChatHabilitado(chatHabilitado);
+        }
+        
+        producto.setDestacado(destacado);
 
         if (producto.getPujas() == null || producto.getPujas().isEmpty()) {
             producto.setPrecioActual(precioBase);
@@ -156,6 +183,16 @@ public class ProductoService {
                 fechaFin += ":00";
             }
             producto.setFechaFinSubasta(LocalDateTime.parse(fechaFin));
+        }
+
+        if (fechaInicioSubasta != null && !fechaInicioSubasta.equals("undefined") && !fechaInicioSubasta.isEmpty()) {
+            if (fechaInicioSubasta.length() == 16) {
+                fechaInicioSubasta += ":00";
+            }
+            producto.setFechaInicioSubasta(LocalDateTime.parse(fechaInicioSubasta));
+        }
+        if (horasVentaAnticipada != null) {
+            producto.setHorasVentaAnticipada(horasVentaAnticipada);
         }
 
         if (archivos != null && !archivos.isEmpty()) {
@@ -200,6 +237,9 @@ public class ProductoService {
         dto.setCantidadGanadores(p.getCantidadGanadores());
         dto.setPrecioTicket(p.getPrecioTicket());
         dto.setChatHabilitado(p.isChatHabilitado());
+        dto.setDestacado(p.isDestacado());
+        dto.setFechaInicioSubasta(p.getFechaInicioSubasta());
+        dto.setHorasVentaAnticipada(p.getHorasVentaAnticipada());
         
         if (p.getTienda() != null) {
             dto.setTiendaId(p.getTienda().getId());

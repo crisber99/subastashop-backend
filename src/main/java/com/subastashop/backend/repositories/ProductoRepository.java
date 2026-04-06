@@ -57,9 +57,16 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     @Query("SELECT p FROM Producto p WHERE p.tienda.id = :tiendaId AND p.estado NOT IN ('SUSPENDIDO', 'ELIMINADO')")
     List<Producto> findPublicosByTienda(Long tiendaId);
     
+    List<Producto> findByTipoVenta(String tipoVenta);
+
     long countByTiendaIdAndTipoVenta(Long tiendaId, String tipoVenta);
     
     long countByTiendaIdAndTipoVentaAndEstadoIn(Long tiendaId, String tipoVenta, List<String> estados);
 
     long countByTipoVenta(String tipoVenta);
+
+    // Buscar productos destacados activos
+    List<Producto> findTop12ByDestacadoTrueAndEstadoInOrderByFechaCreacionDesc(List<String> estados);
+
+    List<Producto> findByEstadoAndFechaFinSubastaBetween(String estado, LocalDateTime start, LocalDateTime end);
 }

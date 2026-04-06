@@ -34,19 +34,42 @@ public class SubastaScheduler {
     private AppUserRepository appUserRepository;
 
     @Autowired
+    private com.subastashop.backend.services.SubastaSniperService sniperService;
+
+    @Autowired
     private com.subastashop.backend.services.EmailService emailService;
 
-    // Se ejecuta cada 60.000 ms (1 minuto)
+    // Se ejecuta cada 60.000 ms (1 minuto) para cierres definitivos
     @Scheduled(fixedRate = 60000)
     public void cerrarSubastasVencidas() {
         System.out.println("⏰ Revisando subastas vencidas..." + LocalDateTime.now());
 
-        // 1. Buscar TODOS los productos que deben cerrarse (Sin filtrar por tenant aún)
-        // Nota: Necesitaremos un método especial en el repositorio para esto
         List<Producto> productosVencidos = productoRepository.buscarSubastasPorCerrar(LocalDateTime.now());
 
         for (Producto p : productosVencidos) {
             procesarCierre(p);
+        }
+    }
+
+    // Proceso de Sniper: Se ejecuta cada 20 segundos para subastas que terminan pronto
+    @Scheduled(fixedRate = 20000)
+    public void ejecutarSnipersUltimoMinuto() {
+        // Buscamos productos que terminan en menos de 1 minuto y que siguen activos
+        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime unMinutoDespues = ahora.plusMinutes(1);
+        
+        List<Producto> terminandoPronto = productoRepository.findByEstadoAndFechaFinSubastaBetween(
+            "EN_SUBASTA", ahora, unMinutoDespues);
+            
+        for (Producto p : terminandoPronto) {
+            // Seteamos el tenant para que sniperService funcione en el contexto correcto
+            TenantContext.setTenantId(p.getTenantId());
+            try {
+                // El excluyente es nulo porque queremos que el bot puje si no es el ganador actual
+                sniperService.procesarSnipers(p.getId(), null); 
+            } finally {
+                TenantContext.clear();
+            }
         }
     }
 
