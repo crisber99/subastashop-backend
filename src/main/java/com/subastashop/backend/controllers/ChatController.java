@@ -28,10 +28,12 @@ public class ChatController {
     @Autowired
     private MensajeChatRepository chatRepository;
 
+    @Autowired
+    private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+
     // --- WEBSOCKET EN TIEMPO REAL ---
     @MessageMapping("/chat/{productoId}")
-    @SendTo("/topic/producto/{productoId}")
-    public MensajeChatDTO manejarMensaje(@DestinationVariable Long productoId, MensajeChatDTO dto) {
+    public void manejarMensaje(@DestinationVariable Long productoId, MensajeChatDTO dto) {
         
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
         dto.setProductoId(productoId);
@@ -40,7 +42,7 @@ public class ChatController {
         // PERSISTENCIA: Guardar en la base de datos
         MensajeChat entidad = new MensajeChat();
         entidad.setProductoId(productoId);
-        entidad.setTiendaId(dto.getTiendaId()); // Conservamos tiendaId por si acaso si viene en el DTO
+        entidad.setTiendaId(dto.getTiendaId());
         entidad.setRemitenteNombre(dto.getRemitenteNombre());
         entidad.setContenido(dto.getContenido());
         entidad.setUserEmail(dto.getUserEmail());
@@ -49,21 +51,22 @@ public class ChatController {
         entidad.setAdmin(dto.isAdmin());
         
         entidad = chatRepository.save(entidad);
-        dto.setId(entidad.getId().toString()); // 👈 IMPORTANTE: Devolvemos el ID generado para el trackBy en Angular
+        dto.setId(entidad.getId().toString()); 
         
         System.out.println("DEBUG (Persistido): Msj ["+dto.getId()+"] en producto " + productoId + " de " + dto.getRemitenteNombre());
         
-        return dto;
+        // DIFUSIÓN MANUAL (Más robusto que @SendTo para variables)
+        messagingTemplate.convertAndSend("/topic/producto/" + productoId, dto);
     }
 
     // --- REST API: OBTENER HISTORIAL ---
     @GetMapping("/api/chat/producto/{productoId}")
     public List<MensajeChatDTO> obtenerHistorial(@PathVariable Long productoId) {
-        // Obtenemos los últimos 50 mensajes de esta conversación individual (producto)
         return chatRepository.findTop50ByProductoIdOrderByFechaEnvioAsc(productoId)
                 .stream()
                 .map(m -> {
                     MensajeChatDTO dto = new MensajeChatDTO();
+                    dto.setId(m.getId().toString()); // 👈 AHORA SÍ SETEADO
                     dto.setContenido(m.getContenido());
                     dto.setRemitenteNombre(m.getRemitenteNombre());
                     dto.setUserEmail(m.getUserEmail());
