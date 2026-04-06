@@ -68,10 +68,10 @@ public class Producto extends BaseEntity {
     private BigDecimal precioTicket;
     private Integer numeroPares = 5; // Dificultad del Memorice
     
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "bit default 1")
     private boolean chatHabilitado = true;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "bit default 0")
     private boolean destacado = false;
 
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
