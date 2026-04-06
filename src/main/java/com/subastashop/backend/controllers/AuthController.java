@@ -81,6 +81,48 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        return ResponseEntity.ok(Map.of("message", "Sesión cerrada"));
+    }
+
+    // --- MI CUENTA: ACTUALIZAR PERFIL ---
+    @PutMapping("/me")
+    public ResponseEntity<?> updateProfile(@RequestBody Map<String, String> updates) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        AppUsers user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (updates.containsKey("nombre")) user.setNombreCompleto(updates.get("nombre"));
+        if (updates.containsKey("alias")) user.setAlias(updates.get("alias"));
+        if (updates.containsKey("telefono")) user.setTelefono(updates.get("telefono"));
+        if (updates.containsKey("direccion")) user.setDireccion(updates.get("direccion"));
+        if (updates.containsKey("preferenciaEnvio")) user.setPreferenciaEnvio(updates.get("preferenciaEnvio"));
+
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("message", "Perfil actualizado con éxito", "user", user));
+    }
+
+    // --- MI CUENTA: CAMBIAR CONTRASEÑA ---
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> data) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        AppUsers user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        String currentPass = data.get("currentPassword");
+        String newPass = data.get("newPassword");
+
+        if (!passwordEncoder.matches(currentPass, user.getPasswordHash())) {
+            return ResponseEntity.status(400).body(Map.of("error", "La contraseña actual es incorrecta"));
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPass));
+        userRepository.save(user);
+        
+        return ResponseEntity.ok(Map.of("message", "Contraseña actualizada correctamente"));
+    }
+
     // REGISTRO
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, @RequestHeader("X-Tenant-ID") String tenantId) {
@@ -89,17 +131,22 @@ public class AuthController {
             throw new ApiException("El email ya existe en esta tienda");
         }
 
+        if (request.getAlias() == null || request.getAlias().isEmpty()) {
+            throw new ApiException("El alias es obligatorio");
+        }
+
         if (userRepository.existsByAliasAndTenantId(request.getAlias(), tenantId)) {
             throw new ApiException("El alias ya está en uso");
         }
 
         AppUsers user = new AppUsers();
         user.setEmail(request.getEmail());
-        user.setAlias(request.getAlias());
-        user.setNombreCompleto(request.getNombre());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setNombreCompleto(request.getNombre());
+        user.setAlias(request.getAlias());
         user.setTelefono(request.getTelefono());
         user.setDireccion(request.getDireccion());
+        user.setPreferenciaEnvio(request.getOpcionEnvio());
         user.setRol(Role.ROLE_COMPRADOR);
         user.setTenantId(tenantId);
 

@@ -37,6 +37,7 @@ public class AppUsers implements UserDetails {
     private String alias;
     private String telefono;
     private String direccion;
+    private String preferenciaEnvio; // 👈 NUEVO: Opción de envío favorita (Blue Express, Starken, etc.)
 
     // 🔧 CAMBIO 1: Cambiamos String por Role y agregamos la anotación
     @Enumerated(EnumType.STRING)

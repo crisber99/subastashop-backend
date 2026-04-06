@@ -20,10 +20,8 @@ public class RegisterRequest {
     @NotBlank(message = "El nombre es obligatorio")
     private String nombre;
 
-    @NotBlank(message = "El alias es obligatorio")
-    @Size(min = 3, max = 20, message = "El alias debe tener entre 3 y 20 caracteres")
     private String alias;
-
     private String telefono;
     private String direccion;
+    private String opcionEnvio;
 }

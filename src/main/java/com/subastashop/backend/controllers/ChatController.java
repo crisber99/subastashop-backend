@@ -48,9 +48,10 @@ public class ChatController {
         entidad.setEsVendedor(dto.isEsVendedor());
         entidad.setAdmin(dto.isAdmin());
         
-        chatRepository.save(entidad);
+        entidad = chatRepository.save(entidad);
+        dto.setId(entidad.getId().toString()); // 👈 IMPORTANTE: Devolvemos el ID generado para el trackBy en Angular
         
-        System.out.println("DEBUG (Persistido): Msj en producto " + productoId + " de " + dto.getRemitenteNombre());
+        System.out.println("DEBUG (Persistido): Msj ["+dto.getId()+"] en producto " + productoId + " de " + dto.getRemitenteNombre());
         
         return dto;
     }
