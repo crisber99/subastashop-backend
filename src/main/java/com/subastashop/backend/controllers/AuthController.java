@@ -75,6 +75,10 @@ public class AuthController {
         usuarioMap.put("role", userCompleto.getRol() != null ? userCompleto.getRol().name() : "ROLE_USER"); 
         usuarioMap.put("fechaFinPrueba", userCompleto.getFechaFinPrueba());
         usuarioMap.put("suscripcionActiva", userCompleto.isSuscripcionActiva());
+        usuarioMap.put("telefono", userCompleto.getTelefono());      // 👈 NUEVO
+        usuarioMap.put("direccion", userCompleto.getDireccion());    // 👈 NUEVO
+        usuarioMap.put("rut", userCompleto.getRut());                // 👈 NUEVO
+        usuarioMap.put("preferenciaEnvio", userCompleto.getPreferenciaEnvio()); // 👈 NUEVO
         
         response.put("usuario", usuarioMap);
 
@@ -97,6 +101,7 @@ public class AuthController {
         if (updates.containsKey("alias")) user.setAlias(updates.get("alias"));
         if (updates.containsKey("telefono")) user.setTelefono(updates.get("telefono"));
         if (updates.containsKey("direccion")) user.setDireccion(updates.get("direccion"));
+        if (updates.containsKey("rut")) user.setRut(updates.get("rut")); // 👈 NUEVO
         if (updates.containsKey("preferenciaEnvio")) user.setPreferenciaEnvio(updates.get("preferenciaEnvio"));
 
         userRepository.save(user);
@@ -146,6 +151,7 @@ public class AuthController {
         user.setAlias(request.getAlias());
         user.setTelefono(request.getTelefono());
         user.setDireccion(request.getDireccion());
+        user.setRut(request.getRut()); // 👈 NUEVO
         user.setPreferenciaEnvio(request.getOpcionEnvio());
         user.setRol(Role.ROLE_COMPRADOR);
         user.setTenantId(tenantId);
@@ -172,6 +178,10 @@ public class AuthController {
         usuarioMap.put("role", user.getRol() != null ? user.getRol().name() : "ROLE_COMPRADOR");
         usuarioMap.put("fechaFinPrueba", user.getFechaFinPrueba());
         usuarioMap.put("suscripcionActiva", user.isSuscripcionActiva());
+        usuarioMap.put("telefono", user.getTelefono());      // 👈 NUEVO
+        usuarioMap.put("direccion", user.getDireccion());    // 👈 NUEVO
+        usuarioMap.put("rut", user.getRut());                // 👈 NUEVO
+        usuarioMap.put("preferenciaEnvio", user.getPreferenciaEnvio()); // 👈 NUEVO
         response.put("usuario", usuarioMap);
 
         return ResponseEntity.ok(response);
@@ -340,6 +350,10 @@ public class AuthController {
         usuarioMap.put("fechaFinPrueba", user.getFechaFinPrueba());
         usuarioMap.put("suscripcionActiva", user.isSuscripcionActiva());
         usuarioMap.put("fechaVencimientoSuscripcion", user.getFechaVencimientoSuscripcion());
+        usuarioMap.put("telefono", user.getTelefono());      // 👈 NUEVO
+        usuarioMap.put("direccion", user.getDireccion());    // 👈 NUEVO
+        usuarioMap.put("rut", user.getRut());                // 👈 NUEVO
+        usuarioMap.put("preferenciaEnvio", user.getPreferenciaEnvio()); // 👈 NUEVO
 
         return ResponseEntity.ok(usuarioMap);
     }

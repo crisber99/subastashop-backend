@@ -23,5 +23,6 @@ public class RegisterRequest {
     private String alias;
     private String telefono;
     private String direccion;
+    private String rut;
     private String opcionEnvio;
 }
