@@ -247,6 +247,12 @@ public class AuthController {
             // Autogeneramos contraseña ultra compleja (el logeo será manejado por OAuth)
             user.setPasswordHash(passwordEncoder.encode(java.util.UUID.randomUUID().toString() + "aA1!social"));
             user.setNombreCompleto(nombre != null ? nombre : "Usuario " + provider);
+            
+            // Generar Alias por defecto (nombre sin espacios + sufijo aleatorio)
+            String baseAlias = (nombre != null ? nombre.split(" ")[0] : "user").replaceAll("[^a-zA-Z0-9]", "");
+            String randomSuffix = String.format("%04d", new java.util.Random().nextInt(10000));
+            user.setAlias(baseAlias + "_" + randomSuffix);
+
             user.setRol(Role.ROLE_COMPRADOR);
             user.setTenantId(tenantId);
             userRepository.save(user);
@@ -262,6 +268,7 @@ public class AuthController {
         usuarioMap.put("id", user.getId());
         usuarioMap.put("nombre", user.getNombreCompleto());
         usuarioMap.put("email", user.getEmail());
+        usuarioMap.put("alias", user.getAlias()); // 👈 IMPORTANTE: Incluir alias en la respuesta
         usuarioMap.put("role", user.getRol() != null ? user.getRol().name() : "ROLE_COMPRADOR"); 
         
         response.put("usuario", usuarioMap);
