@@ -40,7 +40,7 @@ public class ProductoService {
 
     public Producto crearProducto(String email, boolean isSuperAdmin, List<MultipartFile> archivos, String nombre,
                                   String descripcion, String tipoVenta, BigDecimal precioBase, Integer stock,
-                                  String fechaFinIso, BigDecimal precioTicket, Integer cantidadNumeros, Integer cantidadGanadores,
+                                  boolean chatHabilitado, String fechaFinIso, BigDecimal precioTicket, Integer cantidadNumeros, Integer cantidadGanadores,
                                   String premiosCajaJson, Integer categoriaId) throws java.io.IOException {
 
         if (securityService.tieneContenidoIlegal(nombre) || securityService.tieneContenidoIlegal(descripcion)) {
@@ -85,6 +85,7 @@ public class ProductoService {
         p.setPrecioBase(precioBase != null ? precioBase : java.math.BigDecimal.ZERO);
         p.setImagenes(urlsSubidas);
         p.setTienda(admin.getTienda());
+        p.setChatHabilitado(chatHabilitado);
 
         if ("RIFA".equalsIgnoreCase(tipoVenta)) {
             p.setEstado("DISPONIBLE");
@@ -127,7 +128,7 @@ public class ProductoService {
     }
 
     public Producto editarProducto(Integer id, boolean isSuperAdmin, String nombre, String descripcion, BigDecimal precioBase,
-                                   String fechaFin, List<MultipartFile> archivos, Integer categoriaId) throws java.io.IOException {
+                                   String fechaFin, List<MultipartFile> archivos, Integer categoriaId, boolean chatHabilitado) throws java.io.IOException {
 
         if (securityService.tieneContenidoIlegal(nombre) || securityService.tieneContenidoIlegal(descripcion)) {
             throw new ApiException("CensoredContent: No puedes actualizar el producto con términos prohibidos.");
@@ -144,6 +145,7 @@ public class ProductoService {
         producto.setNombre(nombre);
         producto.setDescripcion(descripcion);
         producto.setPrecioBase(precioBase);
+        producto.setChatHabilitado(chatHabilitado);
 
         if (producto.getPujas() == null || producto.getPujas().isEmpty()) {
             producto.setPrecioActual(precioBase);
@@ -197,6 +199,7 @@ public class ProductoService {
         dto.setCantidadNumeros(p.getCantidadNumeros());
         dto.setCantidadGanadores(p.getCantidadGanadores());
         dto.setPrecioTicket(p.getPrecioTicket());
+        dto.setChatHabilitado(p.isChatHabilitado());
         
         if (p.getTienda() != null) {
             dto.setTiendaId(p.getTienda().getId());

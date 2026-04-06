@@ -22,6 +22,7 @@ public class ProductoDTO {
     private Integer cantidadNumeros;
     private Integer cantidadGanadores;
     private BigDecimal precioTicket;
+    private boolean chatHabilitado;
     private String nombreTienda;
     private String slugTienda;
     private Long tiendaId;

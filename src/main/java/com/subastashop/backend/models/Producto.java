@@ -64,6 +64,9 @@ public class Producto extends BaseEntity {
     private Integer cantidadNumeros;
     private Integer cantidadGanadores;
     private BigDecimal precioTicket;
+    
+    @Column(nullable = false)
+    private boolean chatHabilitado = true;
 
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PremioCaja> premios = new ArrayList<>();
