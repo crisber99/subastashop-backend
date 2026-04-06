@@ -11,6 +11,7 @@ public class MensajeChatDTO {
     private String id; 
     private String contenido;
     private String remitenteNombre;
+    private Long productoId;
     private Long tiendaId;
     private String timestamp; 
     private String userEmail; 

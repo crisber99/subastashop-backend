@@ -16,6 +16,9 @@ public class MensajeChat extends BaseEntity {
     private Long id;
 
     @Column(nullable = false)
+    private Long productoId;
+
+    @Column(nullable = true)
     private Long tiendaId;
 
     @Column(nullable = false)

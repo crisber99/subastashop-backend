@@ -29,17 +29,18 @@ public class ChatController {
     private MensajeChatRepository chatRepository;
 
     // --- WEBSOCKET EN TIEMPO REAL ---
-    @MessageMapping("/chat/{tiendaId}")
-    @SendTo("/topic/tienda/{tiendaId}")
-    public MensajeChatDTO manejarMensaje(@DestinationVariable Long tiendaId, MensajeChatDTO dto) {
+    @MessageMapping("/chat/{productoId}")
+    @SendTo("/topic/producto/{productoId}")
+    public MensajeChatDTO manejarMensaje(@DestinationVariable Long productoId, MensajeChatDTO dto) {
         
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-        dto.setTiendaId(tiendaId);
+        dto.setProductoId(productoId);
         dto.setTimestamp(timestamp);
         
         // PERSISTENCIA: Guardar en la base de datos
         MensajeChat entidad = new MensajeChat();
-        entidad.setTiendaId(tiendaId);
+        entidad.setProductoId(productoId);
+        entidad.setTiendaId(dto.getTiendaId()); // Conservamos tiendaId por si acaso si viene en el DTO
         entidad.setRemitenteNombre(dto.getRemitenteNombre());
         entidad.setContenido(dto.getContenido());
         entidad.setUserEmail(dto.getUserEmail());
@@ -49,16 +50,16 @@ public class ChatController {
         
         chatRepository.save(entidad);
         
-        System.out.println("DEBUG (Persistido): Msj en tienda " + tiendaId + " de " + dto.getRemitenteNombre());
+        System.out.println("DEBUG (Persistido): Msj en producto " + productoId + " de " + dto.getRemitenteNombre());
         
         return dto;
     }
 
     // --- REST API: OBTENER HISTORIAL ---
-    @GetMapping("/api/chat/tienda/{tiendaId}")
-    public List<MensajeChatDTO> obtenerHistorial(@PathVariable Long tiendaId) {
-        // Obtenemos los últimos 50 mensajes de esta tienda
-        return chatRepository.findTop50ByTiendaIdOrderByFechaEnvioAsc(tiendaId)
+    @GetMapping("/api/chat/producto/{productoId}")
+    public List<MensajeChatDTO> obtenerHistorial(@PathVariable Long productoId) {
+        // Obtenemos los últimos 50 mensajes de esta conversación individual (producto)
+        return chatRepository.findTop50ByProductoIdOrderByFechaEnvioAsc(productoId)
                 .stream()
                 .map(m -> {
                     MensajeChatDTO dto = new MensajeChatDTO();
@@ -66,6 +67,7 @@ public class ChatController {
                     dto.setRemitenteNombre(m.getRemitenteNombre());
                     dto.setUserEmail(m.getUserEmail());
                     dto.setTimestamp(m.getTimestampStr());
+                    dto.setProductoId(m.getProductoId());
                     dto.setTiendaId(m.getTiendaId());
                     dto.setEsVendedor(m.isEsVendedor());
                     dto.setAdmin(m.isAdmin());

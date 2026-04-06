@@ -10,9 +10,13 @@ import java.util.List;
 @Repository
 public interface MensajeChatRepository extends JpaRepository<MensajeChat, Long> {
     
-    // Buscar los últimos mensajes para una tienda
-    List<MensajeChat> findByTiendaIdOrderByFechaEnvioAsc(Long tiendaId);
+    // Buscar los últimos mensajes para un producto (Conversación individual)
+    List<MensajeChat> findByProductoIdOrderByFechaEnvioAsc(Long productoId);
     
-    // Con soporte de paginación para limitar historial
+    // Con soporte de paginación para limitar historial por producto
+    List<MensajeChat> findTop50ByProductoIdOrderByFechaEnvioAsc(Long productoId);
+
+    // Métodos antiguos por tienda (mantener por si acaso para vista admin de tienda)
+    List<MensajeChat> findByTiendaIdOrderByFechaEnvioAsc(Long tiendaId);
     List<MensajeChat> findTop50ByTiendaIdOrderByFechaEnvioAsc(Long tiendaId);
 }
