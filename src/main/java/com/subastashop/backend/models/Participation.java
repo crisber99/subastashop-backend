@@ -14,28 +14,29 @@ public class Participation {
     private Long id;
 
     // Identificador opcional para retrocompatibilidad
-    @Column(name = "identificador_inscripcion")
+    @Column(name = "IdentificadorInscripcion")
     private Integer identificadorInscripcion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "producto_id")
+    @JoinColumn(name = "ProductoId")
     private Producto contest; // Rifa -> Contest
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id")
+    @JoinColumn(name = "UsuarioId")
     private AppUsers participant; // Comprador -> Participant
 
-    @Column(name = "created_at")
+    @Column(name = "CreatedAt")
     private LocalDateTime createdAt = LocalDateTime.now(); // fechaCompra -> createdAt
 
+    @Column(name = "Paid")
     private Boolean paid = false; // pagado -> paid
 
-    @Column(name = "payment_slip_url")
+    @Column(name = "PaymentSlipUrl")
     private String paymentSlipUrl; // comprobanteUrl -> paymentSlipUrl
 
-    @Column(name = "duration_ms")
+    @Column(name = "DurationMs")
     private Long durationMs; // Nuevo: Tiempo de resolución en milisegundos
 
-    @Column(name = "completion_timestamp")
+    @Column(name = "CompletionTimestamp")
     private LocalDateTime completionTimestamp; // Nuevo: Instante de finalización
 }

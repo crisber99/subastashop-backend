@@ -14,11 +14,11 @@ public class ContestWinner {
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "producto_id")
+    @JoinColumn(name = "ProductoId")
     private Producto contest;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "participacion_id")
+    @JoinColumn(name = "ParticipacionId")
     private Participation winningParticipation;
 
     private Integer rank; // puesto -> rank
