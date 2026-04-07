@@ -290,11 +290,11 @@ public class MercadoPagoService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         // 1. Aseguramos que existe el plan (V6)
-        String planName = "SubastaShop PRO V6";
+        String planName = "SubastaShop PRO";
         BigDecimal amount = new BigDecimal("9990");
         long totalProUsers = userRepository.countByRol(Role.ROLE_ADMIN);
         if (totalProUsers < 100) {
-            planName = "SubastaShop PRO Promo V6";
+            planName = "SubastaShop PRO Promo";
             amount = new BigDecimal("4990");
         }
 
