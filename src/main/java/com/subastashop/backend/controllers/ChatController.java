@@ -64,8 +64,8 @@ public class ChatController {
 
             System.out.println("✅ Chat guardado: Msj [" + dto.getId() + "] en producto " + productoId + " de " + dto.getRemitenteNombre());
 
-            // DIFUSIÓN: Enviar a todos los suscriptores del topic (incluido el remitente)
-            messagingTemplate.convertAndSend("/topic/producto/" + productoId, dto);
+            // DIFUSIÓN: Enviar por el canal exclusivo de chat (separado del canal de subastas/rifas)
+            messagingTemplate.convertAndSend("/topic/chat/" + productoId, dto);
 
         } catch (Exception e) {
             System.err.println("❌ Error al guardar mensaje del chat: " + e.getMessage());

@@ -240,6 +240,7 @@ public class ProductoService {
         dto.setDestacado(p.isDestacado());
         dto.setFechaInicioSubasta(p.getFechaInicioSubasta());
         dto.setHorasVentaAnticipada(p.getHorasVentaAnticipada());
+        dto.setNumeroPares(p.getNumeroPares());
         
         if (p.getTienda() != null) {
             dto.setTiendaId(p.getTienda().getId());
@@ -247,6 +248,13 @@ public class ProductoService {
             dto.setSlugTienda(p.getTienda().getSlug());
             // Obtener el ID del dueño (admin) de la tienda
             dto.setTiendaUsuarioId(usuarioRepository.findOwnerIdByTiendaId(p.getTienda().getId()));
+            
+            // Sub-objeto tienda para compatibilidad con frontend (producto.tienda.id)
+            ProductoDTO.TiendaInfo tiendaInfo = new ProductoDTO.TiendaInfo();
+            tiendaInfo.setId(p.getTienda().getId());
+            tiendaInfo.setNombre(p.getTienda().getNombre());
+            tiendaInfo.setSlug(p.getTienda().getSlug());
+            dto.setTienda(tiendaInfo);
         }
 
         if (p.getCategoria() != null) {
