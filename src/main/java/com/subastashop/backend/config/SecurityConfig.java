@@ -59,6 +59,13 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/categorias", "/api/categorias/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/categorias").hasAuthority("ROLE_SUPER_ADMIN")
 
+                // Chat en vivo (public para ver historial, WS auth opcional)
+                .requestMatchers("/api/chat/**").permitAll()
+
+                // Concursos (lectura pública)
+                .requestMatchers(HttpMethod.GET, "/api/contests/**").permitAll()
+
+
                 // ================================================================
                 // 2. ZONA PROTEGIDA (Roles Específicos) 👮‍♂️
                 // ================================================================
