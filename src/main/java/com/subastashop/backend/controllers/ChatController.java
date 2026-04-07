@@ -77,13 +77,13 @@ public class ChatController {
 
     // --- REST API: OBTENER HISTORIAL ---
     @GetMapping("/api/chat/producto/{productoId}")
-    public org.springframework.http.ResponseEntity<?> obtenerHistorial(@PathVariable Long productoId) {
-        try {
-            // Aseguramos contexto si interceptores fallan o no vienen headers
-            if (TenantContext.getTenantId() == null) {
-                TenantContext.setTenantId("chat-global");
-            }
+    public org.springframework.http.ResponseEntity<List<MensajeChatDTO>> obtenerHistorial(@PathVariable Long productoId) {
+        // El GlobalExceptionHandler capturará cualquier error aquí
+        if (TenantContext.getTenantId() == null) {
+            TenantContext.setTenantId("chat-global");
+        }
 
+        try {
             List<MensajeChatDTO> historial = chatRepository.findTop50ByProductoIdOrderByFechaEnvioAsc(productoId)
                     .stream()
                     .map(m -> {
@@ -102,10 +102,6 @@ public class ChatController {
                     .collect(Collectors.toList());
 
             return org.springframework.http.ResponseEntity.ok(historial);
-        } catch (Exception e) {
-            System.err.println("❌ Error en obtenerHistorial: " + e.getMessage());
-            e.printStackTrace();
-            return org.springframework.http.ResponseEntity.status(400).body("Error al cargar historial: " + e.getMessage());
         } finally {
             TenantContext.clear();
         }

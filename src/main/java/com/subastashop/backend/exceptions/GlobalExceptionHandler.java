@@ -14,10 +14,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleAllExceptions(Exception ex) {
         ex.printStackTrace(); // Log fundamental en el servidor
         Map<String, Object> body = new HashMap<>();
-        body.put("error", "Error interno o Bad Request");
+        body.put("error", "Error interno de servidor (500)");
         body.put("message", ex.getMessage());
         body.put("type", ex.getClass().getSimpleName());
-        return ResponseEntity.status(400).body(body);
+        // No enviamos el stack trace completo por seguridad, solo el primer elemento si existe
+        if (ex.getStackTrace().length > 0) {
+            body.put("location", ex.getStackTrace()[0].toString());
+        }
+        return ResponseEntity.status(500).body(body);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
