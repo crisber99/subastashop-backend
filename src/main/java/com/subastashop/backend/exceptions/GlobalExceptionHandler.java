@@ -1,58 +1,32 @@
 package com.subastashop.backend.exceptions;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<String> handleNoSuchElementException(NoSuchElementException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handleAllExceptions(Exception ex) {
+        ex.printStackTrace(); // Log fundamental en el servidor
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", "Error interno o Bad Request");
+        body.put("message", ex.getMessage());
+        body.put("type", ex.getClass().getSimpleName());
+        return ResponseEntity.status(400).body(body);
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, java.util.List<String>>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, java.util.List<String>> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName;
-            if (error instanceof FieldError) {
-                fieldName = ((FieldError) error).getField();
-            } else {
-                fieldName = "general";
-            }
-            String errorMessage = error.getDefaultMessage();
-            errors.computeIfAbsent(fieldName, k -> new java.util.ArrayList<>()).add(errorMessage);
-        });
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
-    }
-    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
-    public ResponseEntity<Map<String, String>> handleAuthenticationException(org.springframework.security.core.AuthenticationException ex) {
-        Map<String, String> response = new HashMap<>();
-        response.put("error", "Credenciales incorrectas");
-        response.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-    }
-
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
-        Map<String, String> response = new HashMap<>();
-        response.put("error", "Error interno");
-        response.put("message", ex.getMessage());
-        // Devolver 400 Bad Request o 401 dependiendo del contexto, usamos 400 por defecto para que no de 403
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<?> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", "Error de tipo en PathVariable o Param");
+        String typeName = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "desconocido";
+        body.put("message", String.format("El parámetro '%s' con valor '%s' no pudo ser convertido a %s", 
+                ex.getName(), ex.getValue(), typeName));
+        return ResponseEntity.status(400).body(body);
     }
 }

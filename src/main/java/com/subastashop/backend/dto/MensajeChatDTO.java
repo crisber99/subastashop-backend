@@ -1,10 +1,12 @@
 package com.subastashop.backend.dto;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class MensajeChatDTO {
@@ -15,7 +17,6 @@ public class MensajeChatDTO {
     private Long tiendaId;
     private String timestamp; 
     private String userEmail; 
-    // Añadimos campos para compatibilidad con el frontend anterior por si acaso
     private boolean esVendedor;
     private boolean admin;
 }
