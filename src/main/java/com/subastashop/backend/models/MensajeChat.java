@@ -15,10 +15,10 @@ public class MensajeChat extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "producto_id", nullable = false)
     private Long productoId;
 
-    @Column(nullable = true)
+    @Column(name = "tienda_id", nullable = true)
     private Long tiendaId;
 
     @Column(nullable = false)
