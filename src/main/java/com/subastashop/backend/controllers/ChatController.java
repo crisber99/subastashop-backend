@@ -1,5 +1,6 @@
 package com.subastashop.backend.controllers;
 
+import com.subastashop.backend.config.TenantContext;
 import com.subastashop.backend.dto.MensajeChatDTO;
 import com.subastashop.backend.models.AppUsers;
 import com.subastashop.backend.models.MensajeChat;
@@ -34,29 +35,44 @@ public class ChatController {
     // --- WEBSOCKET EN TIEMPO REAL ---
     @MessageMapping("/chat/{productoId}")
     public void manejarMensaje(@DestinationVariable Long productoId, MensajeChatDTO dto) {
-        
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-        dto.setProductoId(productoId);
-        dto.setTimestamp(timestamp);
-        
-        // PERSISTENCIA: Guardar en la base de datos
-        MensajeChat entidad = new MensajeChat();
-        entidad.setProductoId(productoId);
-        entidad.setTiendaId(dto.getTiendaId());
-        entidad.setRemitenteNombre(dto.getRemitenteNombre());
-        entidad.setContenido(dto.getContenido());
-        entidad.setUserEmail(dto.getUserEmail());
-        entidad.setTimestampStr(timestamp);
-        entidad.setEsVendedor(dto.isEsVendedor());
-        entidad.setAdmin(dto.isAdmin());
-        
-        entidad = chatRepository.save(entidad);
-        dto.setId(entidad.getId().toString()); 
-        
-        System.out.println("DEBUG (Persistido): Msj ["+dto.getId()+"] en producto " + productoId + " de " + dto.getRemitenteNombre());
-        
-        // DIFUSIÓN MANUAL (Más robusto que @SendTo para variables)
-        messagingTemplate.convertAndSend("/topic/producto/" + productoId, dto);
+
+        // FIX CRÍTICO: Los mensajes WebSocket/STOMP no pasan por el TenantInterceptor HTTP.
+        // Sin esto, BaseEntity.onPrePersist() llama TenantContext.getTenantId() que devuelve null,
+        // y el INSERT falla silenciosamente (excepción en el thread de STOMP).
+        if (TenantContext.getTenantId() == null) {
+            TenantContext.setTenantId("chat-global");
+        }
+
+        try {
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
+            dto.setProductoId(productoId);
+            dto.setTimestamp(timestamp);
+
+            // PERSISTENCIA: Guardar en la base de datos
+            MensajeChat entidad = new MensajeChat();
+            entidad.setProductoId(productoId);
+            entidad.setTiendaId(dto.getTiendaId());
+            entidad.setRemitenteNombre(dto.getRemitenteNombre());
+            entidad.setContenido(dto.getContenido());
+            entidad.setUserEmail(dto.getUserEmail());
+            entidad.setTimestampStr(timestamp);
+            entidad.setEsVendedor(dto.isEsVendedor());
+            entidad.setAdmin(dto.isAdmin());
+
+            entidad = chatRepository.save(entidad);
+            dto.setId(entidad.getId().toString());
+
+            System.out.println("✅ Chat guardado: Msj [" + dto.getId() + "] en producto " + productoId + " de " + dto.getRemitenteNombre());
+
+            // DIFUSIÓN: Enviar a todos los suscriptores del topic (incluido el remitente)
+            messagingTemplate.convertAndSend("/topic/producto/" + productoId, dto);
+
+        } catch (Exception e) {
+            System.err.println("❌ Error al guardar mensaje del chat: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            TenantContext.clear(); // Limpiar el contexto del thread STOMP
+        }
     }
 
     // --- REST API: OBTENER HISTORIAL ---
