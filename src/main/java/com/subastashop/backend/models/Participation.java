@@ -18,11 +18,11 @@ public class Participation {
     private Integer identificadorInscripcion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ProductoId")
+    //@JoinColumn(name = "ProductoId")
     private Producto contest; // Rifa -> Contest
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UsuarioId")
+    //@JoinColumn(name = "UsuarioId")
     private AppUsers participant; // Comprador -> Participant
 
     @Column(name = "CreatedAt")
