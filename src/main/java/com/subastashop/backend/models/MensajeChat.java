@@ -2,9 +2,11 @@ package com.subastashop.backend.models;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import java.time.LocalDateTime;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "mensajes_chat")
 public class MensajeChat extends BaseEntity {
@@ -30,6 +32,7 @@ public class MensajeChat extends BaseEntity {
     private LocalDateTime fechaEnvio = LocalDateTime.now();
 
     private boolean esVendedor = false;
+    private boolean admin = false;
     
     private String timestampStr;
 }

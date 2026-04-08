@@ -10,4 +10,7 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
     List<Participation> findByContestId(Integer contestId);
     List<Participation> findByContestIdAndParticipantId(Integer contestId, Integer participantId);
     List<Participation> findByParticipantId(Integer participantId);
+    
+    // Method for contest winners calculation
+    List<Participation> findByContestIdAndPaidTrueOrderByDurationMsAscCreatedAtAsc(Integer contestId);
 }
