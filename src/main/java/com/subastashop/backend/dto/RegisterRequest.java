@@ -25,4 +25,5 @@ public class RegisterRequest {
     private String direccion;
     private String rut;
     private String opcionEnvio;
+    private boolean aceptaTerminos; // ⚖️ Aceptación de términos durante registro
 }

@@ -8,7 +8,11 @@ import com.subastashop.backend.dto.LoginRequest;
 import com.subastashop.backend.dto.RegisterRequest;
 import com.subastashop.backend.dto.ResetPasswordRequest;
 import com.subastashop.backend.exceptions.ApiException;
+import com.subastashop.backend.models.UserLegalAcceptance;
+import com.subastashop.backend.repositories.UserLegalAcceptanceRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.time.LocalDateTime;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +48,9 @@ public class AuthController {
 
     @Autowired
     private com.subastashop.backend.repositories.PasswordResetTokenRepository tokenRepository;
+
+    @Autowired
+    private UserLegalAcceptanceRepository legalRepository;
 
     // LOGIN
     @PostMapping("/login")
@@ -130,7 +137,7 @@ public class AuthController {
 
     // REGISTRO
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, @RequestHeader("X-Tenant-ID") String tenantId) {
+    public ResponseEntity<?> register(HttpServletRequest requestHttp, @Valid @RequestBody RegisterRequest request, @RequestHeader("X-Tenant-ID") String tenantId) {
         
         if (userRepository.existsByEmailAndTenantId(request.getEmail(), tenantId)) {
             throw new ApiException("El email ya existe en esta tienda");
@@ -157,6 +164,23 @@ public class AuthController {
         user.setTenantId(tenantId);
 
         userRepository.save(user);
+
+        // ⚖️ Registro de Aceptación Legal Automático si viene en el registro
+        if (request.isAceptaTerminos()) {
+            try {
+                UserLegalAcceptance acceptance = new UserLegalAcceptance();
+                acceptance.setUserId(user.getId());
+                acceptance.setTermsVersion("v1.0");
+                acceptance.setAcceptanceTimestamp(LocalDateTime.now());
+                acceptance.setIpAddress(requestHttp.getRemoteAddr());
+                acceptance.setUserAgent(requestHttp.getHeader("User-Agent"));
+                acceptance.setType("USER_REGISTRATION");
+                legalRepository.save(acceptance);
+            } catch (Exception e) {
+                // No bloqueamos el registro si falla la auditoría legal, pero lo logueamos
+                System.err.println("Error al grabar aceptación legal en registro: " + e.getMessage());
+            }
+        }
 
         // Enviar correo de bienvenida
         String asunto = "¡Bienvenido a SubastaShop!";
