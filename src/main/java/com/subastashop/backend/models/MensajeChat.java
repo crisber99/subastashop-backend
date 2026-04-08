@@ -15,8 +15,10 @@ public class MensajeChat extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Use default naming for now to avoid crashes on startup
+    @Column(name = "productoId", nullable = false)
     private Long productoId;
+
+    @Column(name = "tiendaId", nullable = true)
     private Long tiendaId;
 
     @Column(nullable = false)
