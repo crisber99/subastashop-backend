@@ -14,16 +14,28 @@ public class DebugController {
     private JdbcTemplate jdbcTemplate;
 
     @GetMapping("/columns/{table}")
-    public List<Map<String, Object>> getColumns(@PathVariable String table) {
-        // Query to get column names from SQL Server
-        String sql = "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?";
-        return jdbcTemplate.queryForList(sql, table);
+    public Object getColumns(@PathVariable String table) {
+        try {
+            String sql = "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?";
+            return jdbcTemplate.queryForList(sql, table);
+        } catch (Exception e) {
+            Map<String, Object> error = new java.util.HashMap<>();
+            error.put("error", e.getMessage());
+            error.put("type", e.getClass().getName());
+            return error;
+        }
     }
     
     @GetMapping("/tables")
-    public List<Map<String, Object>> getTables() {
-        // Query to list all tables to see if we are using the right table names
-        String sql = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'";
-        return jdbcTemplate.queryForList(sql);
+    public Object getTables() {
+        try {
+            String sql = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'";
+            return jdbcTemplate.queryForList(sql);
+        } catch (Exception e) {
+            Map<String, Object> error = new java.util.HashMap<>();
+            error.put("error", e.getMessage());
+            error.put("type", e.getClass().getName());
+            return error;
+        }
     }
 }
