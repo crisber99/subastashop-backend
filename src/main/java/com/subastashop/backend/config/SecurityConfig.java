@@ -59,8 +59,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/categorias", "/api/categorias/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/categorias").hasAuthority("ROLE_SUPER_ADMIN")
 
-                // Chat en vivo (public para ver historial, WS auth opcional)
-                .requestMatchers("/api/chat/**").permitAll()
+                // Chat en vivo (público para ver historial GET, autenticado para enviar POST/WS)
+                .requestMatchers(HttpMethod.GET, "/api/chat/**").permitAll()
+                .requestMatchers("/api/chat/**").authenticated()
 
                 // Concursos (lectura pública)
                 .requestMatchers(HttpMethod.GET, "/api/contests/**").permitAll()
@@ -110,8 +111,8 @@ public class SecurityConfig {
                 "https://storagesubastasapp.z20.web.core.windows.net",
                 "https://storagesubastasapp.z20.web.core.windows.net/"
         ));
-        configuration.setAllowedMethods(Arrays.asList("*"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "x-tenant-id"));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "x-tenant-id"));
         configuration.setAllowCredentials(true);
 
