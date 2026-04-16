@@ -1,0 +1,27 @@
+Bienvenido a SubastaShop.
+
+1. PROCESO DE SUBASTA
+- Todas las subastas tienen un precio base.
+- Las pujas deben ser superiores a la puja máxima actual por al menos el 5% del valor actual.
+- Si una puja se realiza en el último minuto, el reloj de la subasta se extenderá por 1 minuto adicional para evitar el "snipeo" de última hora.
+- Una vez finalizada la subasta, el ganador tiene 48 horas para realizar el pago.
+- Si el ganador no paga en el plazo estipulado, la subasta se declarará desierta y el usuario perderá su derecho a participar en la plataforma por 30 días.
+
+2. REGLAS DEL SITIO
+- Todos los usuarios deben tener más de 18 años y residir en un país soportado.
+- Está prohibido el uso de bots o sistemas automatizados para realizar pujas.
+- Los productos subastados son proporcionados por diversas tiendas asociadas. SubastaShop actúa como intermediario.
+
+3. PAGOS CON MERCADO PAGO
+- SubastaShop utiliza Mercado Pago para procesar todas las transacciones financieras.
+- Los métodos de pago aceptados incluyen tarjetas de crédito, débito y saldo en la cuenta de Mercado Pago.
+- Si el estado de un pago aparece como "Pendiente" (Pending), el usuario debe esperar hasta 24 horas hábiles para ver reflejado el cambio. Mercado Pago podría estar revisando la transacción por razones de seguridad.
+- SubastaShop no retiene dinero; los fondos son procesados directamente por la pasarela de pagos.
+- En caso de reembolsos por subastas canceladas, el dinero tardará entre 3 a 7 días hábiles en regresar a la cuenta bancaria del usuario, dependiendo de la política de Mercado Pago y el banco emisor.
+
+4. ENVÍOS Y ENTREGAS
+- El envío será acordado directamente entre el ganador de la subasta y la tienda de origen.
+- Los costos de envío corren por cuenta del comprador, a menos que se especifique lo contrario en la publicación de la subasta.
+
+5. SOPORTE
+- Para dudas sobre un cobro doble, por favor contactar directamente a soporte@subastashop.com adjuntando el comprobante de Mercado Pago.

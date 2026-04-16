@@ -27,17 +27,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String userEmail;
+        String jwtCandidate = null;
 
-        // 1. Verificar si trae token Bearer
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // 1. Intentar obtener de Header
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            jwtCandidate = authHeader.substring(7);
+        } 
+        // 2. Intentar obtener de parámetro query (Para SSE/EventSource)
+        else {
+            jwtCandidate = request.getParameter("token");
+        }
+
+        if (jwtCandidate == null) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7); // Quitar la palabra "Bearer "
+        jwt = jwtCandidate;
         
         try {
             userEmail = jwtService.extractUsername(jwt);
