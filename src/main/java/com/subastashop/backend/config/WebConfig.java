@@ -17,18 +17,4 @@ public class WebConfig implements WebMvcConfigurer {
         // Aplicamos el interceptor a todas las rutas de la API
         registry.addInterceptor(tenantInterceptor).addPathPatterns("/api/**");
     }
-
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // Permitir todas las rutas
-                .allowedOrigins(
-                    "http://localhost:4200", 
-                    "https://www.subastashop.cl", 
-                    "https://subastashop.cl",
-                    "https://storagesubastasapp.z20.web.core.windows.net"
-                )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true);
-    }
 }

@@ -104,17 +104,27 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList(
+        
+        // Dominios permitidos explícitamente
+        configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:4200",
                 "https://www.subastashop.cl",
                 "https://subastashop.cl",
                 "https://storagesubastasapp.z20.web.core.windows.net",
                 "https://storagesubastasapp.z20.web.core.windows.net/"
         ));
+        
+        // Métodos permitidos
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "x-tenant-id"));
+        
+        // Cabeceras permitidas (Usamos * para evitar bloqueos por cabeceras personalizadas del navegador o interceptores)
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        
+        // Cabeceras expuestas
         configuration.setExposedHeaders(Arrays.asList("Authorization", "x-tenant-id"));
+        
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L); // Cache de preflight por 1 hora
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
