@@ -137,6 +137,43 @@ public class ContestController {
     }
 
     /**
+     * Obtener mis participaciones
+     */
+    @GetMapping("/my-participations")
+    public ResponseEntity<List<Participation>> getMyParticipations() {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            AppUsers user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            List<Participation> participaciones = participationRepository.findByParticipantId(user.getId());
+            return ResponseEntity.ok(participaciones);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    /**
+     * Obtener todos los participantes (Solo para el dueño/admin)
+     */
+    @GetMapping("/{contestId}/participants")
+    public ResponseEntity<List<Participation>> getContestParticipants(@PathVariable Integer contestId) {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            AppUsers user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            Producto contest = productoRepository.findById(contestId).orElseThrow(() -> new RuntimeException("Concurso no encontrado"));
+            
+            if (user.getRol() != Role.ROLE_SUPER_ADMIN && 
+               (user.getTienda() == null || contest.getTienda() == null || !user.getTienda().getId().equals(contest.getTienda().getId()))) {
+                return ResponseEntity.status(403).body(null); // No es dueño ni admin
+            }
+            
+            List<Participation> participaciones = participationRepository.findByContestId(contestId);
+            return ResponseEntity.ok(participaciones);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    /**
      * Lanzar determinación de ganadores (Admin)
      */
     @PostMapping("/{contestId}/lanzar")

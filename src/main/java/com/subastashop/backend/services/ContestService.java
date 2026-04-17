@@ -60,6 +60,29 @@ public class ContestService {
         participacion.setDurationMs(durationMs);
         participacion.setCompletionTimestamp(LocalDateTime.now());
         participationRepository.save(participacion);
+
+        // 🏆 Broadcast Top 5 en tiempo real
+        notificarPodioActualizado(contestId);
+    }
+
+    private void notificarPodioActualizado(Integer contestId) {
+        List<Participation> participaciones = participationRepository
+                .findByContestIdAndPaidTrueOrderByDurationMsAscCreatedAtAsc(contestId);
+        
+        List<Map<String, Object>> top5 = new ArrayList<>();
+        int rank = 1;
+        for (Participation p : participaciones) {
+            if (p.getDurationMs() != null) {
+                Map<String, Object> dto = new HashMap<>();
+                dto.put("rank", rank++);
+                dto.put("durationMs", p.getDurationMs());
+                dto.put("participant", enmascararEmail(p.getParticipant().getEmail()));
+                top5.add(dto);
+                if (top5.size() >= 5) break;
+            }
+        }
+
+        messagingTemplate.convertAndSend("/topic/concurso/" + contestId + "/podio", top5);
     }
 
     /**
