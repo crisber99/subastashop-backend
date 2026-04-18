@@ -25,5 +25,6 @@ public class PremioCaja implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "producto_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Producto producto;
 }
