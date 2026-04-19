@@ -53,27 +53,50 @@ public class OrdenService {
 
         orden.setEstado("PAGADO");
 
-        // MARCAR PRODUCTOS COMO VENDIDOS
+        // MARCAR PRODUCTOS COMO VENDIDOS Y REVELAR CAJAS MISTERIOSAS
+        List<String> premiosObtenidos = new ArrayList<>();
         for (DetalleOrden detalle : orden.getDetalles()) {
             Producto p = detalle.getProducto();
             p.setEstado("VENDIDO");
             productoRepo.save(p);
+
+            if ("CAJA_MISTERIOSA".equals(detalle.getTipoCompra())) {
+                try {
+                    String premio = revelarPremioCaja(detalle);
+                    premiosObtenidos.add(p.getNombre() + ": " + premio);
+                } catch (Exception e) {
+                    System.err.println("Error al revelar caja automáticamente: " + e.getMessage());
+                }
+            }
         }
 
         ordenRepository.save(orden);
 
-        // Notificación de Pago Exitoso
+        // Notificación de Pago Exitoso + Premios
         try {
             String destino = orden.getUsuario().getEmail();
-            String asunto = "Pago Exitoso - Orden #" + orden.getId();
-            String mensaje = "Hola " + orden.getUsuario().getNombreCompleto() + ",<br><br>" +
-                    "Hemos recibido el pago de tu orden #" + orden.getId() + " por un total de $" + orden.getTotal()
-                    + ".<br><br>" +
-                    "¡Gracias por tu compra en SubastaShop!<br><br>" +
-                    "Saludos,<br>El equipo de SubastaShop";
-            emailService.enviarCorreo(destino, asunto, mensaje);
+            String asunto = "¡Pago Exitoso y Premio Revelado! - Orden #" + orden.getId();
+            
+            StringBuilder mensajeBuilder = new StringBuilder();
+            mensajeBuilder.append("Hola ").append(orden.getUsuario().getNombreCompleto()).append(",<br><br>");
+            mensajeBuilder.append("Hemos recibido el pago de tu orden <b>#").append(orden.getId()).append("</b>.<br>");
+            
+            if (!premiosObtenidos.isEmpty()) {
+                mensajeBuilder.append("<br><b>🎁 ¡Tus premios de la Caja Misteriosa ya están aquí!</b><br>");
+                for (String p : premiosObtenidos) {
+                    mensajeBuilder.append("- ").append(p).append("<br>");
+                }
+                mensajeBuilder.append("<br>Puedes ver los detalles entrando a <b>Mis Compras</b> en tu perfil.<br>");
+            } else {
+                mensajeBuilder.append("Tu compra por un total de <b>$").append(orden.getTotal()).append("</b> ha sido procesada con éxito.<br>");
+            }
+            
+            mensajeBuilder.append("<br>¡Gracias por confiar en SubastaShop!<br><br>");
+            mensajeBuilder.append("Saludos,<br>El equipo de SubastaShop");
+
+            emailService.enviarCorreo(destino, asunto, mensajeBuilder.toString());
         } catch (Exception e) {
-            // Ignorar para no interrumpir el flujo de la orden
+            // Ignorar para no interrumpir el flujo
         }
 
         return "Pago exitoso. ¡Producto en camino!";
@@ -124,13 +147,13 @@ public class OrdenService {
 
             BigDecimal precioAUsar = BigDecimal.ZERO;
 
-            if ("DIRECTA".equals(d.getTipoCompra())) {
+            if ("DIRECTA".equals(d.getTipoCompra()) || "CAJA_MISTERIOSA".equals(d.getTipoCompra())) {
                 if (!"DISPONIBLE".equals(p.getEstado())) {
-                    throw new RuntimeException("El producto " + p.getNombre() + " ya no está disponible.");
+                    throw new RuntimeException("El producto " + p.getNombre() + " ya no está disponible (estado: " + p.getEstado() + ").");
                 }
                 p.setEstado("RESERVADO");
                 productoRepo.save(p);
-                precioAUsar = p.getPrecioBase();
+                precioAUsar = ("DIRECTA".equals(d.getTipoCompra())) ? p.getPrecioBase() : (p.getPrecioTicket() != null ? p.getPrecioTicket() : p.getPrecioBase());
             } else if ("RIFA".equals(d.getTipoCompra())) {
                 precioAUsar = p.getPrecioTicket();
             } else if ("SUBASTA".equals(d.getTipoCompra())) {
@@ -200,10 +223,19 @@ public class OrdenService {
 
     @Transactional
     public void rechazarPago(Integer id) {
-        Orden orden = ordenRepository.findById(id).orElseThrow();
+        Orden orden = ordenRepository.findByIdConDetalles(id)
+                .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
+        
+        // LIBERAR PRODUCTOS RESERVADOS
+        for (DetalleOrden detalle : orden.getDetalles()) {
+            Producto p = detalle.getProducto();
+            if ("RESERVADO".equals(p.getEstado())) {
+                p.setEstado("DISPONIBLE");
+                productoRepo.save(p);
+            }
+        }
+
         orden.setEstado("PENDIENTE_PAGO");
-        // No borramos el comprobanteUrl anterior para auditoría si se desea, 
-        // pero el cliente podrá subir uno nuevo.
         ordenRepository.save(orden);
     }
 
@@ -223,8 +255,14 @@ public class OrdenService {
         if (!"PAGADO".equals(orden.getEstado())) {
             throw new RuntimeException("La orden debe estar PAGADA para abrir la caja.");
         }
+        
+        return revelarPremioCaja(detalle);
+    }
+
+    @Transactional
+    protected String revelarPremioCaja(DetalleOrden detalle) {
         if (detalle.getDatosExtra() != null && detalle.getDatosExtra().startsWith("Premio:")) {
-            throw new RuntimeException("Esta caja ya ha sido abierta.");
+            return detalle.getDatosExtra().replace("Premio: ", "");
         }
 
         Producto producto = detalle.getProducto();
@@ -255,7 +293,6 @@ public class OrdenService {
         // Bajar stock del premio si es relevante
         if (ganador.getStock() != null && ganador.getStock() > 0) {
             ganador.setStock(ganador.getStock() - 1);
-            // JPA actualizará automáticamente por CASCADE o transacción directa
         }
 
         String resultado = "Premio: " + ganador.getNombre();
