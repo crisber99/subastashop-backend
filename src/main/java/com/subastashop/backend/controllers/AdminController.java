@@ -300,8 +300,8 @@ public class AdminController {
     }
 
     @PostMapping("/ordenes/{id}/rechazar")
-    public ResponseEntity<?> rechazarPago(@PathVariable Integer id) {
-        ordenService.rechazarPago(id);
-        return ResponseEntity.ok(java.util.Map.of("message", "Pago rechazado. El cliente puede subir otro comprobante."));
+    public ResponseEntity<?> rechazarPago(@PathVariable Integer id, @RequestParam(required = false) String motivo) {
+        ordenService.rechazarPago(id, motivo);
+        return ResponseEntity.ok(java.util.Map.of("message", "Pago rechazado. Se ha notificado al cliente por correo."));
     }
 }

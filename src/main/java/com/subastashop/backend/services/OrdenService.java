@@ -238,7 +238,7 @@ public class OrdenService {
     }
 
     @Transactional
-    public void rechazarPago(Integer id) {
+    public void rechazarPago(Integer id, String motivo) {
         Orden orden = ordenRepository.findByIdConDetalles(id)
                 .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
         
@@ -251,7 +251,37 @@ public class OrdenService {
             }
         }
 
-        orden.setEstado("PENDIENTE_PAGO");
+        String motivoFinal = (motivo == null || motivo.trim().isEmpty()) 
+            ? "El comprobante enviado no es válido o no coincide con el monto de la transferencia." 
+            : motivo;
+
+        // Notificación por Email 📧
+        try {
+            String tiendaNombre = orden.getTienda() != null ? orden.getTienda().getNombre() : "SubastaShop";
+            String clienteEmail = orden.getUsuario().getEmail();
+            String asunto = "Actualización de tu Orden #" + orden.getId() + " - Pago Rechazado";
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("<div style='font-family: Arial, sans-serif; color: #333;'>");
+            sb.append("<h2>Hola, ").append(orden.getUsuario().getNombreCompleto()).append("</h2>");
+            sb.append("<p>Te informamos que tu pago para la orden <b>#").append(orden.getId()).append("</b> ha sido rechazado por la tienda <b>").append(tiendaNombre).append("</b>.</p>");
+            sb.append("<div style='background: #f8d7da; padding: 15px; border-radius: 8px; border-left: 5px solid #dc3545;'>");
+            sb.append("<strong>Motivo del rechazo:</strong><br>");
+            sb.append("<i>").append(motivoFinal).append("</i>");
+            sb.append("</div>");
+            sb.append("<p style='margin-top: 20px;'>Debido a este rechazo, <b>la orden ha sido eliminada de nuestro sistema</b> y los productos han vuelto a estar disponibles.</p>");
+            sb.append("<p>Te invitamos a realizar una nueva compra o intentar el pago nuevamente más tarde.</p>");
+            sb.append("<br><hr style='border: 0; border-top: 1px solid #eee;'>");
+            sb.append("<p style='font-size: 0.8em; color: #777;'>Mensaje enviado automáticamente en nombre de <b>").append(tiendaNombre).append("</b> a través de SubastaShop.</p>");
+            sb.append("</div>");
+
+            emailService.enviarCorreo(clienteEmail, asunto, sb.toString());
+        } catch (Exception e) {
+            // Log error
+            System.err.println("Error enviando email de rechazo: " + e.getMessage());
+        }
+
+        orden.setEstado("CANCELADA"); // Cambiado de PENDIENTE_PAGO a CANCELADA
         ordenRepository.save(orden);
     }
 
