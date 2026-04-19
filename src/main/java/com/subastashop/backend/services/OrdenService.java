@@ -111,45 +111,70 @@ public class OrdenService {
             throw new RuntimeException("El carrito no puede estar vacío");
         }
 
-        // BUSCAR SI YA EXISTE UNA ORDEN PENDIENTE PARA EL MISMO PRODUCTO (Solo si es 1 detalle, para evitar duplicados en compra directa)
+        BigDecimal totalOrden = BigDecimal.ZERO;
+        List<DetalleOrden> detallesAProcesar = new ArrayList<>();
+        Tienda tiendaOrden = null;
+
+        // 1. Calcular total y preparar datos (Incluso para validación de estado)
+        for (DetalleRequest d : request.getDetalles()) {
+            Integer idProducto = d.getProductoId().intValue();
+            Producto p = productoRepo.findById(idProducto)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado ID: " + idProducto));
+
+            if (tiendaOrden == null) tiendaOrden = p.getTienda();
+
+            BigDecimal precioAUsar = BigDecimal.ZERO;
+            if ("DIRECTA".equals(d.getTipoCompra()) || "CAJA_MISTERIOSA".equals(d.getTipoCompra())) {
+                // Solo validamos disponibilidad si el producto NO está ya reservado por este mismo usuario
+                // Pero para simplificar, permitimos que el flujo continúe si el usuario ya tiene una orden pendiente
+                precioAUsar = ("DIRECTA".equals(d.getTipoCompra())) ? p.getPrecioBase() : (p.getPrecioTicket() != null ? p.getPrecioTicket() : p.getPrecioBase());
+            } else if ("RIFA".equals(d.getTipoCompra())) {
+                precioAUsar = p.getPrecioTicket();
+            } else if ("SUBASTA".equals(d.getTipoCompra())) {
+                precioAUsar = p.getPrecioActual();
+            }
+            totalOrden = totalOrden.add(precioAUsar);
+        }
+
+        // 2. BUSCAR SI YA EXISTE UNA ORDEN PENDIENTE (Solo para compras individuales de momento o simplificación)
         if (request.getDetalles().size() == 1) {
             Integer productoId = request.getDetalles().get(0).getProductoId().intValue();
-            var existete = ordenRepository.findPendingOrderByUserAndProduct(email, productoId);
-            if (existete.isPresent()) {
-                return existete.get(); // Devolver la existente en lugar de crear otra
+            var existe = ordenRepository.findPendingOrderByUserAndProduct(email, productoId);
+            if (existe.isPresent()) {
+                Orden ordenExistente = existe.get();
+                
+                // ASEGURAR BLOQUEO Y TOTAL
+                Producto p = productoRepo.findById(productoId).orElseThrow();
+                if ("DIRECTA".equals(p.getTipoVenta()) || "CAJA_MISTERIOSA".equals(p.getTipoVenta())) {
+                   p.setEstado("RESERVADO");
+                   productoRepo.save(p);
+                }
+                
+                ordenExistente.setTotal(totalOrden);
+                return ordenRepository.save(ordenExistente);
             }
         }
 
-        Long primerProductoId = request.getDetalles().get(0).getProductoId();
-        Producto primerProducto = productoRepo.findById(primerProductoId.intValue())
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-
-        Tienda tiendaOrden = primerProducto.getTienda();
-
+        // 3. CREACIÓN DE ORDEN NUEVA
         Orden orden = new Orden();
         orden.setUsuario(usuarioActual);
         orden.setTienda(tiendaOrden);
         orden.setFechaCreacion(LocalDateTime.now());
         orden.setFechaExpiracionReserva(LocalDateTime.now().plusHours(24));
         orden.setEstado("PENDIENTE_PAGO");
-        orden.setTotal(BigDecimal.ZERO);
+        orden.setTotal(totalOrden);
         orden.setPreferenciaEnvio(request.getPreferenciaEnvio());
 
-        orden = ordenRepository.save(orden);
-
-        BigDecimal totalOrden = BigDecimal.ZERO;
-        List<DetalleOrden> detallesGuardados = new ArrayList<>();
+        final Orden ordenGuardada = ordenRepository.save(orden);
 
         for (DetalleRequest d : request.getDetalles()) {
             Integer idProducto = d.getProductoId().intValue();
-            Producto p = productoRepo.findById(idProducto)
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado ID: " + idProducto));
+            Producto p = productoRepo.findById(idProducto).orElseThrow();
 
             BigDecimal precioAUsar = BigDecimal.ZERO;
-
             if ("DIRECTA".equals(d.getTipoCompra()) || "CAJA_MISTERIOSA".equals(d.getTipoCompra())) {
                 if (!"DISPONIBLE".equals(p.getEstado())) {
-                    throw new RuntimeException("El producto " + p.getNombre() + " ya no está disponible (estado: " + p.getEstado() + ").");
+                    throw new RuntimeException("El producto " + p.getNombre() + " ya no está disponible.");
                 }
                 p.setEstado("RESERVADO");
                 productoRepo.save(p);
@@ -160,10 +185,8 @@ public class OrdenService {
                 precioAUsar = p.getPrecioActual();
             }
 
-            totalOrden = totalOrden.add(precioAUsar);
-
             DetalleOrden detalle = new DetalleOrden();
-            detalle.setOrden(orden);
+            detalle.setOrden(ordenGuardada);
             detalle.setProducto(p);
             detalle.setCantidad(d.getCantidad());
             detalle.setTipoCompra(d.getTipoCompra());
@@ -171,16 +194,9 @@ public class OrdenService {
             detalle.setPrecioUnitario(precioAUsar);
 
             detalleOrdenRepository.save(detalle);
-            detallesGuardados.add(detalle);
         }
 
-        orden.setTotal(totalOrden);
-
-        if (!detallesGuardados.isEmpty()) {
-            orden.setTienda(detallesGuardados.get(0).getProducto().getTienda());
-        }
-
-        return ordenRepository.save(orden);
+        return ordenGuardada;
     }
 
     @Transactional
