@@ -52,6 +52,32 @@ public class AzureBlobService {
         return blobClient.getBlobUrl();
     }
 
+    public String subirImagenBase64(String base64, String nombreBase) throws IOException {
+        if (connectionString == null || connectionString.contains("placeholder")) {
+            return "https://placehold.co/100x100?text=Premio+Demo";
+        }
+
+        // Limpiar el prefijo data:image/...;base64,
+        String base64Real = base64.contains(",") ? base64.split(",")[1] : base64;
+        byte[] bytes = java.util.Base64.getDecoder().decode(base64Real);
+
+        BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
+                .connectionString(connectionString)
+                .buildClient();
+
+        BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient(containerName);
+        if (!containerClient.exists()) containerClient.create();
+
+        String nombreUnico = UUID.randomUUID().toString() + "-" + nombreBase + ".jpg";
+        BlobClient blobClient = containerClient.getBlobClient(nombreUnico);
+        
+        try (java.io.ByteArrayInputStream bis = new java.io.ByteArrayInputStream(bytes)) {
+            blobClient.upload(bis, bytes.length, true);
+        }
+
+        return blobClient.getBlobUrl();
+    }
+
     /**
      * Elimina todos los archivos del contenedor (para limpieza).
      */

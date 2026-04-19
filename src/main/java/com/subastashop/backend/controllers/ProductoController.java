@@ -137,6 +137,7 @@ public class ProductoController {
             @RequestParam(value = "fechaFin", required = false) String fechaFin,
             @RequestParam(value = "archivos", required = false) List<MultipartFile> archivos,
             @RequestParam(value = "categoriaId", required = false) Integer categoriaId,
+            @RequestParam(value = "precioTicket", required = false) java.math.BigDecimal precioTicket,
             @RequestParam(value = "chatHabilitado", required = false, defaultValue = "true") boolean chatHabilitado,
             @RequestParam(value = "destacado", required = false, defaultValue = "false") boolean destacado,
             @RequestParam(value = "fechaInicioSubasta", required = false) String fechaInicioSubasta,
@@ -146,7 +147,7 @@ public class ProductoController {
                 .getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
-        Producto modificado = productoService.editarProducto(id, isSuperAdmin, nombre, descripcion, precioBase, fechaFin, archivos, 
+        Producto modificado = productoService.editarProducto(id, isSuperAdmin, nombre, descripcion, precioBase, precioTicket, fechaFin, archivos, 
                 categoriaId, chatHabilitado, destacado, fechaInicioSubasta, horasVentaAnticipada);
         return ResponseEntity.ok(productoService.toDTO(modificado));
     }

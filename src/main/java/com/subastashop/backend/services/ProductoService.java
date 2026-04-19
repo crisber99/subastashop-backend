@@ -127,6 +127,16 @@ public class ProductoService {
                 List<PremioCaja> premios = mapper.readValue(premiosCajaJson, new TypeReference<List<PremioCaja>>() {});
                 for (PremioCaja premio : premios) {
                     premio.setProducto(p);
+                    // Si el usuario subió una imagen local (Base64), la subimos a Azure ☁️
+                    if (premio.getImagenUrl() != null && premio.getImagenUrl().startsWith("data:image")) {
+                        try {
+                            String urlAzure = azureBlobService.subirImagenBase64(premio.getImagenUrl(), "premio-" + premio.getNombre().replaceAll("\\s+", "_"));
+                            premio.setImagenUrl(urlAzure);
+                        } catch (Exception e) {
+                            System.err.println("Error al subir imagen de premio a Azure: " + e.getMessage());
+                            // Fallback o mantener el base64 (aunque no es lo ideal)
+                        }
+                    }
                 }
                 p.setPremios(premios);
             }
@@ -142,7 +152,7 @@ public class ProductoService {
         return productoRepository.save(p);
     }
 
-    public Producto editarProducto(Integer id, boolean isSuperAdmin, String nombre, String descripcion, BigDecimal precioBase,
+    public Producto editarProducto(Integer id, boolean isSuperAdmin, String nombre, String descripcion, BigDecimal precioBase, BigDecimal precioTicket,
                                    String fechaFin, List<MultipartFile> archivos, Integer categoriaId, boolean chatHabilitado, boolean destacado,
                                    String fechaInicioSubasta, Integer horasVentaAnticipada) throws java.io.IOException {
 
@@ -161,6 +171,9 @@ public class ProductoService {
         producto.setNombre(nombre);
         producto.setDescripcion(descripcion);
         producto.setPrecioBase(precioBase);
+        if (precioTicket != null) {
+            producto.setPrecioTicket(precioTicket);
+        }
         
         // --- VALIDACIÓN PRO PARA CHAT (EDIT) ---
         Integer ownerId = usuarioRepository.findOwnerIdByTiendaId(producto.getTienda().getId());
