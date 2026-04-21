@@ -290,6 +290,84 @@ public class OrdenService {
     }
 
     @Transactional
+    public void cancelarOrden(Long id, String emailUsuario) {
+        Orden orden = ordenRepository.findByIdConDetalles(id.intValue())
+                .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
+
+
+        // Solo el comprador dueño puede cancelar su propia orden
+        if (!orden.getUsuario().getEmail().equals(emailUsuario)) {
+            throw new RuntimeException("No tienes permiso para cancelar esta orden.");
+        }
+
+        // Solo se pueden cancelar órdenes que aún no han sido pagadas o procesadas
+        String estado = orden.getEstado();
+        if ("PAGADO".equals(estado) || "CANCELADA".equals(estado)) {
+            throw new RuntimeException("Esta orden no puede cancelarse porque ya fue " + estado.toLowerCase() + ".");
+        }
+
+        // LIBERAR PRODUCTOS RESERVADOS
+        for (DetalleOrden detalle : orden.getDetalles()) {
+            Producto p = detalle.getProducto();
+            if ("RESERVADO".equals(p.getEstado())) {
+                p.setEstado("DISPONIBLE");
+                productoRepo.save(p);
+            }
+        }
+
+        String tiendaNombre = orden.getTienda() != null ? orden.getTienda().getNombre() : "SubastaShop";
+        String compradorNombre = orden.getUsuario().getNombreCompleto();
+        String compradorEmail = orden.getUsuario().getEmail();
+
+        // --- EMAIL AL COMPRADOR ---
+        try {
+            String asunto = "Tu Orden #" + orden.getId() + " ha sido cancelada";
+            StringBuilder sb = new StringBuilder();
+            sb.append("<div style='font-family: Arial, sans-serif; color: #333;'>");
+            sb.append("<h2>Hola, ").append(compradorNombre).append("</h2>");
+            sb.append("<p>Confirmamos que tu orden <b>#").append(orden.getId()).append("</b> en la tienda <b>").append(tiendaNombre).append("</b> ha sido <b style='color:#dc3545;'>cancelada</b> por ti.</p>");
+            sb.append("<div style='background: #f8d7da; padding: 15px; border-radius: 8px; border-left: 5px solid #dc3545; margin: 16px 0;'>");
+            sb.append("<b>Productos liberados y disponibles nuevamente.</b> Si deseas, puedes volver a comprarlos cuando quieras.");
+            sb.append("</div>");
+            sb.append("<p>Si tienes dudas, puedes contactar directamente con la tienda <b>").append(tiendaNombre).append("</b>.</p>");
+            sb.append("<br><hr style='border: 0; border-top: 1px solid #eee;'>");
+            sb.append("<p style='font-size: 0.8em; color: #777;'>Mensaje enviado automáticamente por SubastaShop.</p>");
+            sb.append("</div>");
+            emailService.enviarCorreo(compradorEmail, asunto, sb.toString());
+        } catch (Exception e) {
+            System.err.println("Error enviando email de cancelación al comprador: " + e.getMessage());
+        }
+
+        // --- EMAIL AL VENDEDOR ---
+        try {
+            // Buscar el dueño de la tienda por su tiendaId
+            if (orden.getTienda() != null) {
+                usuarioRepository.findByTiendaId(orden.getTienda().getId()).ifPresent(vendedor -> {
+                    String asuntoVendedor = "El cliente canceló la Orden #" + orden.getId();
+                    StringBuilder sbV = new StringBuilder();
+                    sbV.append("<div style='font-family: Arial, sans-serif; color: #333;'>");
+                    sbV.append("<h2>Cancelación de Orden</h2>");
+                    sbV.append("<p>El cliente <b>").append(compradorNombre).append("</b> (").append(compradorEmail).append(") ha cancelado la orden <b>#").append(orden.getId()).append("</b>.</p>");
+                    sbV.append("<div style='background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 5px solid #ffc107; margin: 16px 0;'>");
+                    sbV.append("<b>Total de la orden cancelada:</b> $").append(orden.getTotal()).append("<br>");
+                    sbV.append("<b>Productos:</b> ");
+                    orden.getDetalles().forEach(d -> sbV.append(d.getProducto().getNombre()).append(", "));
+                    sbV.append("</div>");
+                    sbV.append("<p>Los productos han sido liberados y vueltos a estado disponible automáticamente.</p>");
+                    sbV.append("<br><hr style='border: 0; border-top: 1px solid #eee;'>");
+                    sbV.append("<p style='font-size: 0.8em; color: #777;'>Mensaje enviado automáticamente por SubastaShop.</p></div>");
+                    emailService.enviarCorreo(vendedor.getEmail(), asuntoVendedor, sbV.toString());
+                });
+            }
+        } catch (Exception e) {
+            System.err.println("Error enviando email de cancelación al vendedor: " + e.getMessage());
+        }
+
+        orden.setEstado("CANCELADA");
+        ordenRepository.save(orden);
+    }
+
+    @Transactional
     public String abrirCajaMisteriosa(Long detalleId, String email) {
         DetalleOrden detalle = detalleOrdenRepository.findById(java.util.Objects.requireNonNull(detalleId, "ID de detalle no puede ser nulo"))
                 .orElseThrow(() -> new RuntimeException("Detalle no encontrado"));

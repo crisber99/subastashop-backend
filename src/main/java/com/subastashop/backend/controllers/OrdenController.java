@@ -66,6 +66,17 @@ public class OrdenController {
         }
     }
 
+    @DeleteMapping("/{id}/cancelar")
+    public ResponseEntity<?> cancelarOrden(@PathVariable Long id) {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            ordenService.cancelarOrden(id, email);
+            return ResponseEntity.ok(java.util.Map.of("message", "Orden cancelada exitosamente."));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/{id}/informar-pago")
     public ResponseEntity<?> informarPago(@PathVariable Integer id, @RequestParam("archivo") org.springframework.web.multipart.MultipartFile archivo) {
         try {
