@@ -72,7 +72,8 @@ public class ProductoController {
             @RequestParam(value = "premiosCaja", required = false) String premiosCajaJson,
             @RequestParam(value = "categoriaId", required = false) Integer categoriaId,
             @RequestParam(value = "fechaInicioSubasta", required = false) String fechaInicioSubasta,
-            @RequestParam(value = "horasVentaAnticipada", required = false, defaultValue = "24") Integer horasVentaAnticipada) throws java.io.IOException {
+            @RequestParam(value = "horasVentaAnticipada", required = false, defaultValue = "24") Integer horasVentaAnticipada,
+            @RequestParam(value = "tipoJuego", required = false) String tipoJuego) throws java.io.IOException {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         boolean isSuperAdmin = SecurityContextHolder.getContext().getAuthentication()
@@ -81,7 +82,7 @@ public class ProductoController {
 
         Producto nuevo = productoService.crearProducto(email, isSuperAdmin, archivos, nombre, descripcion,
                 tipoVenta, precioBase, stock, chatHabilitado, destacado, fechaFinIso, precioTicket, cantidadNumeros, cantidadGanadores, premiosCajaJson, categoriaId,
-                fechaInicioSubasta, horasVentaAnticipada);
+                fechaInicioSubasta, horasVentaAnticipada, tipoJuego);
 
         // Enviar notificación Push Global
         try {
@@ -141,14 +142,15 @@ public class ProductoController {
             @RequestParam(value = "chatHabilitado", required = false, defaultValue = "true") boolean chatHabilitado,
             @RequestParam(value = "destacado", required = false, defaultValue = "false") boolean destacado,
             @RequestParam(value = "fechaInicioSubasta", required = false) String fechaInicioSubasta,
-            @RequestParam(value = "horasVentaAnticipada", required = false) Integer horasVentaAnticipada) throws java.io.IOException {
+            @RequestParam(value = "horasVentaAnticipada", required = false) Integer horasVentaAnticipada,
+            @RequestParam(value = "tipoJuego", required = false) String tipoJuego) throws java.io.IOException {
 
         boolean isSuperAdmin = SecurityContextHolder.getContext().getAuthentication()
                 .getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
         Producto modificado = productoService.editarProducto(id, isSuperAdmin, nombre, descripcion, precioBase, precioTicket, fechaFin, archivos, 
-                categoriaId, chatHabilitado, destacado, fechaInicioSubasta, horasVentaAnticipada);
+                categoriaId, chatHabilitado, destacado, fechaInicioSubasta, horasVentaAnticipada, tipoJuego);
         return ResponseEntity.ok(productoService.toDTO(modificado));
     }
 }

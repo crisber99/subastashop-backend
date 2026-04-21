@@ -66,7 +66,10 @@ public class Producto extends BaseEntity {
     private Integer cantidadNumeros;
     private Integer cantidadGanadores;
     private BigDecimal precioTicket;
-    private Integer numeroPares = 5; // Dificultad del Memorice
+    private Integer numeroPares = 5; // Dificultad general para los juegos
+    
+    @Column(length = 30)
+    private String tipoJuego = "MEMORICE"; // ENUM local: MEMORICE, HANOI, REACCION
     
     @Column(nullable = false, columnDefinition = "bit default 1")
     private boolean chatHabilitado = true;

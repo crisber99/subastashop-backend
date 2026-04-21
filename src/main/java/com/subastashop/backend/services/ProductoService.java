@@ -41,7 +41,7 @@ public class ProductoService {
     public Producto crearProducto(String email, boolean isSuperAdmin, List<MultipartFile> archivos, String nombre,
                                   String descripcion, String tipoVenta, BigDecimal precioBase, Integer stock,
                                   boolean chatHabilitado, boolean destacado, String fechaFinIso, BigDecimal precioTicket, Integer cantidadNumeros, Integer cantidadGanadores,
-                                  String premiosCajaJson, Integer categoriaId, String fechaInicioSubasta, Integer horasVentaAnticipada) throws java.io.IOException {
+                                  String premiosCajaJson, Integer categoriaId, String fechaInicioSubasta, Integer horasVentaAnticipada, String tipoJuego) throws java.io.IOException {
 
         if (securityService.tieneContenidoIlegal(nombre) || securityService.tieneContenidoIlegal(descripcion)) {
             throw new ApiException("CensoredContent: Tu publicación contiene palabras prohibidas por nuestras normas de comunidad.");
@@ -100,6 +100,9 @@ public class ProductoService {
             p.setPrecioTicket(precioTicket);
             p.setCantidadNumeros(cantidadNumeros);
             p.setCantidadGanadores(cantidadGanadores);
+            if (tipoJuego != null && !tipoJuego.isEmpty() && !tipoJuego.equals("undefined")) {
+                p.setTipoJuego(tipoJuego);
+            }
         } else if ("SUBASTA".equalsIgnoreCase(tipoVenta)) {
             p.setPrecioActual(precioBase);
             p.setEstado("EN_SUBASTA");
@@ -154,7 +157,7 @@ public class ProductoService {
 
     public Producto editarProducto(Integer id, boolean isSuperAdmin, String nombre, String descripcion, BigDecimal precioBase, BigDecimal precioTicket,
                                    String fechaFin, List<MultipartFile> archivos, Integer categoriaId, boolean chatHabilitado, boolean destacado,
-                                   String fechaInicioSubasta, Integer horasVentaAnticipada) throws java.io.IOException {
+                                   String fechaInicioSubasta, Integer horasVentaAnticipada, String tipoJuego) throws java.io.IOException {
 
         if (securityService.tieneContenidoIlegal(nombre) || securityService.tieneContenidoIlegal(descripcion)) {
             throw new ApiException("CensoredContent: No puedes actualizar el producto con términos prohibidos.");
@@ -173,6 +176,9 @@ public class ProductoService {
         producto.setPrecioBase(precioBase);
         if (precioTicket != null) {
             producto.setPrecioTicket(precioTicket);
+        }
+        if (tipoJuego != null && !tipoJuego.isEmpty() && !tipoJuego.equals("undefined")) {
+            producto.setTipoJuego(tipoJuego);
         }
         
         // --- VALIDACIÓN PRO PARA CHAT (EDIT) ---
@@ -254,6 +260,7 @@ public class ProductoService {
         dto.setFechaInicioSubasta(p.getFechaInicioSubasta());
         dto.setHorasVentaAnticipada(p.getHorasVentaAnticipada());
         dto.setNumeroPares(p.getNumeroPares());
+        dto.setTipoJuego(p.getTipoJuego());
         
         if (p.getTienda() != null) {
             dto.setTiendaId(p.getTienda().getId());

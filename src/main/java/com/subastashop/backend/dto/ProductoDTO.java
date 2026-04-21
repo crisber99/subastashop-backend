@@ -34,6 +34,7 @@ public class ProductoDTO {
     private String categoriaNombre;
     private List<PremioCajaDTO> premios;
     private Integer numeroPares;
+    private String tipoJuego;
 
     // Sub-objeto tienda para que el frontend pueda acceder a producto.tienda.id
     private TiendaInfo tienda;
