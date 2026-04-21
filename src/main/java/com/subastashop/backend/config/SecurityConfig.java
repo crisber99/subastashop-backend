@@ -11,12 +11,10 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.security.config.Customizer;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.core.Ordered;
-
+import org.springframework.web.cors.CorsConfiguration;
 import java.util.Arrays;
 
 @Configuration
@@ -33,7 +31,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.disable()) // Se deshabilita aquí porque usamos un filtro global de mayor prioridad (abajo)
+            .cors(Customizer.withDefaults()) 
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 // ================================================================
@@ -104,8 +102,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public FilterRegistrationBean<CorsFilter> customCorsFilter() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.setAllowedOrigins(Arrays.asList(
@@ -119,14 +116,9 @@ public class SecurityConfig {
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setExposedHeaders(Arrays.asList("Authorization", "x-tenant-id"));
         config.setMaxAge(3600L);
-        
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-        
-        CorsFilter filter = new CorsFilter(source);
-        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(filter);
-        
-        // Esto es CLAVE: Ejecutar este filtro ANTES que la seguridad de Spring o interceptores
-        bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
-        return bean;
+        return source;
     }
 }

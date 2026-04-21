@@ -18,7 +18,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/games")
-@CrossOrigin(origins = "*")
 public class GameController {
 
     @Autowired
