@@ -45,9 +45,8 @@ public class ContestService {
      */
     @Transactional
     public void submitPuntaje(Integer contestId, Integer userId, Long durationMs) {
-        if (durationMs < 3000) {
-            throw new RuntimeException("Tiempo de resolución no válido (posible bot).");
-        }
+        // La validación estricta de tiempo por juego (hack/bot) se realiza ahora
+        // en GameValidationService.isResultValid() antes de invocar este método.
 
         Participation participacion = participationRepository.findByContestIdAndParticipantId(contestId, userId)
                 .stream().findFirst()
