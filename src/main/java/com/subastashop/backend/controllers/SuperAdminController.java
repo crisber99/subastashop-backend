@@ -211,4 +211,19 @@ public class SuperAdminController {
         tiendaRepository.delete(tienda);
         return ResponseEntity.ok("Tienda '" + tienda.getNombre() + "' eliminada correctamente.");
     }
+
+    @PutMapping("/tiendas/{id}")
+    public ResponseEntity<?> actualizarTienda(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        Tienda tienda = tiendaRepository.findById(id).orElseThrow();
+        if (body.containsKey("nombre")) tienda.setNombre(body.get("nombre"));
+        if (body.containsKey("slug")) {
+            String newSlug = body.get("slug");
+            if (!newSlug.equals(tienda.getSlug()) && tiendaRepository.existsBySlug(newSlug)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El slug ya existe"));
+            }
+            tienda.setSlug(newSlug);
+        }
+        tiendaRepository.save(tienda);
+        return ResponseEntity.ok(Map.of("mensaje", "Tienda actualizada"));
+    }
 }
