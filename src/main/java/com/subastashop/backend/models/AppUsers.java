@@ -39,6 +39,7 @@ public class AppUsers implements UserDetails {
     private String direccion;
     private String rut; // 👈 NUEVO: RUT del usuario (Formato xx.xxx.xxx-x)
     private String preferenciaEnvio; // 👈 NUEVO: Opción de envío favorita (Blue Express, Starken, etc.)
+    private String profileImageUrl; // 👈 NUEVO: Foto de perfil
 
     // 🔧 CAMBIO 1: Cambiamos String por Role y agregamos la anotación
     @Enumerated(EnumType.STRING)

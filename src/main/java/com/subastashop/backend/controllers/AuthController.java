@@ -52,6 +52,9 @@ public class AuthController {
     @Autowired
     private UserLegalAcceptanceRepository legalRepository;
 
+    @Autowired
+    private com.subastashop.backend.services.AzureBlobService azureBlobService;
+
     // LOGIN
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
@@ -86,6 +89,7 @@ public class AuthController {
         usuarioMap.put("direccion", userCompleto.getDireccion());    // 👈 NUEVO
         usuarioMap.put("rut", userCompleto.getRut());                // 👈 NUEVO
         usuarioMap.put("preferenciaEnvio", userCompleto.getPreferenciaEnvio()); // 👈 NUEVO
+        usuarioMap.put("profileImageUrl", userCompleto.getProfileImageUrl()); // 👈 NUEVO
         
         response.put("usuario", usuarioMap);
 
@@ -110,9 +114,27 @@ public class AuthController {
         if (updates.containsKey("direccion")) user.setDireccion(updates.get("direccion"));
         if (updates.containsKey("rut")) user.setRut(updates.get("rut")); // 👈 NUEVO
         if (updates.containsKey("preferenciaEnvio")) user.setPreferenciaEnvio(updates.get("preferenciaEnvio"));
+        if (updates.containsKey("profileImageUrl")) user.setProfileImageUrl(updates.get("profileImageUrl"));
 
         userRepository.save(user);
         return ResponseEntity.ok(Map.of("message", "Perfil actualizado con éxito", "user", user));
+    }
+
+    @PostMapping("/upload-avatar")
+    public ResponseEntity<?> uploadAvatar(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+            AppUsers user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            String url = azureBlobService.subirImagen(file);
+            user.setProfileImageUrl(url);
+            userRepository.save(user);
+
+            return ResponseEntity.ok(Map.of("url", url));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     // --- MI CUENTA: CAMBIAR CONTRASEÑA ---
