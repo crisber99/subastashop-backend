@@ -39,6 +39,7 @@ public class AppUsers implements UserDetails {
     private String direccion;
     private String rut; // 👈 NUEVO: RUT del usuario (Formato xx.xxx.xxx-x)
     private String preferenciaEnvio; // 👈 NUEVO: Opción de envío favorita (Blue Express, Starken, etc.)
+    @Transient
     private String profileImageUrl; // 👈 NUEVO: Foto de perfil
 
     // 🔧 CAMBIO 1: Cambiamos String por Role y agregamos la anotación
@@ -49,7 +50,8 @@ public class AppUsers implements UserDetails {
 
     @ManyToOne
     @JoinColumn(name = "tienda_id")
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"rutEmpresa", "datosBancarios", "documentoAnversoUrl", "documentoReversoUrl", "fechaAceptacionTerminos"})
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "rutEmpresa", "datosBancarios", "documentoAnversoUrl",
+            "documentoReversoUrl", "fechaAceptacionTerminos" })
     private Tienda tienda;
 
     // --- Campos de Suscripción y Trial ---
@@ -89,7 +91,8 @@ public class AppUsers implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (rol == null) return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        if (rol == null)
+            return List.of(new SimpleGrantedAuthority("ROLE_USER"));
         return List.of(new SimpleGrantedAuthority(rol.name()));
     }
 
@@ -126,5 +129,5 @@ public class AppUsers implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
-    
+
 }
