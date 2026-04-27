@@ -199,14 +199,20 @@ public class SuperAdminController {
         Tienda tienda = tiendaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Tienda no encontrada"));
         
-        // Antes de borrar la tienda, desvinculamos al usuario para que no quede huérfano 
-        // o cause errores de integridad referencial.
-        AppUsers dueño = usuarioRepository.findByTiendaId(tienda.getId()).orElse(null);
-        if (dueño != null) {
-            dueño.setTienda(null);
-            dueño.setRol(Role.ROLE_COMPRADOR); // Lo bajamos a comprador si su tienda se cierra
-            usuarioRepository.save(dueño);
+        // CORRECCIÓN: Buscamos a TODOS los usuarios vinculados para evitar NonUniqueResultException
+        List<AppUsers> vinculados = usuarioRepository.findAllByTiendaId(id);
+        for (AppUsers u : vinculados) {
+            u.setTienda(null);
+            if (u.getRol() == Role.ROLE_ADMIN) {
+                u.setRol(Role.ROLE_COMPRADOR); 
+            }
+            u.setSuscripcionActiva(false);
+            usuarioRepository.save(u);
         }
+
+        // Antes de borrar, limpiamos los productos para evitar bloqueos de integridad si el DB es estricto
+        List<Producto> productos = productoRepository.findByTiendaId(id);
+        productoRepository.deleteAll(productos);
 
         tiendaRepository.delete(tienda);
         return ResponseEntity.ok("Tienda '" + tienda.getNombre() + "' eliminada correctamente.");
