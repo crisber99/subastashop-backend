@@ -105,14 +105,14 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(Arrays.asList(
+        config.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:4200",
-                "https://www.subastashop.cl",
+                "https://*.subastashop.cl",
                 "https://subastashop.cl",
-                "https://storagesubastasapp.z20.web.core.windows.net",
-                "https://storagesubastasapp.z20.web.core.windows.net/"
+                "https://www.subastashop.cl",
+                "https://*.web.core.windows.net"
         ));
-        config.setAllowedHeaders(Arrays.asList("*"));
+        config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization", "x-tenant-id", "X-Requested-With"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setExposedHeaders(Arrays.asList("Authorization", "x-tenant-id"));
         config.setMaxAge(3600L);
