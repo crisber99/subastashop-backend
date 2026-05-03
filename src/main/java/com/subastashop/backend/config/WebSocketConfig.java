@@ -15,12 +15,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // Punto de conexión para el Frontend
         registry.addEndpoint("/ws-subastas")
                 .setAllowedOrigins(
-                        "http://localhost:4200", 
+                        "http://localhost:4200",
+                        "http://localhost:8100",
                         "https://storagesubastasapp.z20.web.core.windows.net",
                         "https://www.subastashop.cl",
                         "https://subastashop.cl",
-                        "https://api-subastashop-dhd5gec8hecxfbc9.centralus-01.azurewebsites.net"
-                )
+                        "https://api-subastashop-dhd5gec8hecxfbc9.centralus-01.azurewebsites.net")
                 .withSockJS(); // Habilita fallback por si el navegador es viejo
     }
 
