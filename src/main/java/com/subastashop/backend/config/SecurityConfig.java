@@ -108,6 +108,9 @@ public class SecurityConfig {
         config.setAllowCredentials(true);
         config.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:4200",
+                "http://localhost:8100",
+                "capacitor://localhost",
+                "http://localhost",
                 "https://*.subastashop.cl",
                 "https://subastashop.cl",
                 "https://www.subastashop.cl",
