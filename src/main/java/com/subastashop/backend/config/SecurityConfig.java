@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/ws-subastas/**").permitAll()
                 .requestMatchers("/error").permitAll() // <-- AÑADIDO: Para evitar que errores internos o BadCredentialsException mascarados por Spring terminen en 403
+                .requestMatchers("/").permitAll() // Permitir la raiz para diagnosticar problemas de DNS
 
                 // Autenticación (Login/Registro)
                 .requestMatchers("/api/auth/**").permitAll()
