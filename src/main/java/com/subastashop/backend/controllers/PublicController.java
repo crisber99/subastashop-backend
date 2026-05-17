@@ -30,11 +30,13 @@ public class PublicController {
     private final TiendaRepository tiendaRepository;
     private final ProductoRepository productoRepository;
     private final PrelaunchSubscriberRepository prelaunchSubscriberRepository;
+    private final com.subastashop.backend.services.EmailService emailService;
 
-    public PublicController(TiendaRepository tiendaRepository, ProductoRepository productoRepository, PrelaunchSubscriberRepository prelaunchSubscriberRepository) {
+    public PublicController(TiendaRepository tiendaRepository, ProductoRepository productoRepository, PrelaunchSubscriberRepository prelaunchSubscriberRepository, com.subastashop.backend.services.EmailService emailService) {
         this.tiendaRepository = tiendaRepository;
         this.productoRepository = productoRepository;
         this.prelaunchSubscriberRepository = prelaunchSubscriberRepository;
+        this.emailService = emailService;
     }
 
     private TiendaPublicDTO mapToDTO(Tienda t) {
@@ -99,8 +101,25 @@ public class PublicController {
         PrelaunchSubscriber sub = new PrelaunchSubscriber();
         sub.setEmail(email);
         prelaunchSubscriberRepository.save(sub);
+
+        // Enviar email de bienvenida de forma asíncrona
+        new Thread(() -> {
+            try {
+                String html = "<div style='font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;'>"
+                        + "<h2 style='color: #4f46e5; text-align: center;'>¡Estás en la lista! 🚀</h2>"
+                        + "<p>Hola,</p>"
+                        + "<p>Te has suscrito exitosamente a la lista de espera exclusiva del <b>Gran Lanzamiento de SubastaShop</b>.</p>"
+                        + "<p>Serás de las primeras personas en enterarte apenas abramos nuestras puertas, para que puedas asegurar los cupos Fundador y acceder a los mejores chollos antes que nadie.</p>"
+                        + "<br><p>Mantente atento a este correo.</p>"
+                        + "<p><b>El equipo de SubastaShop</b></p>"
+                        + "</div>";
+                emailService.enviarCorreo(email, "🚀 ¡Estás en la lista VIP de SubastaShop!", html);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
         
-        return ResponseEntity.ok(Map.of("message", "¡Gracias! Te avisaremos apenas abramos."));
+        return ResponseEntity.ok(Map.of("message", "¡Revisa tu bandeja! Te hemos enviado un correo de confirmación."));
     }
 
     @GetMapping("/chollos-ganados")
