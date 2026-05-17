@@ -71,14 +71,16 @@ public class MercadoPagoService {
         String title;
 
         if (months == 1) {
-            // Promoción: $4.990 para los primeros 100 usuarios PRO
             long totalProUsers = userRepository.countByRol(Role.ROLE_ADMIN);
             if (totalProUsers < 100) {
+                unitPrice = new BigDecimal("2490");
+                title = "Suscripción PRO - Lanzamiento (Fase 1)";
+            } else if (totalProUsers < 500) {
                 unitPrice = new BigDecimal("4990");
-                title = "Oferta Lanzamiento: 1 Mes Pro";
+                title = "Suscripción PRO - Early Bird (Fase 2)";
             } else {
-                unitPrice = new BigDecimal("9990");
-                title = "SuscripciónMensual Pro";
+                unitPrice = new BigDecimal("6990");
+                title = "Suscripción PRO";
             }
         } else if (months == 3) {
             unitPrice = new BigDecimal("26970"); // 10% dcto aprox
@@ -231,12 +233,19 @@ public class MercadoPagoService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         // 1. Asegurar Plan V6
-        String planName = "SubastaShop PRO";
-        BigDecimal amount = new BigDecimal("9990");
         long totalProUsers = userRepository.countByRol(Role.ROLE_ADMIN);
+        String planName;
+        BigDecimal amount;
+        
         if (totalProUsers < 100) {
-            planName = "SubastaShop PRO Promo";
+            planName = "Suscripción PRO - Lanzamiento (Fase 1)";
+            amount = new BigDecimal("2490");
+        } else if (totalProUsers < 500) {
+            planName = "Suscripción PRO - Early Bird (Fase 2)";
             amount = new BigDecimal("4990");
+        } else {
+            planName = "Suscripción PRO";
+            amount = new BigDecimal("6990");
         }
         String planId = getOrCreatePlanId(planName, amount);
 
@@ -290,12 +299,19 @@ public class MercadoPagoService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         // 1. Aseguramos que existe el plan (V6)
-        String planName = "SubastaShop PRO";
-        BigDecimal amount = new BigDecimal("9990");
         long totalProUsers = userRepository.countByRol(Role.ROLE_ADMIN);
+        String planName;
+        BigDecimal amount;
+        
         if (totalProUsers < 100) {
-            planName = "SubastaShop PRO Promo";
+            planName = "Suscripción PRO - Lanzamiento (Fase 1)";
+            amount = new BigDecimal("2490");
+        } else if (totalProUsers < 500) {
+            planName = "Suscripción PRO - Early Bird (Fase 2)";
             amount = new BigDecimal("4990");
+        } else {
+            planName = "Suscripción PRO";
+            amount = new BigDecimal("6990");
         }
 
         // Obtenemos el ID del plan (debería ser el que te funcionó)
