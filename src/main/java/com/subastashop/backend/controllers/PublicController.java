@@ -13,6 +13,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import com.subastashop.backend.models.PrelaunchSubscriber;
+import com.subastashop.backend.repositories.PrelaunchSubscriberRepository;
+import java.util.Map;
+import java.util.HashMap;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,10 +29,12 @@ public class PublicController {
 
     private final TiendaRepository tiendaRepository;
     private final ProductoRepository productoRepository;
+    private final PrelaunchSubscriberRepository prelaunchSubscriberRepository;
 
-    public PublicController(TiendaRepository tiendaRepository, ProductoRepository productoRepository) {
+    public PublicController(TiendaRepository tiendaRepository, ProductoRepository productoRepository, PrelaunchSubscriberRepository prelaunchSubscriberRepository) {
         this.tiendaRepository = tiendaRepository;
         this.productoRepository = productoRepository;
+        this.prelaunchSubscriberRepository = prelaunchSubscriberRepository;
     }
 
     private TiendaPublicDTO mapToDTO(Tienda t) {
@@ -76,5 +84,28 @@ public class PublicController {
         return tiendaRepository.findBySlug(slug.toLowerCase())
                 .map(t -> ResponseEntity.ok(mapToDTO(t)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/prelaunch/subscribe")
+    public ResponseEntity<?> subscribeToPrelaunch(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+        if (email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Email es requerido"));
+        }
+        if (prelaunchSubscriberRepository.existsByEmail(email)) {
+            return ResponseEntity.ok(Map.of("message", "Ya estabas suscrito. ¡Pronto te avisaremos!"));
+        }
+        
+        PrelaunchSubscriber sub = new PrelaunchSubscriber();
+        sub.setEmail(email);
+        prelaunchSubscriberRepository.save(sub);
+        
+        return ResponseEntity.ok(Map.of("message", "¡Gracias! Te avisaremos apenas abramos."));
+    }
+
+    @GetMapping("/chollos-ganados")
+    @Cacheable("chollosGanados")
+    public List<Producto> obtenerChollosGanados() {
+        return productoRepository.findTop10ByEstadoOrderByFechaFinSubastaDesc("ADJUDICADO");
     }
 }

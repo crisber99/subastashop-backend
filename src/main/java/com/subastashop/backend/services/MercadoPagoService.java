@@ -29,6 +29,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+
 @Slf4j
 @Service
 public class MercadoPagoService {
@@ -47,12 +49,14 @@ public class MercadoPagoService {
 
     private final AppUserRepository userRepository;
     private final EmailService emailService;
+    private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
-    public MercadoPagoService(AppUserRepository userRepository, EmailService emailService) {
+    public MercadoPagoService(AppUserRepository userRepository, EmailService emailService, SimpMessagingTemplate messagingTemplate) {
         this.userRepository = userRepository;
         this.emailService = emailService;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @PostConstruct
@@ -508,6 +512,28 @@ public class MercadoPagoService {
 
         log.info("✅ [{} PLAN] Suscripción activada por {} meses para: {}",
                 esAutomatico ? "AUTO" : "MANUAL", months, user.getEmail());
+
+        // --- NOTIFICACIONES EN VIVO (WEBSOCKETS) ---
+        long totalProUsers = userRepository.countByRol(Role.ROLE_ADMIN);
+        if (totalProUsers <= 100) {
+            String ciudad = (user.getDireccion() != null && !user.getDireccion().isEmpty()) 
+                            ? user.getDireccion() : "una ubicación misteriosa";
+            Map<String, Object> wsMsg = new HashMap<>();
+            wsMsg.put("tipo", "NUEVO_FUNDADOR");
+            wsMsg.put("mensaje", "¡Un nuevo Fundador se ha unido desde " + ciudad + "!");
+            wsMsg.put("cuposRestantes", 100 - totalProUsers);
+            messagingTemplate.convertAndSend("/topic/founders", wsMsg);
+        }
+
+        // --- AUTOMATIZACIÓN MARKETING: FASE 1 AGOTADA ---
+        if (totalProUsers == 100) {
+            List<AppUsers> compradores = userRepository.findByRol(Role.ROLE_COMPRADOR);
+            for (AppUsers c : compradores) {
+                emailService.enviarCorreo(c.getEmail(), 
+                    "⚠️ ¡Fase 1 Agotada! La Fase 2 acaba de abrir", 
+                    "Hola " + c.getNombreCompleto() + ",<br><br>Los primeros 100 cupos de Fundador se han agotado completamente.<br><br>Acabamos de abrir la <b>Fase 2 (Early Bird) a $4.990</b>. Quedan solo 400 cupos a este precio antes de que suba a $6.990 para siempre.<br><br><a href='" + frontendUrl + "'>¡Asegura tu cupo Early Bird aquí!</a>");
+            }
+        }
 
         // --- ENVIAR EMAIL DE BIENVENIDA O RENOVACIÓN ---
         enviarEmailConfirmacion(user, months, esAutomatico);

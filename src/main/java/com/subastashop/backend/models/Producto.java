@@ -57,6 +57,9 @@ public class Producto extends BaseEntity {
     @Column(length = 20)
     private String estado = "DISPONIBLE";
 
+    @Column(nullable = false, columnDefinition = "bit default 0")
+    private boolean alerta10MinEnviada = false;
+
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
     @OneToMany(mappedBy = "producto")

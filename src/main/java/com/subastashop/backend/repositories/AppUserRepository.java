@@ -21,6 +21,8 @@ public interface AppUserRepository extends JpaRepository<AppUsers, Integer> {
 
     // Contar registrados por rol (ej: cuántos PRO tenemos)
     long countByRol(com.subastashop.backend.models.Role rol);
+    
+    java.util.List<AppUsers> findByRol(com.subastashop.backend.models.Role rol);
 
     Optional<AppUsers> findByTiendaId(Long tiendaId);
     java.util.List<AppUsers> findAllByTiendaId(Long tiendaId);

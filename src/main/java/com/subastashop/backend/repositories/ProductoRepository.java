@@ -69,4 +69,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     List<Producto> findTop12ByDestacadoTrueAndEstadoInOrderByFechaCreacionDesc(List<String> estados);
 
     List<Producto> findByEstadoAndFechaFinSubastaBetween(String estado, LocalDateTime start, LocalDateTime end);
+
+    List<Producto> findTop10ByEstadoOrderByFechaFinSubastaDesc(String estado);
+
+    List<Producto> findByEstadoAndAlerta10MinEnviadaFalseAndFechaFinSubastaBetween(String estado, LocalDateTime start, LocalDateTime end);
 }

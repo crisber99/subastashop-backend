@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class SubastaScheduler {
@@ -48,6 +50,32 @@ public class SubastaScheduler {
 
         for (Producto p : productosVencidos) {
             procesarCierre(p);
+        }
+    }
+
+    @Scheduled(fixedRate = 60000)
+    public void enviarAlertas10Minutos() {
+        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime en10Minutos = ahora.plusMinutes(10);
+        
+        List<Producto> productos = productoRepository.findByEstadoAndAlerta10MinEnviadaFalseAndFechaFinSubastaBetween(
+            "EN_SUBASTA", ahora, en10Minutos);
+            
+        for (Producto p : productos) {
+            p.setAlerta10MinEnviada(true);
+            productoRepository.save(p);
+            
+            // Encontrar pujadores únicos
+            List<Puja> pujas = pujaRepository.findByProductoIdOrderByMontoDesc(p.getId());
+            Set<Integer> pujadoresIds = pujas.stream().map(Puja::getUsuarioId).collect(Collectors.toSet());
+            
+            for (Integer uid : pujadoresIds) {
+                appUserRepository.findById(uid).ifPresent(u -> {
+                    String asunto = "⏳ ¡Faltan menos de 10 minutos para que termine la subasta!";
+                    String msg = "Hola " + u.getNombreCompleto() + ",<br><br>La subasta por <b>" + p.getNombre() + "</b> está a punto de terminar.<br>¡Asegúrate de tener la puja más alta antes de que el reloj llegue a cero!<br><br><a href='https://www.subastashop.cl/producto/" + p.getId() + "'>Ver Subasta</a>";
+                    emailService.enviarCorreo(u.getEmail(), asunto, msg);
+                });
+            }
         }
     }
 
