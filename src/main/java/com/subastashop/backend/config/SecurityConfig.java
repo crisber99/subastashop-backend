@@ -50,6 +50,7 @@ public class SecurityConfig {
 
                 // Landing Page y Tiendas Públicas
                 .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/v1/pricing/**").permitAll()
 
                 // Imágenes
                 .requestMatchers("/api/productos/imagen/**").permitAll()
