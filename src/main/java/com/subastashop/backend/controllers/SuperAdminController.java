@@ -232,4 +232,12 @@ public class SuperAdminController {
         tiendaRepository.save(tienda);
         return ResponseEntity.ok(Map.of("mensaje", "Tienda actualizada"));
     }
+
+    @Autowired
+    private PrelaunchSubscriberRepository prelaunchSubscriberRepository;
+
+    @GetMapping("/prelaunch/subscribers")
+    public ResponseEntity<List<PrelaunchSubscriber>> listarSuscriptoresLanzamiento() {
+        return ResponseEntity.ok(prelaunchSubscriberRepository.findAll());
+    }
 }

@@ -90,17 +90,27 @@ public class PublicController {
 
     @PostMapping("/prelaunch/subscribe")
     public ResponseEntity<?> subscribeToPrelaunch(@RequestBody Map<String, String> payload) {
-        String email = payload.get("email");
-        if (email == null || email.trim().isEmpty()) {
+        String rawEmail = payload.get("email");
+        if (rawEmail == null || rawEmail.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Email es requerido"));
         }
+        
+        String email = rawEmail.trim().toLowerCase();
+
         if (prelaunchSubscriberRepository.existsByEmail(email)) {
             return ResponseEntity.ok(Map.of("message", "Ya estabas suscrito. ¡Pronto te avisaremos!"));
         }
         
         PrelaunchSubscriber sub = new PrelaunchSubscriber();
         sub.setEmail(email);
-        prelaunchSubscriberRepository.save(sub);
+        
+        try {
+            prelaunchSubscriberRepository.save(sub);
+        } catch (Exception e) {
+            // Si por condiciones de carrera o bases de datos choca con otro, 
+            // simplemente decimos que ya estaba suscrito en lugar de lanzar 500 Error
+            return ResponseEntity.ok(Map.of("message", "Ya estabas suscrito. ¡Pronto te avisaremos!"));
+        }
 
         // Enviar email de bienvenida de forma asíncrona
         new Thread(() -> {
