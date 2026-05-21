@@ -23,13 +23,13 @@ public class PricingController {
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getPricingStatus() {
         long totalProUsers = userRepository.countByRol(Role.ROLE_ADMIN);
-        
+
         int faseActual = 1;
         int precioActual = 2490;
         int cuposTotalesFase = 100;
         long cuposOcupadosFase = totalProUsers;
         long cuposRestantes = 100 - totalProUsers;
-        int precioAncla = 9990;
+        int precioAncla = 6990;
 
         if (totalProUsers >= 100 && totalProUsers < 500) {
             faseActual = 2;

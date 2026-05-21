@@ -87,17 +87,17 @@ public class MercadoPagoService {
                 title = "Suscripción PRO";
             }
         } else if (months == 3) {
-            unitPrice = new BigDecimal("26970"); // 10% dcto aprox
+            unitPrice = new BigDecimal("18990"); // 10% dcto aprox sobre 6990
             title = "Plan Trimestral Pro (3 Meses)";
         } else if (months == 6) {
-            unitPrice = new BigDecimal("50940"); // 15% dcto aprox
+            unitPrice = new BigDecimal("35990"); // 15% dcto aprox sobre 6990
             title = "Plan Semestral Pro (6 Meses)";
         } else if (months == 12) {
-            unitPrice = new BigDecimal("99900"); // 2 meses gratis
+            unitPrice = new BigDecimal("69900"); // 2 meses gratis sobre 6990
             title = "Plan Anual Pro (12 Meses)";
         } else {
             // Default x mes estándar
-            unitPrice = new BigDecimal("9990").multiply(new BigDecimal(months));
+            unitPrice = new BigDecimal("6990").multiply(new BigDecimal(months));
             title = "Suscripción Pro - " + months + " meses";
         }
 
