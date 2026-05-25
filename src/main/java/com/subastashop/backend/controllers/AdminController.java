@@ -69,9 +69,7 @@ public class AdminController {
             stats.put("gananciasTotales", total != null ? total : 0.0);
             stats.put("nombreTienda", "Panel Global");
 
-            long pendientes = ordenRepository.findAll().stream()
-                .filter(o -> "ESPERANDO_APROBACION".equals(o.getEstado()))
-                .count();
+            long pendientes = ordenRepository.countByEstado("ESPERANDO_APROBACION");
             stats.put("pagosPendientesCount", pendientes);
 
             // --- 📊 DATOS PARA GRÁFICOS (Últimos 30 días) ---
@@ -95,7 +93,7 @@ public class AdminController {
             stats.put("gananciasTotales", totalTienda != null ? totalTienda : 0.0);
             stats.put("nombreTienda", admin.getTienda().getNombre());
 
-            long pendientes = ordenRepository.findByTiendaIdAndEstado(tiendaId, "ESPERANDO_APROBACION").size();
+            long pendientes = ordenRepository.countByTiendaIdAndEstado(tiendaId, "ESPERANDO_APROBACION");
             stats.put("pagosPendientesCount", pendientes);
 
             // --- 📊 DATOS PARA GRÁFICOS (Últimos 30 días) ---

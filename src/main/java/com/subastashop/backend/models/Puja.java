@@ -20,6 +20,7 @@ public class Puja extends BaseEntity {
     // Relación con el Producto
     @ManyToOne
     @JoinColumn(name = "ProductoId", nullable = false)
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private Producto producto;
 
     // Por ahora guardamos solo el ID del usuario (simulado hasta que tengamos Auth)
