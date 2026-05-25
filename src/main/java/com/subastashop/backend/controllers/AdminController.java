@@ -55,12 +55,15 @@ public class AdminController {
         java.time.LocalDateTime hace30Dias = java.time.LocalDateTime.now().minusDays(30);
 
         if (isGlobalAdmin) {
-            // Lógica Super Admin 👑
             stats.put("totalUsuarios", usuarioRepository.count());
             stats.put("totalProductos", productoRepository.count());
             stats.put("totalSubastas", productoRepository.countByTipoVenta("SUBASTA"));
             stats.put("totalVentaDirecta", productoRepository.countByTipoVenta("DIRECTA"));
             stats.put("totalRifas", productoRepository.countByTipoVenta("RIFA"));
+            
+            stats.put("subastasActivas", productoRepository.countByTipoVentaAndEstadoIn("SUBASTA", java.util.List.of("SUBASTA", "EN_SUBASTA")));
+            stats.put("ventaDirectaDisponibles", productoRepository.countByTipoVentaAndEstadoIn("DIRECTA", java.util.List.of("DISPONIBLE")));
+            stats.put("rifasDisponibles", productoRepository.countByTipoVentaAndEstadoIn("RIFA", java.util.List.of("DISPONIBLE", "SUBASTA")));
             
             Double total = ordenRepository.sumTotalPagado();
             stats.put("gananciasTotales", total != null ? total : 0.0);
@@ -70,6 +73,11 @@ public class AdminController {
                 .filter(o -> "ESPERANDO_APROBACION".equals(o.getEstado()))
                 .count();
             stats.put("pagosPendientesCount", pendientes);
+
+            // --- 📊 DATOS PARA GRÁFICOS (Últimos 30 días) ---
+            stats.put("ventasPorDia", ordenRepository.getVentasPorDiaGlobal(hace30Dias));
+            stats.put("distribucionVentasPorTipo", ordenRepository.getDistribucionVentasPorTipoGlobal());
+            stats.put("topSellingProducts", detalleOrdenRepository.getTopSellingProductsGlobal(org.springframework.data.domain.PageRequest.of(0, 5)));
         } else {
             // Lógica Admin de Tienda 🏪
             Long tiendaId = admin.getTienda().getId();

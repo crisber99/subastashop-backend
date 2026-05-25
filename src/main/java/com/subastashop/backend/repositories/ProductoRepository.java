@@ -65,6 +65,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
 
     long countByTipoVenta(String tipoVenta);
 
+    long countByTipoVentaAndEstadoIn(String tipoVenta, List<String> estados);
+
     // Buscar productos destacados activos
     List<Producto> findTop12ByDestacadoTrueAndEstadoInOrderByFechaCreacionDesc(List<String> estados);
 
