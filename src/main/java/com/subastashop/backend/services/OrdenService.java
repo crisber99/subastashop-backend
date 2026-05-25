@@ -57,13 +57,16 @@ public class OrdenService {
         List<String> premiosObtenidos = new ArrayList<>();
         for (DetalleOrden detalle : orden.getDetalles()) {
             Producto p = detalle.getProducto();
-            p.setEstado("VENDIDO");
-            productoRepo.save(p);
+            if (p != null) {
+                p.setEstado("VENDIDO");
+                productoRepo.save(p);
+            }
 
             if ("CAJA_MISTERIOSA".equals(detalle.getTipoCompra())) {
                 try {
                     String premio = revelarPremioCaja(detalle);
-                    premiosObtenidos.add(p.getNombre() + ": " + premio);
+                    String nombre = p != null ? p.getNombre() : "Caja Misteriosa (Eliminada)";
+                    premiosObtenidos.add(nombre + ": " + premio);
                 } catch (Exception e) {
                     System.err.println("Error al revelar caja automáticamente: " + e.getMessage());
                 }
@@ -245,7 +248,7 @@ public class OrdenService {
         // LIBERAR PRODUCTOS RESERVADOS
         for (DetalleOrden detalle : orden.getDetalles()) {
             Producto p = detalle.getProducto();
-            if ("RESERVADO".equals(p.getEstado())) {
+            if (p != null && "RESERVADO".equals(p.getEstado())) {
                 p.setEstado("DISPONIBLE");
                 productoRepo.save(p);
             }
@@ -309,7 +312,7 @@ public class OrdenService {
         // LIBERAR PRODUCTOS RESERVADOS
         for (DetalleOrden detalle : orden.getDetalles()) {
             Producto p = detalle.getProducto();
-            if ("RESERVADO".equals(p.getEstado())) {
+            if (p != null && "RESERVADO".equals(p.getEstado())) {
                 p.setEstado("DISPONIBLE");
                 productoRepo.save(p);
             }
@@ -351,7 +354,10 @@ public class OrdenService {
                     sbV.append("<div style='background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 5px solid #ffc107; margin: 16px 0;'>");
                     sbV.append("<b>Total de la orden cancelada:</b> $").append(orden.getTotal()).append("<br>");
                     sbV.append("<b>Productos:</b> ");
-                    orden.getDetalles().forEach(d -> sbV.append(d.getProducto().getNombre()).append(", "));
+                    orden.getDetalles().forEach(d -> {
+                        String nombre = d.getProducto() != null ? d.getProducto().getNombre() : "Producto Eliminado";
+                        sbV.append(nombre).append(", ");
+                    });
                     sbV.append("</div>");
                     sbV.append("<p>Los productos han sido liberados y vueltos a estado disponible automáticamente.</p>");
                     sbV.append("<br><hr style='border: 0; border-top: 1px solid #eee;'>");
@@ -390,6 +396,10 @@ public class OrdenService {
         }
 
         Producto producto = detalle.getProducto();
+        if (producto == null) {
+            throw new RuntimeException("El producto de esta caja ha sido eliminado del sistema.");
+        }
+        
         if (!"CAJA_MISTERIOSA".equals(producto.getTipoVenta())) {
             throw new RuntimeException("Este producto no es una Caja Misteriosa.");
         }
