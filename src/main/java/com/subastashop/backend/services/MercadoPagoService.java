@@ -145,12 +145,18 @@ public class MercadoPagoService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         String subId = user.getSubscriptionId();
+        
+        boolean hasExpired = user.getFechaVencimientoSuscripcion() != null 
+            && user.getFechaVencimientoSuscripcion().isBefore(LocalDateTime.now());
+
         if (subId == null || subId.isEmpty()) {
-            // Si no hay ID, verificamos si debería tenerla o simplemente marcamos como
-            // inactiva la auto
             user.setPagoAutomatico(false);
+            if (hasExpired) {
+                user.setSuscripcionActiva(false);
+                user.setRol(Role.ROLE_COMPRADOR);
+            }
             userRepository.save(user);
-            return false;
+            return true;
         }
 
         try {
@@ -172,7 +178,10 @@ public class MercadoPagoService {
                     user.setRol(Role.ROLE_ADMIN);
                 } else {
                     user.setPagoAutomatico(false);
-                    // No cambiamos suscripcionActiva aquí por si es un plan manual que aún vence
+                    if (hasExpired) {
+                        user.setSuscripcionActiva(false);
+                        user.setRol(Role.ROLE_COMPRADOR);
+                    }
                 }
                 userRepository.save(user);
                 return true;
@@ -180,6 +189,14 @@ public class MercadoPagoService {
         } catch (Exception e) {
             log.error("Error sincronizando suscripción para {}: {}", userEmail, e.getMessage());
         }
+
+        if (hasExpired) {
+            user.setSuscripcionActiva(false);
+            user.setRol(Role.ROLE_COMPRADOR);
+            userRepository.save(user);
+            return true;
+        }
+
         return false;
     }
 
