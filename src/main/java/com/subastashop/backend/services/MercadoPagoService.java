@@ -140,7 +140,10 @@ public class MercadoPagoService {
      * Sincroniza el estado de la suscripción de un usuario consultando directamente
      * a Mercado Pago.
      */
-    public boolean syncSubscriptionStatus(String userEmail) {
+    public Map<String, Object> syncSubscriptionStatus(String userEmail) {
+        Map<String, Object> returnData = new HashMap<>();
+        returnData.put("updated", false);
+
         AppUsers user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -156,12 +159,15 @@ public class MercadoPagoService {
                 user.setRol(Role.ROLE_COMPRADOR);
             }
             userRepository.save(user);
-            return true;
+            returnData.put("updated", true);
+            returnData.put("debug_msg", "No subId present. Status updated based on local expiration.");
+            return returnData;
         }
 
         try {
             String urlConsultada = "https://api.mercadopago.com/preapproval/" + subId;
             log.info("🔍 Consultando suscripción en MP. URL: {}", urlConsultada);
+            returnData.put("debug_url", urlConsultada);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(urlConsultada))
@@ -171,6 +177,9 @@ public class MercadoPagoService {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             log.info("📩 Respuesta de Mercado Pago (HTTP {}): {}", response.statusCode(), response.body());
+            
+            returnData.put("debug_mp_status_code", response.statusCode());
+            returnData.put("debug_mp_response", response.body());
 
             if (response.statusCode() == 200) {
                 Map<String, Object> mpResponse = objectMapper.readValue(response.body(), new TypeReference<>() {
@@ -189,20 +198,23 @@ public class MercadoPagoService {
                     }
                 }
                 userRepository.save(user);
-                return true;
+                returnData.put("updated", true);
+                return returnData;
             }
         } catch (Exception e) {
             log.error("Error sincronizando suscripción para {}: {}", userEmail, e.getMessage());
+            returnData.put("debug_error", e.getMessage());
         }
 
         if (hasExpired) {
             user.setSuscripcionActiva(false);
             user.setRol(Role.ROLE_COMPRADOR);
             userRepository.save(user);
-            return true;
+            returnData.put("updated", true);
+            return returnData;
         }
 
-        return false;
+        return returnData;
     }
 
     /**

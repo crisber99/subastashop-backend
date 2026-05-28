@@ -118,8 +118,8 @@ public class MercadoPagoController {
     @PostMapping("/sync-status")
     public ResponseEntity<?> syncStatus(Principal principal) {
         if (principal == null) return ResponseEntity.status(401).build();
-        boolean updated = mpService.syncSubscriptionStatus(principal.getName());
-        return ResponseEntity.ok(Map.of("updated", updated));
+        Map<String, Object> result = mpService.syncSubscriptionStatus(principal.getName());
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/cancel-subscription")
