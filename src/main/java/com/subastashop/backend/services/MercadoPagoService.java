@@ -160,13 +160,18 @@ public class MercadoPagoService {
         }
 
         try {
+            String urlConsultada = "https://api.mercadopago.com/preapproval/" + subId;
+            log.info("🔍 Consultando suscripción en MP. URL: {}", urlConsultada);
+
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.mercadopago.com/preapproval/" + subId))
+                    .uri(URI.create(urlConsultada))
                     .header("Authorization", "Bearer " + accessToken)
                     .GET()
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            log.info("📩 Respuesta de Mercado Pago (HTTP {}): {}", response.statusCode(), response.body());
+
             if (response.statusCode() == 200) {
                 Map<String, Object> mpResponse = objectMapper.readValue(response.body(), new TypeReference<>() {
                 });
