@@ -386,9 +386,13 @@ public class MercadoPagoService {
 
         Map<String, Object> subscription = objectMapper.readValue(subRes.body(), Map.class);
         String initPoint = (String) subscription.get("init_point");
+        String subId = String.valueOf(subscription.get("id"));
 
         // Guardamos intención
         user.setPagoAutomatico(true);
+        if (subId != null && !subId.equals("null")) {
+            user.setSubscriptionId(subId);
+        }
         userRepository.save(user);
 
         log.info("Redirigiendo usuario {} al Checkout Personalizado: {}", userEmail, initPoint);
