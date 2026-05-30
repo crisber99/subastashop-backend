@@ -11,44 +11,43 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.UUID;
 
+import jakarta.annotation.PostConstruct;
+
 @Service
 public class AzureBlobService {
 
-    // Lee la conexión desde application.properties
     @Value("${azure.storage.connection-string}")
     private String connectionString;
 
-    // Nombre del contenedor que creaste en el Portal de Azure
     private final String containerName = "productos-img";
+    private BlobContainerClient containerClient;
+
+    @PostConstruct
+    public void init() {
+        if (connectionString != null && !connectionString.contains("placeholder")) {
+            BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
+                    .connectionString(connectionString)
+                    .buildClient();
+            containerClient = blobServiceClient.getBlobContainerClient(containerName);
+            if (!containerClient.exists()) {
+                containerClient.create();
+            }
+        }
+    }
 
     public String subirImagen(MultipartFile archivo) throws IOException {
         System.out.println("DEBUG: Azure Connection String detected: " + (connectionString != null && connectionString.contains("AccountName") ? "REAL KEY LOADED" : "PLACEHOLDER/NULL"));
         
-        // Fallback si no hay conexión real a Azure (modo demo)
         if (connectionString == null || connectionString.contains("placeholder")) {
             return "https://placehold.co/600x400?text=Imagen+No+Disponible";
         }
 
-        // 1. Conectarse al servicio
-        BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
-                .connectionString(connectionString)
-                .buildClient();
-
-        // 2. Obtener el contenedor (y crearlo si no existe)
-        BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient(containerName);
-        if (!containerClient.exists()) {
-            containerClient.create();
-        }
-
-        // 3. Generar nombre único (para que no se sobrescriban)
         String nombreOriginal = archivo.getOriginalFilename();
         String nombreUnico = UUID.randomUUID().toString() + "-" + nombreOriginal;
 
-        // 4. Subir
         BlobClient blobClient = containerClient.getBlobClient(nombreUnico);
         blobClient.upload(archivo.getInputStream(), archivo.getSize(), true);
 
-        // 5. Devolver URL
         return blobClient.getBlobUrl();
     }
 
@@ -60,13 +59,6 @@ public class AzureBlobService {
         // Limpiar el prefijo data:image/...;base64,
         String base64Real = base64.contains(",") ? base64.split(",")[1] : base64;
         byte[] bytes = java.util.Base64.getDecoder().decode(base64Real);
-
-        BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
-                .connectionString(connectionString)
-                .buildClient();
-
-        BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient(containerName);
-        if (!containerClient.exists()) containerClient.create();
 
         String nombreUnico = UUID.randomUUID().toString() + "-" + nombreBase + ".jpg";
         BlobClient blobClient = containerClient.getBlobClient(nombreUnico);
@@ -83,11 +75,6 @@ public class AzureBlobService {
      */
     public void eliminarTodo() {
         if (connectionString == null || connectionString.contains("placeholder")) return;
-
-        BlobContainerClient containerClient = new BlobServiceClientBuilder()
-                .connectionString(connectionString)
-                .buildClient()
-                .getBlobContainerClient(containerName);
 
         if (containerClient.exists()) {
             containerClient.listBlobs().forEach(blobItem -> {

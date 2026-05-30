@@ -120,30 +120,44 @@ public class TiendaController {
             if (whatsapp != null)
                 tienda.setWhatsapp(whatsapp);
 
-            // C. Subir Logo a Azure (si el usuario seleccionó un logo)
+            // C. Subir imágenes a Azure (en paralelo para ahorrar tiempo)
+            java.util.List<java.util.concurrent.CompletableFuture<Void>> futures = new java.util.ArrayList<>();
+            final Tienda finalTienda = tienda;
+
             if (fotoLogo != null && !fotoLogo.isEmpty()) {
-                String urlLogo = azureBlobService.subirImagen(fotoLogo);
-                tienda.setLogoUrl(urlLogo);
+                futures.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    try {
+                        finalTienda.setLogoUrl(azureBlobService.subirImagen(fotoLogo));
+                    } catch (Exception ignored) {}
+                }));
             }
 
-            // D. Subir Fotos a Azure (si el usuario seleccionó archivos - Mantenido por compatibilidad)
             if (fotoAnverso != null && !fotoAnverso.isEmpty()) {
-                String urlAnverso = azureBlobService.subirImagen(fotoAnverso);
-                tienda.setDocumentoAnversoUrl(urlAnverso);
+                futures.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    try {
+                        finalTienda.setDocumentoAnversoUrl(azureBlobService.subirImagen(fotoAnverso));
+                    } catch (Exception ignored) {}
+                }));
             }
 
             if (fotoReverso != null && !fotoReverso.isEmpty()) {
-                String urlReverso = azureBlobService.subirImagen(fotoReverso);
-                tienda.setDocumentoReversoUrl(urlReverso);
+                futures.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    try {
+                        finalTienda.setDocumentoReversoUrl(azureBlobService.subirImagen(fotoReverso));
+                    } catch (Exception ignored) {}
+                }));
             }
+
+            // Esperar a que terminen de subir todas las imágenes
+            java.util.concurrent.CompletableFuture.allOf(futures.toArray(new java.util.concurrent.CompletableFuture[0])).join();
 
             if (Boolean.TRUE.equals(aceptaTerminos)) {
                 // Si marca el checkbox, guardamos la fecha y hora exacta (Firma Digital simple)
-                tienda.setFechaAceptacionTerminos(LocalDateTime.now());
+                finalTienda.setFechaAceptacionTerminos(LocalDateTime.now());
             }
 
             // D. Guardar cambios
-            tiendaRepository.save(tienda);
+            tiendaRepository.save(finalTienda);
 
             // Respuesta JSON
             Map<String, String> response = new HashMap<>();
