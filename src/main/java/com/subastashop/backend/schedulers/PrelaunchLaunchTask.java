@@ -17,8 +17,8 @@ public class PrelaunchLaunchTask {
     private final PrelaunchSubscriberRepository subscriberRepository;
     private final EmailService emailService;
 
-    // Fecha objetivo del lanzamiento (31 de Mayo 2026 a las 12:00)
-    private static final LocalDateTime LAUNCH_TIME = LocalDateTime.of(2026, 5, 31, 12, 0);
+    // Fecha objetivo del lanzamiento (31 de Mayo 2026 a las 18:00)
+    private static final LocalDateTime LAUNCH_TIME = LocalDateTime.of(2026, 5, 31, 18, 0);
 
     public PrelaunchLaunchTask(PrelaunchSubscriberRepository subscriberRepository, EmailService emailService) {
         this.subscriberRepository = subscriberRepository;
@@ -35,12 +35,13 @@ public class PrelaunchLaunchTask {
 
         // Buscar hasta 50 suscriptores que aún no han sido notificados
         List<PrelaunchSubscriber> pendingSubscribers = subscriberRepository.findTop50ByNotifiedFalse();
-        
+
         if (pendingSubscribers.isEmpty()) {
             return;
         }
 
-        log.info("Iniciando envío de lote de {} correos de bienvenida por prelanzamiento...", pendingSubscribers.size());
+        log.info("Iniciando envío de lote de {} correos de bienvenida por prelanzamiento...",
+                pendingSubscribers.size());
 
         for (PrelaunchSubscriber subscriber : pendingSubscribers) {
             enviarCorreoBienvenida(subscriber);
@@ -60,16 +61,20 @@ public class PrelaunchLaunchTask {
     private String buildHtmlMessage() {
         return "<html>" +
                 "<body style=\"font-family: Arial, sans-serif; color: #333;\">" +
-                "<div style=\"max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;\">" +
+                "<div style=\"max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;\">"
+                +
                 "<h2 style=\"color: #0056b3; text-align: center;\">¡Hola!</h2>" +
                 "<p style=\"font-size: 16px; line-height: 1.5;\">" +
-                "La cuenta regresiva ha terminado y nos emociona anunciar que <strong>SubastaShop</strong> ya está oficialmente abierto para ti." +
+                "La cuenta regresiva ha terminado y nos emociona anunciar que <strong>SubastaShop</strong> ya está oficialmente abierto para ti."
+                +
                 "</p>" +
                 "<p style=\"font-size: 16px; line-height: 1.5;\">" +
-                "Ya puedes ingresar a nuestra plataforma y comenzar a descubrir todo lo que hemos preparado. Recuerda que dentro de la página podrás encontrar toda la información sobre <strong>nuestros planes y sus precios</strong>, para que elijas el que mejor se adapte a lo que necesitas." +
+                "Ya puedes ingresar a nuestra plataforma y comenzar a descubrir todo lo que hemos preparado. Recuerda que dentro de la página podrás encontrar toda la información sobre <strong>nuestros planes y sus precios</strong>, para que elijas el que mejor se adapte a lo que necesitas."
+                +
                 "</p>" +
                 "<div style=\"text-align: center; margin-top: 30px; margin-bottom: 30px;\">" +
-                "<a href=\"https://www.subastashop.cl\" style=\"background-color: #0056b3; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;\">Entrar a SubastaShop</a>" +
+                "<a href=\"https://www.subastashop.cl\" style=\"background-color: #0056b3; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;\">Entrar a SubastaShop</a>"
+                +
                 "</div>" +
                 "<p style=\"font-size: 16px; line-height: 1.5; text-align: center;\">" +
                 "¡Gracias por la espera y bienvenido!<br>" +

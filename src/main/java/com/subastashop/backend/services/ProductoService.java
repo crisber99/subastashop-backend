@@ -93,7 +93,9 @@ public class ProductoService {
         p.setTienda(admin.getTienda());
         
         // --- VALIDACIÓN PRO PARA CHAT ---
-        if (chatHabilitado && !admin.isSuscripcionActiva() && !admin.isPagoAutomatico()) {
+        if ("PERMUTA".equalsIgnoreCase(tipoVenta)) {
+            p.setChatHabilitado(true); // Siempre habilitado para permutas
+        } else if (chatHabilitado && !admin.isSuscripcionActiva() && !admin.isPagoAutomatico()) {
             p.setChatHabilitado(false); // Forzamos apagado si no es PRO
         } else {
             p.setChatHabilitado(chatHabilitado);
@@ -191,7 +193,9 @@ public class ProductoService {
         Integer ownerId = usuarioRepository.findOwnerIdByTiendaId(producto.getTienda().getId());
         AppUsers dueno = (ownerId != null) ? usuarioRepository.findById(ownerId).orElse(null) : null;
         
-        if (chatHabilitado && dueno != null && !dueno.isSuscripcionActiva() && !dueno.isPagoAutomatico()) {
+        if ("PERMUTA".equalsIgnoreCase(producto.getTipoVenta())) {
+            producto.setChatHabilitado(true);
+        } else if (chatHabilitado && dueno != null && !dueno.isSuscripcionActiva() && !dueno.isPagoAutomatico()) {
             producto.setChatHabilitado(false);
         } else {
             producto.setChatHabilitado(chatHabilitado);
