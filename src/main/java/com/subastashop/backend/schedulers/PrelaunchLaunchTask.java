@@ -17,8 +17,8 @@ public class PrelaunchLaunchTask {
     private final PrelaunchSubscriberRepository subscriberRepository;
     private final EmailService emailService;
 
-    // Fecha objetivo del lanzamiento (31 de Mayo 2026 a las 20:00)
-    private static final LocalDateTime LAUNCH_TIME = LocalDateTime.of(2026, 5, 31, 20, 0);
+    // Fecha objetivo del lanzamiento (31 de Mayo 2026 a las 21:00)
+    private static final LocalDateTime LAUNCH_TIME = LocalDateTime.of(2026, 5, 31, 21, 0);
 
     public PrelaunchLaunchTask(PrelaunchSubscriberRepository subscriberRepository, EmailService emailService) {
         this.subscriberRepository = subscriberRepository;
