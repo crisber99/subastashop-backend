@@ -141,7 +141,7 @@ public class PublicController {
     @GetMapping("/prelaunch/winners")
     @Cacheable("prelaunchWinners")
     public ResponseEntity<List<String>> getPrelaunchWinners() {
-        List<PrelaunchSubscriber> winners = prelaunchSubscriberRepository.findTop100ByEmailNotOrderByFechaRegistroAsc("bcbs1986@gmail.com");
+        List<PrelaunchSubscriber> winners = prelaunchSubscriberRepository.findTop110ByEmailNotOrderByFechaRegistroAsc("bcbs1986@gmail.com");
         List<String> maskedEmails = winners.stream()
                 .map(sub -> {
                     String[] parts = sub.getEmail().split("@");
