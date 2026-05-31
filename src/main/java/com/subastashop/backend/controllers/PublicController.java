@@ -137,4 +137,26 @@ public class PublicController {
     public List<Producto> obtenerChollosGanados() {
         return productoRepository.findTop10ByEstadoOrderByFechaFinSubastaDesc("ADJUDICADO");
     }
+
+    @GetMapping("/prelaunch/winners")
+    @Cacheable("prelaunchWinners")
+    public ResponseEntity<List<String>> getPrelaunchWinners() {
+        List<PrelaunchSubscriber> winners = prelaunchSubscriberRepository.findTop100ByEmailNotOrderByFechaRegistroAsc("bcbs1986@gmail.com");
+        List<String> maskedEmails = winners.stream()
+                .map(sub -> {
+                    String[] parts = sub.getEmail().split("@");
+                    if (parts.length == 2) {
+                        String name = parts[0];
+                        String domain = parts[1];
+                        if (name.length() > 3) {
+                            return name.substring(0, 3) + "***@" + domain;
+                        } else {
+                            return name.charAt(0) + "***@" + domain;
+                        }
+                    }
+                    return "***";
+                })
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(maskedEmails);
+    }
 }

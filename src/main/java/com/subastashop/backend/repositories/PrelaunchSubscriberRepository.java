@@ -9,4 +9,5 @@ public interface PrelaunchSubscriberRepository extends JpaRepository<PrelaunchSu
     Optional<PrelaunchSubscriber> findByEmail(String email);
     boolean existsByEmail(String email);
     List<PrelaunchSubscriber> findTop50ByNotifiedFalse();
+    List<PrelaunchSubscriber> findTop100ByEmailNotOrderByFechaRegistroAsc(String emailToExclude);
 }
