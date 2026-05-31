@@ -132,9 +132,9 @@ public class PublicController {
         return ResponseEntity.ok(Map.of("message", "¡Revisa tu bandeja! Te hemos enviado un correo de confirmación."));
     }
 
-    @GetMapping("/chollos-ganados")
-    @Cacheable("chollosGanados")
-    public List<Producto> obtenerChollosGanados() {
+    @GetMapping("/ofertones-ganados")
+    @Cacheable("ofertonesGanados")
+    public List<Producto> obtenerOfertonesGanados() {
         return productoRepository.findTop10ByEstadoOrderByFechaFinSubastaDesc("ADJUDICADO");
     }
 
