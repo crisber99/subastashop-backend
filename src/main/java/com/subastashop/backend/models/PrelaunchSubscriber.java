@@ -24,7 +24,7 @@ public class PrelaunchSubscriber extends BaseEntity {
     @Column(length = 100)
     private String origen = "LANDING_TEASER";
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "bit default 0")
     private boolean notified = false;
 
 }
