@@ -119,7 +119,7 @@ public class PublicController {
                         + "<h2 style='color: #4f46e5; text-align: center;'>¡Estás en la lista! 🚀</h2>"
                         + "<p>Hola,</p>"
                         + "<p>Te has suscrito exitosamente a la lista de espera exclusiva del <b>Gran Lanzamiento de SubastaShop</b>.</p>"
-                        + "<p>Serás de las primeras personas en enterarte apenas abramos nuestras puertas, para que puedas asegurar los cupos Fundador y acceder a los mejores chollos antes que nadie.</p>"
+                        + "<p>Serás de las primeras personas en enterarte apenas abramos nuestras puertas, para que puedas asegurar los cupos Fundador y acceder a los mejores ofertones antes que nadie.</p>"
                         + "<br><p>Mantente atento a este correo.</p>"
                         + "<p><b>El equipo de SubastaShop</b></p>"
                         + "</div>";
