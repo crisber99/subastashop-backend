@@ -70,9 +70,11 @@ public class WebPushService {
     }
 
     public void enviarGlobal(String title, String body, String url) {
-        List<SuscripcionPush> todas = suscripcionRepository.findAll();
-        for (SuscripcionPush sub : todas) {
-            enviarNotificacion(sub, title, body, url);
-        }
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            List<SuscripcionPush> todas = suscripcionRepository.findAll();
+            for (SuscripcionPush sub : todas) {
+                enviarNotificacion(sub, title, body, url);
+            }
+        });
     }
 }

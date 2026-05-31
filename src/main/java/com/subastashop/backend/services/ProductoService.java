@@ -66,14 +66,20 @@ public class ProductoService {
             throw new ApiException("Límite excedido. Tu rol permite un máximo de " + limiteImagenes + " imágenes.");
         }
 
-        List<String> urlsSubidas = new java.util.ArrayList<>();
+        List<String> urlsSubidas = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
         if (archivos != null && !archivos.isEmpty()) {
+            java.util.List<java.util.concurrent.CompletableFuture<Void>> futures = new java.util.ArrayList<>();
             for (MultipartFile archivo : archivos) {
                 if (!archivo.isEmpty()) {
-                    String url = azureBlobService.subirImagen(archivo);
-                    urlsSubidas.add(url);
+                    futures.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
+                        try {
+                            String url = azureBlobService.subirImagen(archivo);
+                            urlsSubidas.add(url);
+                        } catch (Exception ignored) {}
+                    }));
                 }
             }
+            java.util.concurrent.CompletableFuture.allOf(futures.toArray(new java.util.concurrent.CompletableFuture[0])).join();
         } else {
             urlsSubidas.add("https://placehold.co/600x400?text=Subasta+Shop"); // Imagen por defecto
         }
@@ -221,13 +227,19 @@ public class ProductoService {
                 throw new ApiException("Límite excedido. Tu rol permite un máximo de " + limiteImagenes + " imágenes.");
             }
 
-            List<String> urlsSubidas = new java.util.ArrayList<>();
+            List<String> urlsSubidas = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+            java.util.List<java.util.concurrent.CompletableFuture<Void>> futures = new java.util.ArrayList<>();
             for (MultipartFile archivo : archivos) {
                 if (!archivo.isEmpty()) {
-                    String urlNueva = azureBlobService.subirImagen(archivo);
-                    urlsSubidas.add(urlNueva);
+                    futures.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
+                        try {
+                            String urlNueva = azureBlobService.subirImagen(archivo);
+                            urlsSubidas.add(urlNueva);
+                        } catch (Exception ignored) {}
+                    }));
                 }
             }
+            java.util.concurrent.CompletableFuture.allOf(futures.toArray(new java.util.concurrent.CompletableFuture[0])).join();
             producto.setImagenes(urlsSubidas);
         }
 
