@@ -164,7 +164,7 @@ public class AdminController {
 
             // Cabecera extendida 📊
             Row headerRow = sheet.createRow(0);
-            String[] columns = {"ID", "Producto", "Tipo", "Categoría", "Estado", "Cliente (Email)", "Nombre Completo", "Dirección", "Valor Inicial", "Valor Final", "Estado Pago", "Fecha"};
+            String[] columns = {"ID", "Producto", "Tipo", "Categoría", "Estado", "Cliente (Email)", "Nombre Completo", "Dirección", "Valor Inicial", "Valor Final", "Estado Pago", "Fecha", "Premio (Caja Misteriosa)"};
             for (int i = 0; i < columns.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(columns[i]);
@@ -196,6 +196,12 @@ public class AdminController {
                     row.createCell(9).setCellValue(detalle.getPrecioUnitario() != null ? detalle.getPrecioUnitario().doubleValue() : 0.0);
                     row.createCell(10).setCellValue(detalle.getOrden().getEstado() != null ? detalle.getOrden().getEstado() : "PENDIENTE");
                     row.createCell(11).setCellValue(detalle.getOrden().getFechaCreacion() != null ? detalle.getOrden().getFechaCreacion().toString() : "-");
+                    
+                    if ("CAJA_MISTERIOSA".equals(p.getTipoVenta()) && detalle.getDatosExtra() != null && detalle.getDatosExtra().startsWith("Premio:")) {
+                        row.createCell(12).setCellValue(detalle.getDatosExtra().replace("Premio: ", ""));
+                    } else {
+                        row.createCell(12).setCellValue("-");
+                    }
                 } else {
                     row.createCell(5).setCellValue("-");
                     row.createCell(6).setCellValue("-");
@@ -204,6 +210,7 @@ public class AdminController {
                     row.createCell(9).setCellValue(0.0);
                     row.createCell(10).setCellValue("SIN VENTA");
                     row.createCell(11).setCellValue("-");
+                    row.createCell(12).setCellValue("-");
                 }
             }
 
@@ -297,6 +304,26 @@ public class AdminController {
         }
 
         return ResponseEntity.ok(ordenService.obtenerPendientesValidacion(admin.getTienda().getId()));
+    }
+
+    @GetMapping("/ordenes/completadas")
+    public ResponseEntity<?> listarVentasCompletadas() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        AppUsers admin = usuarioRepository.findByEmail(email).orElseThrow();
+        
+        if (admin.getTienda() == null && !"ROLE_SUPER_ADMIN".equals(admin.getRol().name())) {
+            throw new ApiException("No tienes una tienda asignada.");
+        }
+
+        if ("ROLE_SUPER_ADMIN".equals(admin.getRol().name())) {
+            return ResponseEntity.ok(ordenRepository.findAll().stream()
+                .filter(o -> "PAGADO".equals(o.getEstado()) || "COMPLETADA".equals(o.getEstado()) || "ENTREGADO".equals(o.getEstado()))
+                .toList());
+        }
+
+        return ResponseEntity.ok(ordenRepository.findByTiendaId(admin.getTienda().getId()).stream()
+            .filter(o -> "PAGADO".equals(o.getEstado()) || "COMPLETADA".equals(o.getEstado()) || "ENTREGADO".equals(o.getEstado()))
+            .toList());
     }
 
     @PostMapping("/ordenes/{id}/aprobar")
