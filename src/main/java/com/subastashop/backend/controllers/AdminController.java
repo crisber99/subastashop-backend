@@ -316,14 +316,12 @@ public class AdminController {
         }
 
         if ("ROLE_SUPER_ADMIN".equals(admin.getRol().name())) {
-            return ResponseEntity.ok(ordenRepository.findAll().stream()
-                .filter(o -> "PAGADO".equals(o.getEstado()) || "COMPLETADA".equals(o.getEstado()) || "ENTREGADO".equals(o.getEstado()))
-                .toList());
+            // Devolver TODO el historial sin filtrar por estado
+            return ResponseEntity.ok(ordenRepository.findAll());
         }
 
-        return ResponseEntity.ok(ordenRepository.findByTiendaId(admin.getTienda().getId()).stream()
-            .filter(o -> "PAGADO".equals(o.getEstado()) || "COMPLETADA".equals(o.getEstado()) || "ENTREGADO".equals(o.getEstado()))
-            .toList());
+        // Devolver TODO el historial de la tienda sin filtrar por estado
+        return ResponseEntity.ok(ordenRepository.findByTiendaId(admin.getTienda().getId()));
     }
 
     @PostMapping("/ordenes/{id}/aprobar")
