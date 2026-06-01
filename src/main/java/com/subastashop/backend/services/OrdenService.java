@@ -14,6 +14,8 @@ import com.subastashop.backend.repositories.ProductoRepository;
 
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -41,6 +43,23 @@ public class OrdenService {
 
     @Autowired
     private com.subastashop.backend.services.StorageService storageService;
+
+    @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "productosPublicos", allEntries = true),
+        @CacheEvict(value = "productosDestacados", allEntries = true),
+        @CacheEvict(value = "ofertonesGanados", allEntries = true)
+    })
+    public void confirmarPago(Long idOrden) {
+        Orden orden = ordenRepository.findById(idOrden.intValue())
+                .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
+        
+        if ("PAGADO".equals(orden.getEstado())) {
+            throw new RuntimeException("La orden ya fue pagada anteriormente.");
+        }
+
+        pagarOrden(orden.getId());
+    }
 
     @Transactional
     public String pagarOrden(Integer id) {
@@ -241,6 +260,11 @@ public class OrdenService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "productosPublicos", allEntries = true),
+        @CacheEvict(value = "productosDestacados", allEntries = true),
+        @CacheEvict(value = "ofertonesGanados", allEntries = true)
+    })
     public void rechazarPago(Integer id, String motivo) {
         Orden orden = ordenRepository.findByIdConDetalles(id)
                 .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
@@ -293,6 +317,11 @@ public class OrdenService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "productosPublicos", allEntries = true),
+        @CacheEvict(value = "productosDestacados", allEntries = true),
+        @CacheEvict(value = "ofertonesGanados", allEntries = true)
+    })
     public void cancelarOrden(Long id, String emailUsuario) {
         Orden orden = ordenRepository.findByIdConDetalles(id.intValue())
                 .orElseThrow(() -> new RuntimeException("Orden no encontrada"));

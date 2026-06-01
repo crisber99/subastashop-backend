@@ -599,3 +599,212 @@ com.microsoft.sqlserver.jdbc.SQLServerException: SQL Server did not return a res
 2026-05-31T19:49:07.158-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Starting BackendApplication using Java 21.0.7 with PID 35856 (C:\Users\Bernardo\Desktop\proyecto Shop\backend\target\classes started by Bernardo in C:\Users\Bernardo\Desktop\proyecto Shop\backend)
 2026-05-31T19:49:07.160-04:00 DEBUG 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Running with Spring Boot v3.5.9, Spring v6.2.15
 2026-05-31T19:49:07.160-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : No active profile set, falling back to 1 default profile: "default"
+2026-05-31T19:49:08.020-04:00  INFO 35856 --- [backend] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-31T19:49:08.135-04:00  INFO 35856 --- [backend] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 113 ms. Found 19 JPA repository interfaces.
+2026-05-31T19:49:08.637-04:00  INFO 35856 --- [backend] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-05-31T19:49:08.642-04:00  INFO 35856 --- [backend] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-31T19:49:08.642-04:00  INFO 35856 --- [backend] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.50]
+2026-05-31T19:49:08.748-04:00  INFO 35856 --- [backend] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-05-31T19:49:08.748-04:00  INFO 35856 --- [backend] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1586 ms
+2026-05-31T19:49:08.908-04:00  INFO 35856 --- [backend] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-31T19:49:08.915-04:00  INFO 35856 --- [backend] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-31T19:49:08.948-04:00  INFO 35856 --- [backend] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-31T19:49:08.950-04:00  INFO 35856 --- [backend] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-10 - Starting...
+2026-05-31T19:49:09.883-04:00  INFO 35856 --- [backend] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-10 - Added connection ConnectionID:256 ClientConnectionId: 9ee41516-0a38-4464-bb2c-ac1805d1e037
+2026-05-31T19:49:09.883-04:00  INFO 35856 --- [backend] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-10 - Start completed.
+2026-05-31T19:49:10.008-04:00  WARN 35856 --- [backend] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: SQLServerDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-31T19:49:10.256-04:00  INFO 35856 --- [backend] [restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-10)']
+	Database driver: undefined/unknown
+	Database version: 17.0
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-31T19:49:10.915-04:00  INFO 35856 --- [backend] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-31T19:49:21.000-04:00  INFO 35856 --- [backend] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-31T19:49:21.184-04:00 DEBUG 35856 --- [backend] [restartedMain] c.s.b.config.JwtAuthenticationFilter     : Filter 'jwtAuthenticationFilter' configured for use
+2026-05-31T19:49:21.185-04:00 DEBUG 35856 --- [backend] [restartedMain] c.s.backend.config.RateLimitingFilter    : Filter 'rateLimitingFilter' configured for use
+2026-05-31T19:49:21.390-04:00  INFO 35856 --- [backend] [restartedMain] eAuthenticationProviderManagerConfigurer : Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2026-05-31T19:49:21.395-04:00  WARN 35856 --- [backend] [restartedMain] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2026-05-31T19:49:22.619-04:00  WARN 35856 --- [backend] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-31T19:49:22.977-04:00  INFO 35856 --- [backend] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2026-05-31T19:49:22.992-04:00  INFO 35856 --- [backend] [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Starting...
+2026-05-31T19:49:22.993-04:00  INFO 35856 --- [backend] [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@69ff49c7]]
+2026-05-31T19:49:22.993-04:00  INFO 35856 --- [backend] [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Started.
+2026-05-31T19:49:22.997-04:00  INFO 35856 --- [backend] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-05-31T19:49:23.003-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Started BackendApplication in 15.949 seconds (process running for 68718.329)
+2026-05-31T19:49:24.273-04:00  INFO 35856 --- [backend] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2026-05-31T19:50:23.001-04:00  INFO 35856 --- [backend] [MessageBroker-6] o.s.w.s.c.WebSocketMessageBrokerStats    : WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 8, active threads = 1, queued tasks = 6, completed tasks = 6]
+2026-05-31T20:04:19.570-04:00  INFO 35856 --- [backend] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2026-05-31T20:04:19.574-04:00  INFO 35856 --- [backend] [Thread-112] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-05-31T20:04:19.579-04:00  INFO 35856 --- [backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-05-31T20:04:19.580-04:00  INFO 35856 --- [backend] [Thread-112] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopping...
+2026-05-31T20:04:19.580-04:00  INFO 35856 --- [backend] [Thread-112] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@69ff49c7]]
+2026-05-31T20:04:19.580-04:00  INFO 35856 --- [backend] [Thread-112] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopped.
+2026-05-31T20:04:19.586-04:00  INFO 35856 --- [backend] [Thread-112] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-05-31T20:04:19.587-04:00  INFO 35856 --- [backend] [Thread-112] com.zaxxer.hikari.HikariDataSource       : HikariPool-10 - Shutdown initiated...
+2026-05-31T20:04:19.589-04:00  INFO 35856 --- [backend] [Thread-112] com.zaxxer.hikari.HikariDataSource       : HikariPool-10 - Shutdown completed.
+2026-05-31T20:04:19.699-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Starting BackendApplication using Java 21.0.7 with PID 35856 (C:\Users\Bernardo\Desktop\proyecto Shop\backend\target\classes started by Bernardo in C:\Users\Bernardo\Desktop\proyecto Shop\backend)
+2026-05-31T20:04:19.699-04:00 DEBUG 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Running with Spring Boot v3.5.9, Spring v6.2.15
+2026-05-31T20:04:19.699-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : No active profile set, falling back to 1 default profile: "default"
+2026-05-31T20:04:20.040-04:00  INFO 35856 --- [backend] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-31T20:04:20.114-04:00  INFO 35856 --- [backend] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 72 ms. Found 19 JPA repository interfaces.
+2026-05-31T20:04:20.300-04:00  INFO 35856 --- [backend] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-05-31T20:04:20.302-04:00  INFO 35856 --- [backend] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-31T20:04:20.302-04:00  INFO 35856 --- [backend] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.50]
+2026-05-31T20:04:20.354-04:00  INFO 35856 --- [backend] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-05-31T20:04:20.355-04:00  INFO 35856 --- [backend] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 653 ms
+2026-05-31T20:04:20.415-04:00  INFO 35856 --- [backend] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-31T20:04:20.420-04:00  INFO 35856 --- [backend] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-31T20:04:20.431-04:00  INFO 35856 --- [backend] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-31T20:04:20.432-04:00  INFO 35856 --- [backend] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-11 - Starting...
+2026-05-31T20:04:21.916-04:00  INFO 35856 --- [backend] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-11 - Added connection ConnectionID:266 ClientConnectionId: da6d92f8-1e70-4b8a-8137-fbba75cabb37
+2026-05-31T20:04:21.917-04:00  INFO 35856 --- [backend] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-11 - Start completed.
+2026-05-31T20:04:22.042-04:00  WARN 35856 --- [backend] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: SQLServerDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-31T20:04:22.289-04:00  INFO 35856 --- [backend] [restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-11)']
+	Database driver: undefined/unknown
+	Database version: 17.0
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-31T20:04:22.518-04:00  INFO 35856 --- [backend] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-31T20:04:32.429-04:00  INFO 35856 --- [backend] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-31T20:04:32.516-04:00 DEBUG 35856 --- [backend] [restartedMain] c.s.b.config.JwtAuthenticationFilter     : Filter 'jwtAuthenticationFilter' configured for use
+2026-05-31T20:04:32.516-04:00 DEBUG 35856 --- [backend] [restartedMain] c.s.backend.config.RateLimitingFilter    : Filter 'rateLimitingFilter' configured for use
+2026-05-31T20:04:32.643-04:00  INFO 35856 --- [backend] [restartedMain] eAuthenticationProviderManagerConfigurer : Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2026-05-31T20:04:32.644-04:00  WARN 35856 --- [backend] [restartedMain] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2026-05-31T20:04:34.068-04:00  WARN 35856 --- [backend] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-31T20:04:34.347-04:00  INFO 35856 --- [backend] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2026-05-31T20:04:34.359-04:00  INFO 35856 --- [backend] [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Starting...
+2026-05-31T20:04:34.360-04:00  INFO 35856 --- [backend] [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@e70fadf]]
+2026-05-31T20:04:34.360-04:00  INFO 35856 --- [backend] [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Started.
+2026-05-31T20:04:34.363-04:00  INFO 35856 --- [backend] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-05-31T20:04:34.368-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Started BackendApplication in 14.71 seconds (process running for 69629.694)
+2026-05-31T20:04:35.617-04:00  INFO 35856 --- [backend] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2026-05-31T20:05:34.363-04:00  INFO 35856 --- [backend] [MessageBroker-2] o.s.w.s.c.WebSocketMessageBrokerStats    : WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 8, active threads = 1, queued tasks = 6, completed tasks = 6]
+2026-05-31T20:35:34.372-04:00  INFO 35856 --- [backend] [MessageBroker-3] o.s.w.s.c.WebSocketMessageBrokerStats    : WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 8, active threads = 4, queued tasks = 3, completed tasks = 187]
+2026-05-31T21:05:34.376-04:00  INFO 35856 --- [backend] [MessageBroker-1] o.s.w.s.c.WebSocketMessageBrokerStats    : WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 8, active threads = 4, queued tasks = 3, completed tasks = 368]
+2026-05-31T21:35:34.389-04:00  INFO 35856 --- [backend] [MessageBroker-1] o.s.w.s.c.WebSocketMessageBrokerStats    : WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 8, active threads = 4, queued tasks = 3, completed tasks = 549]
+2026-05-31T22:05:34.396-04:00  INFO 35856 --- [backend] [MessageBroker-2] o.s.w.s.c.WebSocketMessageBrokerStats    : WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 8, active threads = 4, queued tasks = 3, completed tasks = 730]
+2026-05-31T22:14:23.390-04:00  INFO 35856 --- [backend] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2026-05-31T22:14:23.396-04:00  INFO 35856 --- [backend] [Thread-124] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-05-31T22:14:23.401-04:00  INFO 35856 --- [backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-05-31T22:14:23.401-04:00  INFO 35856 --- [backend] [Thread-124] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopping...
+2026-05-31T22:14:23.402-04:00  INFO 35856 --- [backend] [Thread-124] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@e70fadf]]
+2026-05-31T22:14:23.402-04:00  INFO 35856 --- [backend] [Thread-124] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopped.
+2026-05-31T22:14:23.408-04:00  INFO 35856 --- [backend] [Thread-124] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-05-31T22:14:23.409-04:00  INFO 35856 --- [backend] [Thread-124] com.zaxxer.hikari.HikariDataSource       : HikariPool-11 - Shutdown initiated...
+2026-05-31T22:14:23.411-04:00  INFO 35856 --- [backend] [Thread-124] com.zaxxer.hikari.HikariDataSource       : HikariPool-11 - Shutdown completed.
+2026-05-31T22:14:23.590-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Starting BackendApplication using Java 21.0.7 with PID 35856 (C:\Users\Bernardo\Desktop\proyecto Shop\backend\target\classes started by Bernardo in C:\Users\Bernardo\Desktop\proyecto Shop\backend)
+2026-05-31T22:14:23.590-04:00 DEBUG 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Running with Spring Boot v3.5.9, Spring v6.2.15
+2026-05-31T22:14:23.591-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : No active profile set, falling back to 1 default profile: "default"
+2026-05-31T22:14:24.062-04:00  INFO 35856 --- [backend] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-31T22:14:24.123-04:00  INFO 35856 --- [backend] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 66 ms. Found 19 JPA repository interfaces.
+2026-05-31T22:14:24.361-04:00  INFO 35856 --- [backend] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-05-31T22:14:24.372-04:00  INFO 35856 --- [backend] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-31T22:14:24.373-04:00  INFO 35856 --- [backend] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.50]
+2026-05-31T22:14:24.429-04:00  INFO 35856 --- [backend] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-05-31T22:14:24.429-04:00  INFO 35856 --- [backend] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 830 ms
+2026-05-31T22:14:24.495-04:00  INFO 35856 --- [backend] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-31T22:14:24.505-04:00  INFO 35856 --- [backend] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-31T22:14:24.520-04:00  INFO 35856 --- [backend] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-31T22:14:24.523-04:00  INFO 35856 --- [backend] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-12 - Starting...
+2026-05-31T22:14:25.756-04:00  INFO 35856 --- [backend] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-12 - Added connection ConnectionID:319 ClientConnectionId: 8f9b1194-cac4-45db-974a-d947285ea957
+2026-05-31T22:14:25.771-04:00  INFO 35856 --- [backend] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-12 - Start completed.
+2026-05-31T22:14:25.899-04:00  WARN 35856 --- [backend] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: SQLServerDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-31T22:14:26.150-04:00  INFO 35856 --- [backend] [restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-12)']
+	Database driver: undefined/unknown
+	Database version: 17.0
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-31T22:14:26.510-04:00  INFO 35856 --- [backend] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-31T22:14:36.590-04:00  INFO 35856 --- [backend] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-31T22:14:36.709-04:00 DEBUG 35856 --- [backend] [restartedMain] c.s.b.config.JwtAuthenticationFilter     : Filter 'jwtAuthenticationFilter' configured for use
+2026-05-31T22:14:36.713-04:00 DEBUG 35856 --- [backend] [restartedMain] c.s.backend.config.RateLimitingFilter    : Filter 'rateLimitingFilter' configured for use
+2026-05-31T22:14:36.919-04:00  INFO 35856 --- [backend] [restartedMain] eAuthenticationProviderManagerConfigurer : Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2026-05-31T22:14:36.923-04:00  WARN 35856 --- [backend] [restartedMain] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2026-05-31T22:14:38.380-04:00  WARN 35856 --- [backend] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-31T22:14:38.830-04:00  INFO 35856 --- [backend] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2026-05-31T22:14:38.843-04:00  INFO 35856 --- [backend] [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Starting...
+2026-05-31T22:14:38.844-04:00  INFO 35856 --- [backend] [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@300c36cb]]
+2026-05-31T22:14:38.844-04:00  INFO 35856 --- [backend] [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Started.
+2026-05-31T22:14:38.848-04:00  INFO 35856 --- [backend] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-05-31T22:14:38.856-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Started BackendApplication in 15.375 seconds (process running for 77434.182)
+2026-05-31T22:14:40.268-04:00  INFO 35856 --- [backend] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2026-05-31T22:14:49.744-04:00  INFO 35856 --- [backend] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2026-05-31T22:14:49.746-04:00  INFO 35856 --- [backend] [Thread-136] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-05-31T22:14:49.751-04:00  INFO 35856 --- [backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-05-31T22:14:49.751-04:00  INFO 35856 --- [backend] [Thread-136] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopping...
+2026-05-31T22:14:49.751-04:00  INFO 35856 --- [backend] [Thread-136] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@300c36cb]]
+2026-05-31T22:14:49.751-04:00  INFO 35856 --- [backend] [Thread-136] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopped.
+2026-05-31T22:14:49.762-04:00  INFO 35856 --- [backend] [Thread-136] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-05-31T22:14:49.763-04:00  INFO 35856 --- [backend] [Thread-136] com.zaxxer.hikari.HikariDataSource       : HikariPool-12 - Shutdown initiated...
+2026-05-31T22:14:49.764-04:00  INFO 35856 --- [backend] [Thread-136] com.zaxxer.hikari.HikariDataSource       : HikariPool-12 - Shutdown completed.
+2026-05-31T22:14:49.875-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Starting BackendApplication using Java 21.0.7 with PID 35856 (C:\Users\Bernardo\Desktop\proyecto Shop\backend\target\classes started by Bernardo in C:\Users\Bernardo\Desktop\proyecto Shop\backend)
+2026-05-31T22:14:49.876-04:00 DEBUG 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Running with Spring Boot v3.5.9, Spring v6.2.15
+2026-05-31T22:14:49.876-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : No active profile set, falling back to 1 default profile: "default"
+2026-05-31T22:14:50.235-04:00  INFO 35856 --- [backend] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-31T22:14:50.290-04:00  INFO 35856 --- [backend] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 56 ms. Found 19 JPA repository interfaces.
+2026-05-31T22:14:50.432-04:00  INFO 35856 --- [backend] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-05-31T22:14:50.436-04:00  INFO 35856 --- [backend] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-31T22:14:50.436-04:00  INFO 35856 --- [backend] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.50]
+2026-05-31T22:14:50.480-04:00  INFO 35856 --- [backend] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-05-31T22:14:50.480-04:00  INFO 35856 --- [backend] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 603 ms
+2026-05-31T22:14:50.535-04:00  INFO 35856 --- [backend] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-31T22:14:50.539-04:00  INFO 35856 --- [backend] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-31T22:14:50.550-04:00  INFO 35856 --- [backend] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-31T22:14:50.551-04:00  INFO 35856 --- [backend] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-13 - Starting...
+2026-05-31T22:14:51.363-04:00  INFO 35856 --- [backend] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-13 - Added connection ConnectionID:329 ClientConnectionId: 3fb04e03-909d-4b7c-a523-128832a0e00b
+2026-05-31T22:14:51.378-04:00  INFO 35856 --- [backend] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-13 - Start completed.
+2026-05-31T22:14:51.498-04:00  WARN 35856 --- [backend] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: SQLServerDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-31T22:14:51.752-04:00  INFO 35856 --- [backend] [restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-13)']
+	Database driver: undefined/unknown
+	Database version: 17.0
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-31T22:14:52.006-04:00  INFO 35856 --- [backend] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-31T22:15:02.048-04:00  INFO 35856 --- [backend] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-31T22:15:02.123-04:00 DEBUG 35856 --- [backend] [restartedMain] c.s.b.config.JwtAuthenticationFilter     : Filter 'jwtAuthenticationFilter' configured for use
+2026-05-31T22:15:02.129-04:00 DEBUG 35856 --- [backend] [restartedMain] c.s.backend.config.RateLimitingFilter    : Filter 'rateLimitingFilter' configured for use
+2026-05-31T22:15:02.318-04:00  INFO 35856 --- [backend] [restartedMain] eAuthenticationProviderManagerConfigurer : Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2026-05-31T22:15:02.319-04:00  WARN 35856 --- [backend] [restartedMain] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2026-05-31T22:15:03.209-04:00  WARN 35856 --- [backend] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-31T22:15:03.535-04:00  INFO 35856 --- [backend] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2026-05-31T22:15:03.552-04:00  INFO 35856 --- [backend] [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Starting...
+2026-05-31T22:15:03.552-04:00  INFO 35856 --- [backend] [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@6b1fedc3]]
+2026-05-31T22:15:03.552-04:00  INFO 35856 --- [backend] [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Started.
+2026-05-31T22:15:03.557-04:00  INFO 35856 --- [backend] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-05-31T22:15:03.564-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Started BackendApplication in 13.732 seconds (process running for 77458.89)
+2026-05-31T22:15:04.992-04:00  INFO 35856 --- [backend] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2026-05-31T22:15:05.003-04:00  INFO 35856 --- [backend] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2026-05-31T22:15:05.004-04:00  INFO 35856 --- [backend] [Thread-148] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-05-31T22:15:05.009-04:00  INFO 35856 --- [backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-05-31T22:15:05.011-04:00  INFO 35856 --- [backend] [Thread-148] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopping...
+2026-05-31T22:15:05.011-04:00  INFO 35856 --- [backend] [Thread-148] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@6b1fedc3]]
+2026-05-31T22:15:05.011-04:00  INFO 35856 --- [backend] [Thread-148] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopped.
+2026-05-31T22:15:05.018-04:00  INFO 35856 --- [backend] [Thread-148] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-05-31T22:15:05.018-04:00  INFO 35856 --- [backend] [Thread-148] com.zaxxer.hikari.HikariDataSource       : HikariPool-13 - Shutdown initiated...
+2026-05-31T22:15:05.020-04:00  INFO 35856 --- [backend] [Thread-148] com.zaxxer.hikari.HikariDataSource       : HikariPool-13 - Shutdown completed.
+2026-05-31T22:15:05.131-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Starting BackendApplication using Java 21.0.7 with PID 35856 (C:\Users\Bernardo\Desktop\proyecto Shop\backend\target\classes started by Bernardo in C:\Users\Bernardo\Desktop\proyecto Shop\backend)
+2026-05-31T22:15:05.131-04:00 DEBUG 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : Running with Spring Boot v3.5.9, Spring v6.2.15
+2026-05-31T22:15:05.131-04:00  INFO 35856 --- [backend] [restartedMain] c.s.backend.BackendApplication           : No active profile set, falling back to 1 default profile: "default"
+2026-05-31T22:15:05.408-04:00  INFO 35856 --- [backend] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-31T22:15:05.477-04:00  INFO 35856 --- [backend] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 60 ms. Found 19 JPA repository interfaces.
+2026-05-31T22:15:05.616-04:00  INFO 35856 --- [backend] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-05-31T22:15:05.618-04:00  INFO 35856 --- [backend] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-31T22:15:05.618-04:00  INFO 35856 --- [backend] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.50]
+2026-05-31T22:15:05.665-04:00  INFO 35856 --- [backend] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-05-31T22:15:05.665-04:00  INFO 35856 --- [backend] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 531 ms
+2026-05-31T22:15:05.713-04:00  INFO 35856 --- [backend] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-31T22:15:05.717-04:00  INFO 35856 --- [backend] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-31T22:15:05.726-04:00  INFO 35856 --- [backend] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-31T22:15:05.727-04:00  INFO 35856 --- [backend] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-14 - Starting...
