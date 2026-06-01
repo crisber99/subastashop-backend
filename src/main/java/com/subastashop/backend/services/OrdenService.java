@@ -58,7 +58,7 @@ public class OrdenService {
             throw new RuntimeException("La orden ya fue pagada anteriormente.");
         }
 
-        pagarOrden(orden.getId());
+        pagarOrden(orden.getId().intValue());
     }
 
     @Transactional
