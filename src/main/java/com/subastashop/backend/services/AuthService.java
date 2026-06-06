@@ -85,7 +85,7 @@ public class AuthService {
         AppUsers user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        String url = azureBlobService.subirImagen(file);
+        String url = azureBlobService.subirImagenDirecta(file);
         user.setProfileImageUrl(url);
         userRepository.save(user);
         return url;

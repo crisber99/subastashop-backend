@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 public interface DetalleOrdenRepository extends JpaRepository<DetalleOrden, Long> {
     java.util.Optional<DetalleOrden> findFirstByProductoIdOrderByOrdenFechaCreacionDesc(Integer productoId);
 
+    List<DetalleOrden> findByProductoIdIn(List<Integer> productoIds);
+
     @org.springframework.data.jpa.repository.Query("SELECT d.producto.nombre, SUM(d.precioUnitario * d.cantidad) as total " +
             "FROM DetalleOrden d WHERE d.orden.tienda.id = :tiendaId AND (d.orden.estado = 'PAGADO' OR d.orden.estado = 'COMPLETADA') " +
             "GROUP BY d.producto.id, d.producto.nombre ORDER BY total DESC")

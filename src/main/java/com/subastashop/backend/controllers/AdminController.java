@@ -159,6 +159,23 @@ public class AdminController {
             productos = productoRepository.findAll();
         }
 
+        // --- OPTIMIZACIÓN: Pre-cargar los Detalles de Orden para evitar N+1 Query Problem ---
+        java.util.List<Integer> productoIds = productos.stream().map(Producto::getId).toList();
+        java.util.List<com.subastashop.backend.models.DetalleOrden> todosDetalles = detalleOrdenRepository.findByProductoIdIn(productoIds);
+        
+        // Agrupar por productoId y quedarnos con el más reciente
+        Map<Integer, com.subastashop.backend.models.DetalleOrden> detalleMasRecientePorProducto = new HashMap<>();
+        for (com.subastashop.backend.models.DetalleOrden d : todosDetalles) {
+            Integer pId = d.getProducto().getId();
+            com.subastashop.backend.models.DetalleOrden existente = detalleMasRecientePorProducto.get(pId);
+            
+            if (existente == null || 
+                (d.getOrden() != null && existente.getOrden() != null && 
+                 d.getOrden().getFechaCreacion().isAfter(existente.getOrden().getFechaCreacion()))) {
+                detalleMasRecientePorProducto.put(pId, d);
+            }
+        }
+
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Inventario y Ventas");
 
@@ -184,8 +201,8 @@ public class AdminController {
                 row.createCell(3).setCellValue(p.getCategoria() != null ? p.getCategoria().getNombre() : "Sin Categoría");
                 row.createCell(4).setCellValue(p.getEstado());
 
-                // Buscar información de venta 💰
-                var detalle = detalleOrdenRepository.findFirstByProductoIdOrderByOrdenFechaCreacionDesc(p.getId()).orElse(null);
+                // Buscar información de venta 💰 (En memoria, instantáneo)
+                com.subastashop.backend.models.DetalleOrden detalle = detalleMasRecientePorProducto.get(p.getId());
                 
                 if (detalle != null && detalle.getOrden() != null) {
                     AppUsers cliente = detalle.getOrden().getUsuario();

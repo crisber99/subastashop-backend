@@ -67,6 +67,30 @@ public class AzureBlobService {
         return blobClient.getBlobUrl();
     }
 
+    public String subirImagenDirecta(MultipartFile archivo) throws IOException {
+        System.out.println("DEBUG: Azure Direct Upload");
+        if (connectionString == null || connectionString.contains("placeholder")) {
+            return "https://placehold.co/600x400?text=Imagen+No+Disponible";
+        }
+
+        String nombreOriginal = archivo.getOriginalFilename();
+        if (nombreOriginal == null) nombreOriginal = "imagen";
+        String baseName = nombreOriginal.replaceAll("[^a-zA-Z0-9.-]", "_");
+        
+        String extension = "";
+        int i = nombreOriginal.lastIndexOf('.');
+        if (i > 0) {
+            extension = nombreOriginal.substring(i);
+        }
+
+        String nombreUnico = "avatar-" + UUID.randomUUID().toString() + extension;
+
+        BlobClient blobClient = containerClient.getBlobClient(nombreUnico);
+        blobClient.upload(archivo.getInputStream(), archivo.getSize(), true);
+
+        return blobClient.getBlobUrl();
+    }
+
     public String subirImagenBase64(String base64, String nombreBase) throws IOException {
         if (connectionString == null || connectionString.contains("placeholder")) {
             return "https://placehold.co/100x100?text=Premio+Demo";
