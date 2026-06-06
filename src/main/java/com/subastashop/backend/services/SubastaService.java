@@ -13,6 +13,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import org.springframework.context.annotation.Lazy;
 import com.subastashop.backend.services.SubastaSniperService;
+import com.subastashop.backend.services.WebPushService;
+import com.subastashop.backend.repositories.SuscripcionPushRepository;
+import com.subastashop.backend.models.SuscripcionPush;
+import java.util.List;
 
 @Service
 public class SubastaService {
@@ -32,6 +36,12 @@ public class SubastaService {
     @Autowired
     @Lazy
     private SubastaSniperService sniperService;
+
+    @Autowired
+    private WebPushService webPushService;
+
+    @Autowired
+    private SuscripcionPushRepository suscripcionRepository;
 
     @Transactional // <--- ¡Vital! O todo o nada.
     public Puja realizarPuja(Integer productoId, Integer usuarioId, BigDecimal montoOferta) {
@@ -118,6 +128,21 @@ public class SubastaService {
             
             // Enviamos el mensaje al canal privado de ese usuario en particular
             messagingTemplate.convertAndSend("/topic/usuario/" + pujaAnteriorMax.getUsuarioId(), notificacionOutbid);
+
+            // [NUEVO] Enviar notificación Web Push
+            try {
+                List<SuscripcionPush> suscripciones = suscripcionRepository.findByUsuarioId(pujaAnteriorMax.getUsuarioId());
+                for (SuscripcionPush sub : suscripciones) {
+                    webPushService.enviarNotificacion(
+                        sub, 
+                        "¡Te han superado! 📉", 
+                        "Alguien ofreció $" + montoOferta + " por " + producto.getNombre(), 
+                        "https://subastashop.com/producto/" + producto.getId()
+                    );
+                }
+            } catch (Exception e) {
+                System.err.println("Error al enviar notificación push en SubastaService: " + e.getMessage());
+            }
         }
 
         // 7. Si es una puja manual, disparar los Sniper Bots
