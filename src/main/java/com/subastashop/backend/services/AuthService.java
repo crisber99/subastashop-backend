@@ -47,6 +47,9 @@ public class AuthService {
     @Autowired
     private AzureBlobService azureBlobService;
 
+    @org.springframework.beans.factory.annotation.Value("${google.client.id}")
+    private String googleClientId;
+
     public Map<String, Object> authenticateUser(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
@@ -208,6 +211,10 @@ public class AuthService {
                 String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + socialToken;
                 Map<String, Object> response = restTemplate.getForObject(url, Map.class);
                 if (response != null && response.containsKey("email")) {
+                    String aud = (String) response.get("aud");
+                    if (aud != null && !aud.equals(googleClientId)) {
+                        throw new ApiException("Token de Google no fue emitido para esta aplicación (aud mismatch).");
+                    }
                     email = (String) response.get("email");
                     nombre = (String) response.get("name");
                 } else {
