@@ -25,9 +25,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     // Almacena un "balde" (Bucket) de tokens virtual para cada IP
     private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
 
-    // Creamos un bucket que permita 50 peticiones, y recargue 50 cada minuto.
+    // Creamos un bucket que permita 120 peticiones, y recargue 120 cada minuto.
     private Bucket createNewBucket() {
-        Bandwidth limit = Bandwidth.classic(50, Refill.greedy(50, Duration.ofMinutes(1)));
+        Bandwidth limit = Bandwidth.classic(120, Refill.greedy(120, Duration.ofMinutes(1)));
         return Bucket.builder().addLimit(limit).build();
     }
 
@@ -60,8 +60,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             } else {
                 // No hay tokens, bloquear
                 response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value()); // Error 429
-                response.setContentType("application/json");
-                response.getWriter().write("{\"error\": \"Demasiadas peticiones\", \"message\": \"Has excedido el límite de peticiones (50/minuto). Por favor espera un minuto.\"}");
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"error\": \"Demasiadas peticiones\", \"message\": \"Has excedido el límite de peticiones (120/minuto). Por favor espera un minuto.\"}");
                 return;
             }
         } else {
