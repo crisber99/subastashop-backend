@@ -59,7 +59,7 @@ public class CuponService {
                 .stream().map(this::toDTO).toList();
     }
 
-    public CuponDTO validarCupon(String codigo, Integer tiendaId) {
+    public CuponDTO validarCupon(String codigo, Long tiendaId) {
         Cupon cupon = cuponRepository.findByCodigoAndTenantIdAndActivoTrue(codigo.toUpperCase(), TenantContext.getTenantId())
                 .orElseThrow(() -> new ApiException("Cupón inválido o inactivo."));
 

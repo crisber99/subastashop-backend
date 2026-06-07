@@ -44,6 +44,9 @@ public class OrdenService {
     @Autowired
     private com.subastashop.backend.services.StorageService storageService;
 
+    @Autowired
+    private com.subastashop.backend.services.CuponService cuponService;
+
     @Transactional
     @Caching(evict = {
         @CacheEvict(value = "productosPublicos", allEntries = true),
@@ -182,8 +185,7 @@ public class OrdenService {
         String codigoCuponUsado = null;
         if (request.getCodigoCupon() != null && !request.getCodigoCupon().trim().isEmpty() && tiendaOrden != null) {
             try {
-                com.subastashop.backend.dto.CuponDTO cuponDto = com.subastashop.backend.config.BeanUtil.getBean(com.subastashop.backend.services.CuponService.class)
-                        .validarCupon(request.getCodigoCupon(), tiendaOrden.getId());
+                com.subastashop.backend.dto.CuponDTO cuponDto = cuponService.validarCupon(request.getCodigoCupon(), tiendaOrden.getId());
                 codigoCuponUsado = cuponDto.getCodigo();
                 if ("PORCENTAJE".equalsIgnoreCase(cuponDto.getTipo())) {
                     descuento = totalOrden.multiply(cuponDto.getDescuento()).divide(new BigDecimal(100));
@@ -196,7 +198,7 @@ public class OrdenService {
                 }
                 
                 // Usar cupón
-                com.subastashop.backend.config.BeanUtil.getBean(com.subastashop.backend.services.CuponService.class).usarCupon(codigoCuponUsado);
+                cuponService.usarCupon(codigoCuponUsado);
             } catch (Exception e) {
                 // Si el cupón es inválido, lanzar excepción o ignorar
                 throw new RuntimeException("Error al aplicar cupón: " + e.getMessage());

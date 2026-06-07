@@ -15,6 +15,6 @@ public class CuponDTO {
     private boolean activo;
     private Integer limiteUso;
     private Integer usosActuales;
-    private Integer tiendaId;
+    private Long tiendaId;
     private String tiendaNombre;
 }

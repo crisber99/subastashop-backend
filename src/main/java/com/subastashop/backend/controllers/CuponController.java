@@ -1,6 +1,7 @@
 package com.subastashop.backend.controllers;
 
 import com.subastashop.backend.dto.CuponDTO;
+import com.subastashop.backend.models.Cupon;
 import com.subastashop.backend.services.CuponService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +41,7 @@ public class CuponController {
     // --- Endpoints Públicos (Validación en Carrito) ---
 
     @GetMapping("/validar")
-    public ResponseEntity<CuponDTO> validarCupon(@RequestParam String codigo, @RequestParam Integer tiendaId) {
+    public ResponseEntity<CuponDTO> validarCupon(@RequestParam String codigo, @RequestParam Long tiendaId) {
         return ResponseEntity.ok(cuponService.validarCupon(codigo, tiendaId));
     }
 }

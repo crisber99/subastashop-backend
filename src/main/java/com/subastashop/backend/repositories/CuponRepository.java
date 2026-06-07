@@ -10,6 +10,6 @@ import java.util.Optional;
 @Repository
 public interface CuponRepository extends JpaRepository<Cupon, Integer> {
     Optional<Cupon> findByCodigoAndTenantIdAndActivoTrue(String codigo, String tenantId);
-    List<Cupon> findByTiendaIdAndTenantId(Integer tiendaId, String tenantId);
+    List<Cupon> findByTiendaIdAndTenantId(Long tiendaId, String tenantId);
     Optional<Cupon> findByIdAndTenantId(Integer id, String tenantId);
 }
