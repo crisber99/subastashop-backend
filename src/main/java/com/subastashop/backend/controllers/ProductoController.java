@@ -143,14 +143,15 @@ public class ProductoController {
             @RequestParam(value = "destacado", required = false, defaultValue = "false") boolean destacado,
             @RequestParam(value = "fechaInicioSubasta", required = false) String fechaInicioSubasta,
             @RequestParam(value = "horasVentaAnticipada", required = false) Integer horasVentaAnticipada,
-            @RequestParam(value = "tipoJuego", required = false) String tipoJuego) throws java.io.IOException {
+            @RequestParam(value = "tipoJuego", required = false) String tipoJuego,
+            @RequestParam(value = "estado", required = false) String estado) throws java.io.IOException {
 
         boolean isSuperAdmin = SecurityContextHolder.getContext().getAuthentication()
                 .getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
         Producto modificado = productoService.editarProducto(id, isSuperAdmin, nombre, descripcion, precioBase, precioTicket, fechaFin, archivos, 
-                categoriaId, chatHabilitado, destacado, fechaInicioSubasta, horasVentaAnticipada, tipoJuego);
+                categoriaId, chatHabilitado, destacado, fechaInicioSubasta, horasVentaAnticipada, tipoJuego, estado);
         return ResponseEntity.ok(productoService.toDTO(modificado));
     }
 }

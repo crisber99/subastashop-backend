@@ -165,7 +165,7 @@ public class ProductoService {
 
     public Producto editarProducto(Integer id, boolean isSuperAdmin, String nombre, String descripcion, BigDecimal precioBase, BigDecimal precioTicket,
                                    String fechaFin, List<MultipartFile> archivos, Integer categoriaId, boolean chatHabilitado, boolean destacado,
-                                   String fechaInicioSubasta, Integer horasVentaAnticipada, String tipoJuego) throws java.io.IOException {
+                                   String fechaInicioSubasta, Integer horasVentaAnticipada, String tipoJuego, String estadoForzado) throws java.io.IOException {
 
         if (securityService.tieneContenidoIlegal(nombre) || securityService.tieneContenidoIlegal(descripcion)) {
             throw new ApiException("CensoredContent: No puedes actualizar el producto con términos prohibidos.");
@@ -174,9 +174,13 @@ public class ProductoService {
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
-        String estado = producto.getEstado();
-        if ("SUBASTA".equals(estado) || "ADJUDICADO".equals(estado) || "PAGADO".equals(estado)) {
+        String estadoActual = producto.getEstado();
+        if (!isSuperAdmin && ("SUBASTA".equals(estadoActual) || "ADJUDICADO".equals(estadoActual) || "PAGADO".equals(estadoActual))) {
             throw new ApiException("No puedes editar un producto activo o vendido.");
+        }
+
+        if (estadoForzado != null && !estadoForzado.isEmpty() && !estadoForzado.equals("undefined")) {
+            producto.setEstado(estadoForzado);
         }
 
         producto.setNombre(nombre);
