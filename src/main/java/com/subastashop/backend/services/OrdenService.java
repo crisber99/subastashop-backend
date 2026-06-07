@@ -177,6 +177,32 @@ public class OrdenService {
             }
         }
 
+        // VALIDAR CUPON SI SE ENVIA
+        BigDecimal descuento = BigDecimal.ZERO;
+        String codigoCuponUsado = null;
+        if (request.getCodigoCupon() != null && !request.getCodigoCupon().trim().isEmpty() && tiendaOrden != null) {
+            try {
+                com.subastashop.backend.dto.CuponDTO cuponDto = com.subastashop.backend.config.BeanUtil.getBean(com.subastashop.backend.services.CuponService.class)
+                        .validarCupon(request.getCodigoCupon(), tiendaOrden.getId());
+                codigoCuponUsado = cuponDto.getCodigo();
+                if ("PORCENTAJE".equalsIgnoreCase(cuponDto.getTipo())) {
+                    descuento = totalOrden.multiply(cuponDto.getDescuento()).divide(new BigDecimal(100));
+                } else {
+                    descuento = cuponDto.getDescuento();
+                }
+                totalOrden = totalOrden.subtract(descuento);
+                if (totalOrden.compareTo(BigDecimal.ZERO) < 0) {
+                    totalOrden = BigDecimal.ZERO;
+                }
+                
+                // Usar cupón
+                com.subastashop.backend.config.BeanUtil.getBean(com.subastashop.backend.services.CuponService.class).usarCupon(codigoCuponUsado);
+            } catch (Exception e) {
+                // Si el cupón es inválido, lanzar excepción o ignorar
+                throw new RuntimeException("Error al aplicar cupón: " + e.getMessage());
+            }
+        }
+
         // 3. CREACIÓN DE ORDEN NUEVA
         Orden orden = new Orden();
         orden.setUsuario(usuarioActual);
@@ -185,6 +211,8 @@ public class OrdenService {
         orden.setFechaExpiracionReserva(LocalDateTime.now().plusHours(24));
         orden.setEstado("PENDIENTE_PAGO");
         orden.setTotal(totalOrden);
+        orden.setDescuento(descuento);
+        orden.setCodigoCupon(codigoCuponUsado);
         orden.setPreferenciaEnvio(request.getPreferenciaEnvio());
 
         final Orden ordenGuardada = ordenRepository.save(orden);

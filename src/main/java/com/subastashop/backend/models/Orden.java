@@ -41,6 +41,8 @@ public class Orden extends BaseEntity {
     private String estado; // Sugerencia: Podrías usar un ENUM aquí
 
     private BigDecimal total; // BigDecimal es mejor para dinero que Double
+    private BigDecimal descuento;
+    private String codigoCupon;
 
     private String comprobanteUrl;
     private LocalDateTime fechaExpiracionReserva;
