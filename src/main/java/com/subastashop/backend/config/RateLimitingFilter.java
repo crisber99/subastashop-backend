@@ -16,15 +16,18 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.core.annotation.Order;
+
 @Component
+@Order(1)
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     // Almacena un "balde" (Bucket) de tokens virtual para cada IP
     private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
 
-    // Creamos un bucket que permita 10 peticiones, y recargue 10 cada minuto.
+    // Creamos un bucket que permita 50 peticiones, y recargue 50 cada minuto.
     private Bucket createNewBucket() {
-        Bandwidth limit = Bandwidth.classic(10, Refill.greedy(10, Duration.ofMinutes(1)));
+        Bandwidth limit = Bandwidth.classic(50, Refill.greedy(50, Duration.ofMinutes(1)));
         return Bucket.builder().addLimit(limit).build();
     }
 
@@ -38,8 +41,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // Solo aplicamos Rate Limiting a las rutas de Autenticación para evitar Fuerza Bruta
-        if (path.startsWith("/api/auth/login") || path.startsWith("/api/auth/register")) {
+        // Aplicamos Rate Limiting a toda la API
+        if (path.startsWith("/api/")) {
             
             // Extraer la IP del cliente
             String ip = request.getHeader("X-Forwarded-For");
@@ -51,13 +54,14 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
             // Intentar consumir 1 token
             if (bucket.tryConsume(1)) {
-                // Hay tokens disponibles, dejar pasar la petición
+                // Hay tokens disponibles, añadir header informativo
+                response.setHeader("X-Rate-Limit-Remaining", String.valueOf(bucket.getAvailableTokens()));
                 filterChain.doFilter(request, response);
             } else {
-                // No hay tokens (DDoS o Fuerza Bruta), bloquear temporalmente
+                // No hay tokens, bloquear
                 response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value()); // Error 429
                 response.setContentType("application/json");
-                response.getWriter().write("{\"error\": \"Demasiadas peticiones\", \"message\": \"Has excedido el l\\u00EDmite de intentos. Por favor espera un minuto.\"}");
+                response.getWriter().write("{\"error\": \"Demasiadas peticiones\", \"message\": \"Has excedido el límite de peticiones (50/minuto). Por favor espera un minuto.\"}");
                 return;
             }
         } else {
