@@ -16,4 +16,6 @@ public interface TiendaRepository extends JpaRepository<Tienda, Long> {
 
     // 2. Para verificar si una URL ya existe (antes de crearla)
     boolean existsBySlug(String slug);
+
+    java.util.List<Tienda> findByEnVivoTrue();
 }

@@ -169,4 +169,50 @@ public class TiendaController {
             return ResponseEntity.internalServerError().body("Error al actualizar: " + e.getMessage());
         }
     }
+
+    // ========================================================================
+    // 3. ACTUALIZAR ESTADO EN VIVO (Live Commerce)
+    // ========================================================================
+    @PostMapping("/live-status")
+    @CacheEvict(value = {"tiendasActivas", "tiendasEnVivo"}, allEntries = true)
+    public ResponseEntity<?> actualizarLiveStatus(@RequestBody Map<String, Object> payload) {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            AppUsers admin = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            Tienda tienda = admin.getTienda();
+            if (tienda == null) {
+                return ResponseEntity.badRequest().body(Map.of("mensaje", "❌ Error: No tienes tienda asignada."));
+            }
+
+            boolean isPro = admin.getRol().name().equals("ROLE_SUPER_ADMIN") || 
+                            admin.isSuscripcionActiva() || 
+                            admin.isPagoAutomatico();
+
+            if (!isPro) {
+                return ResponseEntity.status(403).body(Map.of("mensaje", "Solo los usuarios PRO pueden transmitir en vivo."));
+            }
+
+            Boolean enVivo = (Boolean) payload.get("enVivo");
+            String urlStream = (String) payload.get("urlStream");
+
+            if (enVivo != null) {
+                tienda.setEnVivo(enVivo);
+            }
+            if (urlStream != null) {
+                tienda.setUrlStream(urlStream);
+            } else if (Boolean.FALSE.equals(enVivo)) {
+                tienda.setUrlStream(null);
+            }
+
+            tiendaRepository.save(tienda);
+            
+            Map<String, String> response = new HashMap<>();
+            response.put("mensaje", "✅ Estado en vivo actualizado correctamente.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("mensaje", "Error al actualizar estado en vivo: " + e.getMessage()));
+        }
+    }
 }

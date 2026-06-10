@@ -49,7 +49,9 @@ public class PublicController {
                 t.getActiva(),
                 t.isIdentidadVerificada(),
                 t.getFechaCreacion(),
-                t.getWhatsapp());
+                t.getWhatsapp(),
+                t.isEnVivo(),
+                t.getUrlStream());
     }
 
     // Endpoint para la Landing Page (Listar Tiendas)
@@ -57,6 +59,13 @@ public class PublicController {
     @Cacheable("tiendasActivas")
     public List<TiendaPublicDTO> obtenerTiendasActivas() {
         return tiendaRepository.findAll().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/tiendas/en-vivo")
+    public List<TiendaPublicDTO> obtenerTiendasEnVivo() {
+        return tiendaRepository.findByEnVivoTrue().stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
