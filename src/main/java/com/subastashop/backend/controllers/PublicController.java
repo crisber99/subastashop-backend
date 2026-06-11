@@ -50,7 +50,7 @@ public class PublicController {
                 t.isIdentidadVerificada(),
                 t.getFechaCreacion(),
                 t.getWhatsapp(),
-                t.isEnVivo(),
+                t.getEnVivo(),
                 t.getUrlStream());
     }
 

@@ -13,10 +13,10 @@ public class TiendaPublicDTO {
     private LocalDateTime fechaCreacion;
     private String whatsapp;
 
-    private boolean enVivo;
+    private Boolean enVivo;
     private String urlStream;
 
-    public TiendaPublicDTO(Long id, String nombre, String slug, String logoUrl, String colorPrimario, Boolean activa, boolean identidadVerificada, LocalDateTime fechaCreacion, String whatsapp, boolean enVivo, String urlStream) {
+    public TiendaPublicDTO(Long id, String nombre, String slug, String logoUrl, String colorPrimario, Boolean activa, boolean identidadVerificada, LocalDateTime fechaCreacion, String whatsapp, Boolean enVivo, String urlStream) {
         this.id = id;
         this.nombre = nombre;
         this.slug = slug;
@@ -39,6 +39,6 @@ public class TiendaPublicDTO {
     public boolean isIdentidadVerificada() { return identidadVerificada; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public String getWhatsapp() { return whatsapp; }
-    public boolean isEnVivo() { return enVivo; }
+    public Boolean getEnVivo() { return enVivo; }
     public String getUrlStream() { return urlStream; }
 }

@@ -41,7 +41,7 @@ public class Tienda {
 
     private String whatsapp; // <-- Número de WhatsApp para recibir comprobantes
 
-    private boolean enVivo = false;
+    private Boolean enVivo = false;
     private String urlStream;
 
     @Column(name = "fecha_aceptacion_terminos")
