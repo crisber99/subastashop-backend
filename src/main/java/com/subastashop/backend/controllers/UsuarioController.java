@@ -12,8 +12,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.subastashop.backend.services.AuthService;
 import com.subastashop.backend.models.Role;
 
 import java.util.List;
@@ -28,6 +30,8 @@ public class UsuarioController {
     private OrdenRepository ordenRepository;
     @Autowired
     private AppUserRepository usuarioRepository;
+    @Autowired
+    private AuthService authService;
 
     // 1. Endpoint para "Mis Pujas" 🔨
     @GetMapping("/mis-pujas")
@@ -62,9 +66,15 @@ public class UsuarioController {
         usuario.setRol(Role.ROLE_VENDEDOR); // Asegúrate de agregar VENDEDOR a tu Enum Role
         usuarioRepository.save(usuario);
 
-        // 3. (Opcional) Aquí podrías pedir RUT, Cuenta Bancaria, etc. antes de
         // aprobarlo.
 
         return ResponseEntity.ok("¡Felicidades! Ahora tienes acceso al panel de ventas.");
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<?> eliminarMiCuenta() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        authService.deleteMyAccount(email);
+        return ResponseEntity.ok(java.util.Map.of("message", "Cuenta eliminada y anonimizada correctamente."));
     }
 }

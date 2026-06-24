@@ -271,6 +271,29 @@ public class AuthService {
         return buildUserMap(user);
     }
 
+    public void deleteMyAccount(String email) {
+        AppUsers user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Anonimizar datos (Derecho al Olvido)
+        user.setNombreCompleto("Usuario Eliminado");
+        user.setAlias("Eliminado_" + UUID.randomUUID().toString().substring(0, 4));
+        user.setTelefono(null);
+        user.setDireccion(null);
+        user.setRut("00.000.000-0");
+        user.setProfileImageUrl(null);
+        
+        // Cambiar email a un hash para evitar colisiones y revocar tokens JWT (ya que JWT usa email)
+        String hashEmail = "eliminado_" + UUID.randomUUID().toString().substring(0, 8) + "@subastashop.cl";
+        user.setEmail(hashEmail);
+
+        // Guardamos los datos anonimizados primero
+        userRepository.save(user);
+
+        // Ejecutamos soft delete (@SQLDelete en AppUsers)
+        userRepository.delete(user);
+    }
+
     private Map<String, Object> buildAuthResponse(String token, AppUsers user) {
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
